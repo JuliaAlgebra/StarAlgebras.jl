@@ -1,6 +1,12 @@
 using StarAlgebras
 using Test
+using LinearAlgebra
+using SparseArrays
 
-@testset "StarAlgebras.jl" begin
-    # Write your tests here.
+include("test_example_words.jl")
+
+@testset "StarAlgebras" begin
+   include("mtables.jl")
+   include("constructors.jl")
+   include("arithmetic.jl")
 end
