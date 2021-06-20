@@ -36,13 +36,14 @@ function StarAlgebras.star(w::Word)
     # star(:c) = :c
 
     for (i, l) in enumerate(Iterators.reverse(w.letters))
-        newletters[i] = if A[l] === :a
+        k = if A[l] === :a
             2
         elseif A[l] === :b
             1
-        elseif A[l] === :c
-            3
+        else
+            l
         end
+        newletters[i] = k
     end
     return Word(w.alphabet, newletters)
 end

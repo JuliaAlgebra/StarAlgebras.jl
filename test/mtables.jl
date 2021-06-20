@@ -23,6 +23,26 @@
     @test_throws StarAlgebras.ProductNotDefined mstr[k+1, k]
 end
 
+@testset "MTable" begin
+    b = StarAlgebras.Basis{UInt16}(words([:a, :b, :c, :d], radius=4))
+    k = findfirst(w->length(w)==3, b)-1
+
+    mstr = StarAlgebras.MTable{false}(b, table_size=(k, k))
+
+    @test mstr isa StarAlgebras.MTable{UInt16, false}
+
+    @test all(mstr[i,i]≠1 for i in 2:size(mstr, 1))
+    @test all(mstr[1,i]==i for i in 1:size(mstr, 2))
+    @test all(mstr[i,1]==i for i in 1:size(mstr, 1))
+
+    tmstr = StarAlgebras.MTable{true}(b, table_size=(k, k))
+
+    @test tmstr isa StarAlgebras.MTable{UInt16, true}
+    @test all(tmstr[i,i]!=1 for i in 2:size(tmstr, 1))
+    @test all(tmstr[1,i]==i for i in 1:size(tmstr, 2))
+    @test all(tmstr[i,1]≠ i for i in 1:size(tmstr, 1) if b[i] != StarAlgebras.star(b[i]))
+end
+
 @testset "CachedMTable" begin
     b = StarAlgebras.Basis{UInt8}(words([:a, :b, :c], radius=4))
     k = findfirst(w->length(w)==3, b)-1
@@ -54,4 +74,3 @@ end
 
     @test_throws StarAlgebras.ProductNotDefined mstr[k+1, k]
 end
-
