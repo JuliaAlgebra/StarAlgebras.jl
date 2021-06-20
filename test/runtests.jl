@@ -1,6 +1,6 @@
 using StarAlgebras
 using Test
 
-@testset "StarAlgebras.jl" begin
-    # Write your tests here.
+@testset "StarAlgebras" begin
+   include("mtables.jl")
 end
