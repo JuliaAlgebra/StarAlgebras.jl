@@ -145,36 +145,44 @@ StarAlgebras.star(g::GroupElement) = inv(g)
 
         RG = StarAlgebras.StarAlgebra(one(first(b)), b)
 
+        @test StarAlgebras.basis(RG) === b
+        @test StarAlgebras.basis(RG.mstructure) === StarAlgebras.basis(RG)
+
         RGc = StarAlgebras.StarAlgebra(one(first(b)), b, (l, l))
+        @test StarAlgebras.basis(RGc) === b
+        @test StarAlgebras.basis(RGc.mstructure) === StarAlgebras.basis(RGc)
 
         @test all(RG.mstructure[1:121, 1:121] .== RGc.mstructure)
 
         Z = zero(RGc)
         W = zero(RGc)
 
-        for g in [rand(b[1:121]) for _ in 1:30]
+        let cfs = StarAlgebras.coeffs
+            g = b[rand(1:121)]
             X = RG(g)
             Y = -RG(StarAlgebras.star(g))
-            for i in 1:10
-                X[rand(b[1:121])] += rand(-3:3)
-                Y[rand(b[1:121])] -= rand(3:3)
+            for i in 1:3
+                X[b[rand(1:121)]] += rand(-3:3)
+                Y[b[rand(1:121)]] -= rand(3:3)
             end
 
-            Xc = StarAlgebras.AlgebraElement(StarAlgebras.coeffs(X), RGc)
-            Yc = StarAlgebras.AlgebraElement(StarAlgebras.coeffs(Y), RGc)
+            Xc = StarAlgebras.AlgebraElement(cfs(X), RGc)
+            Yc = StarAlgebras.AlgebraElement(cfs(Y), RGc)
 
-            @test StarAlgebras.coeffs(X*Y) ==
-            StarAlgebras.coeffs(Xc*Yc) == StarAlgebras.coeffs(StarAlgebras.mul!(Z, X, Y))
+            @test cfs(X*Y) == cfs(Xc*Yc) == cfs(StarAlgebras.mul!(Z, X, Y))
 
-            @test Z.coeffs == StarAlgebras.mul!(W.coeffs, X.coeffs, Y.coeffs, RG.mstructure)
-            @test Z.coeffs == W.coeffs
-            @test Z.coeffs == StarAlgebras.mul!(W.coeffs, X.coeffs, Y.coeffs, RGc.mstructure)
-            @test Z.coeffs == W.coeffs
+            @test cfs(X^2) == cfs(Xc^2) == cfs(X*X)
+            @test cfs(Y^2) == cfs(Yc^2) == cfs(Y*Y)
+
+            @test cfs(Z) == StarAlgebras.mul!(cfs(W), cfs(X), cfs(Y), RG.mstructure)
+            @test cfs(Z) == cfs(W)
+            @test cfs(Z) == StarAlgebras.mul!(cfs(W), cfs(X), cfs(Y), RGc.mstructure)
+            @test cfs(Z) == cfs(W)
 
             StarAlgebras.zero!(W)
+            StarAlgebras.fmac!(cfs(W), cfs(X), cfs(Y), RG.mstructure)
 
-            @test StarAlgebras.coeffs((2*X*Y)) ==
-            (StarAlgebras.fmac!(W.coeffs, X.coeffs, Y.coeffs, RG.mstructure); StarAlgebras.coeffs(StarAlgebras.mul!(W, W, 2)))
+            @test cfs(2*X*Y) == cfs(StarAlgebras.mul!(W, W, 2))
         end
     end
 end
@@ -205,9 +213,11 @@ end
 
     @test StarAlgebras.supp(D) == b[1:k]
 
-    @test any(iszero, RG.mstructure.table)
+    @test_throws StarAlgebras.ProductNotDefined StarAlgebras._check(RG.mstructure)
 
     @test D * D isa StarAlgebras.AlgebraElement
+
+    @test StarAlgebras._check(RG.mstructure)
 
     @test all(!iszero, RG.mstructure.table)
 end

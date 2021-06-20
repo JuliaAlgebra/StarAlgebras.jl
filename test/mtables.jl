@@ -21,13 +21,20 @@
     @test tmstr[3, 2] == b[StarAlgebras.star(b[3])*b[2]]
 
     @test_throws StarAlgebras.ProductNotDefined mstr[k+1, k]
+
+    try
+        w = mstr[k+1, k]
+    catch ex
+        @test ex isa StarAlgebras.ProductNotDefined
+        @test sprint(Base.showerror, ex) == "Product of elements 14 and 13 is not defined on the basis or the multiplicative structure could not be completed: a·a·a · c·c = a·a·a·c·c."
+    end
 end
 
 @testset "MTable" begin
     b = StarAlgebras.Basis{UInt16}(words([:a, :b, :c, :d], radius=4))
     k = findfirst(w->length(w)==3, b)-1
 
-    mstr = StarAlgebras.MTable{false}(b, table_size=(k, k))
+    mstr = StarAlgebras.MTable(b, table_size=(k, k))
 
     @test mstr isa StarAlgebras.MTable{UInt16, false}
 

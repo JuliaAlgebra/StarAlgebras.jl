@@ -1,6 +1,8 @@
 using StarAlgebras
 using Test
+using LinearAlgebra
 using SparseArrays
+
 include("test_example_words.jl")
 
 @testset "StarAlgebras" begin

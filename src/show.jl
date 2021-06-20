@@ -7,7 +7,7 @@ function Base.show(io::IO, a::AlgebraElement)
     A = parent(a)
     if iszero(a)
         T = eltype(a)
-        print(io, "$(zero(T))*$(one(object(A)))")
+        print(io, "$(zero(T))·$(one(object(A)))")
     elseif hasbasis(A)
         elts = String[]
         nzeros = findall(!iszero, coeffs(a))

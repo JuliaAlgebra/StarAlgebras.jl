@@ -1,6 +1,5 @@
-function Base.hash(a::AlgebraElement, h::UInt)
-    return hash(coeffs(a), hash(parent(a), hash(typeof(a), h)))
-end
+Base.hash(a::AlgebraElement, h::UInt) = hash(coeffs(a), hash(parent(a), h))
+
 function Base.:(==)(X::AlgebraElement, Y::AlgebraElement)
     parent(X) === parent(Y) || return false
     return coeffs(X) == coeffs(Y)
@@ -40,5 +39,5 @@ function star(X::AlgebraElement)
     return AlgebraElement(sparsevec(idcs, vals, length(b)), A)
 end
 
-LinearAlgebra.norm(a::AlgebraElement, p) = LinearAlgebra.norm(coeffs(a), p)
+LinearAlgebra.norm(a::AlgebraElement, p::Real) = LinearAlgebra.norm(coeffs(a), p)
 aug(a::AlgebraElement) = sum(coeffs(a))

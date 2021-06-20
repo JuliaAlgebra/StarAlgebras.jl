@@ -2,7 +2,7 @@ abstract type AbstractMTable{I,Tw} <: MultiplicativeStructure{Tw,I} end
 
 Base.size(mt::AbstractMTable) = size(mt.table)
 
-_check(mt::AbstractMTable) = check(mt.table, basis(mt), _istwisted(mt))
+_check(mt::AbstractMTable) = _check(mt.table, basis(mt), _istwisted(mt))
 
 function _check(product_matrix, basis, twisted::Bool)
     idx = findfirst(iszero, product_matrix)
