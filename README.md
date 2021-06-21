@@ -3,7 +3,7 @@
 <!-- [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://kalmarek.github.io/StarAlgebras.jl/stable) -->
 <!-- [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://kalmarek.github.io/StarAlgebras.jl/dev) -->
 [![Build Status](https://github.com/kalmarek/StarAlgebras.jl/workflows/CI/badge.svg)](https://github.com/kalmarek/StarAlgebras.jl/actions?query=workflow%3ACI)
-[![Coverage](https://codecov.io/gh/kalmarek/StarAlgebras.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/kalmarek/StarAlgebras.jl)
+[![codecov](https://codecov.io/gh/kalmarek/StarAlgebras.jl/branch/main/graph/badge.svg?token=jpHVdYRx8G)](https://codecov.io/gh/kalmarek/StarAlgebras.jl)
 
 ----
 
