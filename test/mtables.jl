@@ -17,8 +17,8 @@
 
     tmstr = StarAlgebras.TrivialMStructure{true}(b)
     @test tmstr[1, 2] == 2
-    @test tmstr[2, 3] == b[StarAlgebras.star(b[2])*b[3]]
-    @test tmstr[3, 2] == b[StarAlgebras.star(b[3])*b[2]]
+    @test tmstr[2, 3] == b[star(b[2])*b[3]]
+    @test tmstr[3, 2] == b[star(b[3])*b[2]]
 
     @test_throws StarAlgebras.ProductNotDefined mstr[k+1, k]
 
@@ -47,7 +47,7 @@ end
     @test tmstr isa StarAlgebras.MTable{UInt16, true}
     @test all(tmstr[i,i]!=1 for i in 2:size(tmstr, 1))
     @test all(tmstr[1,i]==i for i in 1:size(tmstr, 2))
-    @test all(tmstr[i,1]≠ i for i in 1:size(tmstr, 1) if b[i] != StarAlgebras.star(b[i]))
+    @test all(tmstr[i,1]≠ i for i in 1:size(tmstr, 1) if b[i] != star(b[i]))
 end
 
 @testset "CachedMTable" begin
@@ -87,7 +87,7 @@ end
         @test mstr.table[1, 2] == 2
         @test mstr.table[1, 1] == 0
 
-        idx = b[b[2]*b[3]] # == 8
+        idx = StarAlgebras._istwisted(mstr) ? b[star(b[2])*b[3]] : b[b[2]*b[3]]
 
         @test mstr.table[2, 3] == 0
         @test mstr[2, 3] == idx
@@ -106,6 +106,6 @@ end
 
     @test all(iszero, tmstr.table)
     @test tmstr[1, 2] == 2
-    @test tmstr[2, 3] == b[StarAlgebras.star(b[2])*b[3]]
-    @test tmstr[3, 2] == b[StarAlgebras.star(b[3])*b[2]]
+    @test tmstr[2, 3] == b[star(b[2])*b[3]]
+    @test tmstr[3, 2] == b[star(b[3])*b[2]]
 end
