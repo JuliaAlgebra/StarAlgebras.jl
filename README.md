@@ -188,7 +188,7 @@ Finally, if the group is infinite (or just too large), but we need specific prod
 
 ### Even more advanced use (for experts only)
 
-This package originated as a tool to compute sum of (hermitian) squares in `*``-algebras. These consist not of standard `f*f` summands, but rather `star(f)*f`. You may think of semi-definite matrices: their Cholesky decomposition determines `P = Q'·Q`, where `Q'` denotes transpose. Algebra of matrices with transpose is an (the?) example of *-algebra.
+This package originated as a tool to compute sum of (hermitian) squares in `*`-algebras. These consist not of standard `f*f` summands, but rather `star(f)*f`. You may think of semi-definite matrices: their Cholesky decomposition determines `P = Q'·Q`, where `Q'` denotes transpose. Algebra of matrices with transpose is an (the?) example of `*`-algebra.
 
 To compute such sums of squares one may either sprinkle the code with `star`s, or define
 ```julia
@@ -238,5 +238,4 @@ Before using this mode you should consult the code (and potentially its author:)
 
 
 -----
-
-This package superseeds [GroupRings.jl](https://github.com/kalmarek/GroupRings.jl) that served its purpose well. Let it rest peacefully.
+If you happen to use this package please cite either [1712.07167](https://arxiv.org/abs/1712.07167) or [1812.03456](https://arxiv.org/abs/1812.03456). This package superseeds [GroupRings.jl](https://github.com/kalmarek/GroupRings.jl) which was developed and used there. It served its purpose well. Let it rest peacefully.
