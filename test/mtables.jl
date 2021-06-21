@@ -20,6 +20,8 @@
     @test tmstr[2, 3] == b[star(b[2])*b[3]]
     @test tmstr[3, 2] == b[star(b[3])*b[2]]
 
+    @test sprint(show, MIME"text/plain"(), tmstr) == "twisted TrivialMStructure over basis with $(length(basis(tmstr))) elements"
+
     @test_throws StarAlgebras.ProductNotDefined mstr[k+1, k]
 
     try

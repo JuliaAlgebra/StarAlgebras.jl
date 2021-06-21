@@ -10,6 +10,8 @@ StarAlgebras.star(g::GroupElement) = inv(g)
     l = length(b)
     RG = StarAlgebra(G, b, (l,l))
 
+    @test sprint(show, RG) == "*-algebra of Group of residues modulo 6"
+
     @testset "Module structure" begin
         a = AlgebraElement(ones(Int, order(G)), RG)
 
