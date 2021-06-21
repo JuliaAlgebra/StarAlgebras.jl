@@ -51,33 +51,61 @@ end
 end
 
 @testset "CachedMTable" begin
-    b = StarAlgebras.Basis{UInt8}(words([:a, :b, :c], radius=4))
-    k = findfirst(w->length(w)==3, b)-1
+    b = StarAlgebras.Basis{UInt8}(words([:a, :b, :c], radius = 4))
+    k = findfirst(w -> length(w) == 3, b) - 1
 
-    mstr = StarAlgebras.CachedMTable{false}(b, table_size=(k,k))
-    @test all(iszero, mstr.table)
-    StarAlgebras.cache!(mstr, 1, 2)
-    @test mstr.table[1, 2] == 2
-    @test mstr.table[1, 1] == 0
+    @test StarAlgebras.CachedMTable(b, table_size = (k, k)) isa
+          StarAlgebras.CachedMTable{Word{Symbol},UInt8,typeof(b),Matrix{UInt8},false}
 
-    idx = b[b[2]*b[3]] # == 8
+    @test StarAlgebras.CachedMTable{true}(b, table_size = (k, k)) isa
+          StarAlgebras.CachedMTable{Word{Symbol},UInt8,typeof(b),Matrix{UInt8},true}
 
-    @test mstr.table[2, 3] == 0
-    @test mstr[2, 3] == idx
-    @test mstr.table[2, 3] == idx
+    @test StarAlgebras.CachedMTable(b, spzeros(UInt8, k, k)) isa StarAlgebras.CachedMTable{
+        Word{Symbol},
+        UInt8,
+        typeof(b),
+        SparseMatrixCSC{UInt8,Int64},
+        false,
+    }
 
-    @test mstr.table[1, 3] == 0
-    @test mstr.table[1, 4] == 0
-    StarAlgebras.cache!(mstr, [1], [3, 4])
-    @test mstr.table[1, 3] == 3
-    @test mstr.table[1, 4] == 4
+    @test StarAlgebras.CachedMTable{true}(b, spzeros(UInt8, k, k)) isa
+          StarAlgebras.CachedMTable{
+        Word{Symbol},
+        UInt8,
+        typeof(b),
+        SparseMatrixCSC{UInt8,Int64},
+        true,
+    }
 
-    tmstr = StarAlgebras.CachedMTable{true}(b, table_size=(k,k))
+    for mstr in [
+        StarAlgebras.CachedMTable{false}(b, table_size = (k, k)),
+        StarAlgebras.CachedMTable{true}(b, spzeros(UInt8, k, k)),
+    ]
+
+        @test all(iszero, mstr.table)
+        StarAlgebras.cache!(mstr, 1, 2)
+        @test mstr.table[1, 2] == 2
+        @test mstr.table[1, 1] == 0
+
+        idx = b[b[2]*b[3]] # == 8
+
+        @test mstr.table[2, 3] == 0
+        @test mstr[2, 3] == idx
+        @test mstr.table[2, 3] == idx
+
+        @test mstr.table[1, 3] == 0
+        @test mstr.table[1, 4] == 0
+        StarAlgebras.cache!(mstr, [1], [3, 4])
+        @test mstr.table[1, 3] == 3
+        @test mstr.table[1, 4] == 4
+
+        @test_throws StarAlgebras.ProductNotDefined mstr[k+1, k]
+    end
+
+    tmstr = StarAlgebras.CachedMTable{true}(b, table_size = (k, k))
 
     @test all(iszero, tmstr.table)
     @test tmstr[1, 2] == 2
     @test tmstr[2, 3] == b[StarAlgebras.star(b[2])*b[3]]
     @test tmstr[3, 2] == b[StarAlgebras.star(b[3])*b[2]]
-
-    @test_throws StarAlgebras.ProductNotDefined mstr[k+1, k]
 end

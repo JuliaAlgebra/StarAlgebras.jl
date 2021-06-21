@@ -96,7 +96,7 @@ end
 
 CachedMTable(basis::AbstractBasis, mt::AbstractMatrix) = CachedMTable{false}(basis, mt)
 
-function CachedMTable{Tw}(basis::AbstractBasis{T,I}, mt::AbstractMatrix{I}) where {Tw,T,I}
+function CachedMTable{Tw}(basis::AbstractBasis{T,I}, mt::AbstractMatrix) where {Tw,T,I}
     return CachedMTable{T,I,typeof(basis),typeof(mt),Tw}(basis, mt)
 end
 
