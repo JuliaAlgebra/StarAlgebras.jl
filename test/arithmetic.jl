@@ -8,43 +8,45 @@ StarAlgebras.star(g::GroupElement) = inv(g)
     G = CyclicGroup(6)
     b = StarAlgebras.Basis{UInt8}(collect(G))
     l = length(b)
-    RG = StarAlgebras.StarAlgebra(G, b, (l,l))
+    RG = StarAlgebra(G, b, (l,l))
+
+    @test sprint(show, RG) == "*-algebra of Group of residues modulo 6"
 
     @testset "Module structure" begin
-        a = StarAlgebras.AlgebraElement(ones(Int, order(G)), RG)
+        a = AlgebraElement(ones(Int, order(G)), RG)
 
-        @test -a isa StarAlgebras.AlgebraElement
-        @test StarAlgebras.coeffs(-a) == -StarAlgebras.coeffs(a)
+        @test -a isa AlgebraElement
+        @test coeffs(-a) == -coeffs(a)
 
-        @test 2*a isa StarAlgebras.AlgebraElement
+        @test 2*a isa AlgebraElement
         @test eltype(2*a) == typeof(2)
-        @test StarAlgebras.coeffs(2*a) == 2StarAlgebras.coeffs(a)
+        @test coeffs(2*a) == 2coeffs(a)
 
-        @test 2.0*a isa StarAlgebras.AlgebraElement
+        @test 2.0*a isa AlgebraElement
         @test eltype(2.0*a) == typeof(2.0)
-        @test StarAlgebras.coeffs(2.0*a) == 2.0*StarAlgebras.coeffs(a)
+        @test coeffs(2.0*a) == 2.0*coeffs(a)
 
-        @test StarAlgebras.coeffs(a/2) == StarAlgebras.coeffs(a)/2
+        @test coeffs(a/2) == coeffs(a)/2
         b = a/2
-        @test b isa StarAlgebras.AlgebraElement
+        @test b isa AlgebraElement
         @test eltype(b) == typeof(1/2)
-        @test StarAlgebras.coeffs(b/2) == 0.25*StarAlgebras.coeffs(a)
+        @test coeffs(b/2) == 0.25*coeffs(a)
 
         c = a//1
 
         @test eltype(c) == Rational{Int}
-        @test c//4 isa StarAlgebras.AlgebraElement
-        @test c//big(4) isa StarAlgebras.AlgebraElement
+        @test c//4 isa AlgebraElement
+        @test c//big(4) isa AlgebraElement
         @test eltype(c//(big(4)//1)) == Rational{BigInt}
 
         @test (1.0a)*1//2 == (0.5a) == c//2
     end
 
     @testset "Additive structure" begin
-        a = StarAlgebras.AlgebraElement(ones(Int, order(G)), RG)
+        a = AlgebraElement(ones(Int, order(G)), RG)
         b = sum((-1)^isodd(g.residual)*RG(g) for g in G)
 
-        @test a == StarAlgebras.AlgebraElement(ones(Int, order(G)), RG) == sum(RG(g) for g in G)
+        @test a == AlgebraElement(ones(Int, order(G)), RG) == sum(RG(g) for g in G)
 
         @test 1/2*(a+b).coeffs == [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 
@@ -74,10 +76,10 @@ StarAlgebras.star(g::GroupElement) = inv(g)
         end
 
         for g in G
-            @test StarAlgebras.star(RG(g)) == RG(inv(g))
-            @test (one(RG)-RG(g))*StarAlgebras.star(one(RG)-RG(g)) ==
+            @test star(RG(g)) == RG(inv(g))
+            @test (one(RG)-RG(g))*star(one(RG)-RG(g)) ==
             2*one(RG) - RG(g) - RG(inv(g))
-            @test StarAlgebras.aug(one(RG) - RG(g)) == 0
+            @test aug(one(RG) - RG(g)) == 0
         end
 
         g = CyclicGroupElement(2, G)
@@ -92,16 +94,16 @@ StarAlgebras.star(g::GroupElement) = inv(g)
 
         @test a*b == StarAlgebras.mul!(a,a,b)
 
-        @test StarAlgebras.aug(a) == 3
-        @test StarAlgebras.aug(b) == -1
-        @test StarAlgebras.aug(a)*StarAlgebras.aug(b) == StarAlgebras.aug(a*b) == StarAlgebras.aug(b*a)
+        @test aug(a) == 3
+        @test aug(b) == -1
+        @test aug(a)*aug(b) == aug(a*b) == aug(b*a)
 
-        z = sum((one(RG)-RG(g))*StarAlgebras.star(one(RG)-RG(g)) for g in G)
-        @test StarAlgebras.aug(z) == 0
+        z = sum((one(RG)-RG(g))*star(one(RG)-RG(g)) for g in G)
+        @test aug(z) == 0
 
-        @test StarAlgebras.supp(z) == StarAlgebras.basis(parent(z))
-        @test StarAlgebras.supp(RG(1) + RG(g)) == [one(G), g]
-        @test StarAlgebras.supp(a) == [one(G), g, h]
+        @test supp(z) == basis(parent(z))
+        @test supp(RG(1) + RG(g)) == [one(G), g]
+        @test supp(a) == [one(G), g, h]
 
         if false
             @testset "Projections in Symm(3)" begin
@@ -109,8 +111,8 @@ StarAlgebras.star(g::GroupElement) = inv(g)
                 b = StarAlgebras.Basis{UInt8}(collect(G))
                 l = length(b)
 
-                RG = StarAlgebras.StarAlgebra(G, b)
-                @test RG isa StarAlgebras.StarAlgebra
+                RG = StarAlgebra(G, b)
+                @test RG isa StarAlgebra
 
                 P = sum(RG(g) for g in b) // l
                 @test P * P == P
@@ -143,46 +145,45 @@ StarAlgebras.star(g::GroupElement) = inv(g)
         b = StarAlgebras.Basis{UInt16}(words(A, radius=8))
         l = findfirst(w->length(w)>4, b)-1
 
-        RG = StarAlgebras.StarAlgebra(one(first(b)), b)
+        RG = StarAlgebra(one(first(b)), b)
 
-        @test StarAlgebras.basis(RG) === b
-        @test StarAlgebras.basis(RG.mstructure) === StarAlgebras.basis(RG)
+        @test basis(RG) === b
+        @test basis(RG.mstructure) === basis(RG)
 
-        RGc = StarAlgebras.StarAlgebra(one(first(b)), b, (l, l))
-        @test StarAlgebras.basis(RGc) === b
-        @test StarAlgebras.basis(RGc.mstructure) === StarAlgebras.basis(RGc)
+        RGc = StarAlgebra(one(first(b)), b, (l, l))
+        @test basis(RGc) === b
+        @test basis(RGc.mstructure) === basis(RGc)
 
         @test all(RG.mstructure[1:121, 1:121] .== RGc.mstructure)
 
         Z = zero(RGc)
         W = zero(RGc)
 
-        let cfs = StarAlgebras.coeffs
-            g = b[rand(1:121)]
+        let g = b[rand(1:121)]
             X = RG(g)
-            Y = -RG(StarAlgebras.star(g))
+            Y = -RG(star(g))
             for i in 1:3
                 X[b[rand(1:121)]] += rand(-3:3)
                 Y[b[rand(1:121)]] -= rand(3:3)
             end
 
-            Xc = StarAlgebras.AlgebraElement(cfs(X), RGc)
-            Yc = StarAlgebras.AlgebraElement(cfs(Y), RGc)
+            Xc = AlgebraElement(coeffs(X), RGc)
+            Yc = AlgebraElement(coeffs(Y), RGc)
 
-            @test cfs(X*Y) == cfs(Xc*Yc) == cfs(StarAlgebras.mul!(Z, X, Y))
+            @test coeffs(X*Y) == coeffs(Xc*Yc) == coeffs(StarAlgebras.mul!(Z, X, Y))
 
-            @test cfs(X^2) == cfs(Xc^2) == cfs(X*X)
-            @test cfs(Y^2) == cfs(Yc^2) == cfs(Y*Y)
+            @test coeffs(X^2) == coeffs(Xc^2) == coeffs(X*X)
+            @test coeffs(Y^2) == coeffs(Yc^2) == coeffs(Y*Y)
 
-            @test cfs(Z) == StarAlgebras.mul!(cfs(W), cfs(X), cfs(Y), RG.mstructure)
-            @test cfs(Z) == cfs(W)
-            @test cfs(Z) == StarAlgebras.mul!(cfs(W), cfs(X), cfs(Y), RGc.mstructure)
-            @test cfs(Z) == cfs(W)
+            @test coeffs(Z) == StarAlgebras.mul!(coeffs(W), coeffs(X), coeffs(Y), RG.mstructure)
+            @test coeffs(Z) == coeffs(W)
+            @test coeffs(Z) == StarAlgebras.mul!(coeffs(W), coeffs(X), coeffs(Y), RGc.mstructure)
+            @test coeffs(Z) == coeffs(W)
 
             StarAlgebras.zero!(W)
-            StarAlgebras.fmac!(cfs(W), cfs(X), cfs(Y), RG.mstructure)
+            StarAlgebras.fmac!(coeffs(W), coeffs(X), coeffs(Y), RG.mstructure)
 
-            @test cfs(2*X*Y) == cfs(StarAlgebras.mul!(W, W, 2))
+            @test coeffs(2*X*Y) == coeffs(StarAlgebras.mul!(W, W, 2))
         end
     end
 end
@@ -193,11 +194,11 @@ end
     b = StarAlgebras.Basis{UInt8}(words(A, radius=4))
     k = findfirst(w->length(w)==3, b)-1
 
-    RG = StarAlgebras.StarAlgebra(Word(A, Int[]), b, (k, k))
-    @test RG isa StarAlgebras.StarAlgebra
+    RG = StarAlgebra(Word(A, Int[]), b, (k, k))
+    @test RG isa StarAlgebra
 
     D = sum(RG(b[i]) for i in 1:k)
-    @test D isa StarAlgebras.AlgebraElement
+    @test D isa AlgebraElement
     g = one(RG)
     @test isone(g)
 
@@ -211,11 +212,11 @@ end
     @test D * one(RG) == D
     @test one(RG) * D == D
 
-    @test StarAlgebras.supp(D) == b[1:k]
+    @test supp(D) == b[1:k]
 
     @test_throws StarAlgebras.ProductNotDefined StarAlgebras._check(RG.mstructure)
 
-    @test D * D isa StarAlgebras.AlgebraElement
+    @test D * D isa AlgebraElement
 
     @test StarAlgebras._check(RG.mstructure)
 

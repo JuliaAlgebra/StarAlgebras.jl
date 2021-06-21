@@ -84,23 +84,20 @@ struct CachedMTable{T,I,B<:Basis{T,I},M,Twisted} <: AbstractMTable{I,Twisted}
     table::M
 end
 
+CachedMTable(basis::AbstractBasis; table_size) =
+    CachedMTable{false}(basis; table_size = table_size)
+
 function CachedMTable{Tw}(
     basis::AbstractBasis{T,I};
-    table_size = (l = length(basis); (l, l)),
+    table_size,
 ) where {Tw,T,I}
     return CachedMTable{Tw}(basis, zeros(I, table_size))
 end
 
-CachedMTable{Tw}(basis::AbstractBasis{T,I}, mt::AbstractMatrix{I}) where {Tw,T,I} =
-    CachedMTable{T,I,typeof(basis),typeof(mt),Tw}(basis, mt)
+CachedMTable(basis::AbstractBasis, mt::AbstractMatrix) = CachedMTable{false}(basis, mt)
 
-function CachedMTable{Tw}(
-    basis::AbstractVector;
-    table_size = (l = length(basis); (l, l)),
-) where {Tw}
-    b = Basis{UInt32}(basis)
-    cmt = zeros(UInt32, table_size)
-    return CachedMTable{Tw}(b, cmt)
+function CachedMTable{Tw}(basis::AbstractBasis{T,I}, mt::AbstractMatrix) where {Tw,T,I}
+    return CachedMTable{T,I,typeof(basis),typeof(mt),Tw}(basis, mt)
 end
 
 basis(m::CachedMTable) = m.basis

@@ -1,4 +1,4 @@
-Base.show(io::IO, A::AbstractStarAlgebra) = print(io, "*-Algebra of $(object(A))")
+Base.show(io::IO, A::AbstractStarAlgebra) = print(io, "*-algebra of $(object(A))")
 
 __prints_with_minus(x) = false
 __prints_with_minus(x::Real) = x < 0
@@ -23,7 +23,7 @@ function Base.show(io::IO, a::AlgebraElement)
             end
         end
     else
-        println(io, "Algebra element without defined basis")
+        println(io, "algebra element without defined basis")
         show(io, MIME("text/plain"), a.coeffs)
     end
 end
@@ -31,5 +31,6 @@ end
 function Base.show(io::IO, ::MIME"text/plain", mstr::TrivialMStructure)
     Tw = _istwisted(mstr)
     l = length(basis(mstr))
-    print(io, "TrivialMStructure{$Tw} over basis with $l elements")
+    Tw && print(io, "twisted ")
+    print(io, "TrivialMStructure over basis with $l elements")
 end
