@@ -3,6 +3,9 @@ module StarAlgebras
 using SparseArrays
 import LinearAlgebra
 
+export StarAlgebra, AlgebraElement
+export aug, basis, coeffs, star, supp
+
 include("bases.jl")
 
 include("mstructures.jl")
