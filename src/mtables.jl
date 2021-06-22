@@ -87,16 +87,17 @@ end
 CachedMTable(basis::AbstractBasis; table_size) =
     CachedMTable{false}(basis; table_size = table_size)
 
-function CachedMTable{Tw}(
-    basis::AbstractBasis{T,I};
-    table_size,
-) where {Tw,T,I}
+function CachedMTable{Tw}(basis::AbstractBasis{T,I}; table_size) where {Tw,T,I}
     return CachedMTable{Tw}(basis, zeros(I, table_size))
 end
 
-CachedMTable(basis::AbstractBasis, mt::AbstractMatrix) = CachedMTable{false}(basis, mt)
+CachedMTable(basis::AbstractBasis, mt::AbstractMatrix{<:Integer}) =
+    CachedMTable{false}(basis, mt)
 
-function CachedMTable{Tw}(basis::AbstractBasis{T,I}, mt::AbstractMatrix) where {Tw,T,I}
+function CachedMTable{Tw}(
+    basis::AbstractBasis{T,I},
+    mt::AbstractMatrix{<:Integer},
+) where {Tw,T,I}
     return CachedMTable{T,I,typeof(basis),typeof(mt),Tw}(basis, mt)
 end
 

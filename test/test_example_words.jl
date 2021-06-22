@@ -2,9 +2,10 @@ struct Word{T}
     alphabet::Vector{T}
     letters::Vector{Int}
 
-    function Word(a::AbstractVector{T}, l::AbstractVector{<:Integer}) where T
-        all(i->1<=i<=length(a), l) || throw(ArgumentError("Invalid word over alphabet $a: $w"))
-        return new{T}(a,l)
+    function Word(a::AbstractVector{T}, l::AbstractVector{<:Integer}) where {T}
+        all(i -> 1 <= i <= length(a), l) ||
+            throw(ArgumentError("Invalid word over alphabet $a: $w"))
+        return new{T}(a, l)
     end
 end
 Base.length(w::Word) = length(w.letters)
@@ -55,7 +56,10 @@ function words(alphabet; radius)
     for r in 1:radius
         append!(
             words,
-            [Word(alphabet, collect(w)) for w in Iterators.product(fill(1:length(alphabet), r)...)]
+            [
+                Word(alphabet, collect(w)) for
+                w in Iterators.product(fill(1:length(alphabet), r)...)
+            ],
         )
     end
 

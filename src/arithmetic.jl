@@ -20,7 +20,7 @@ Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
 # mutable API; TODO: replace with MutableArithmetic
 
-zero!(v::AbstractVector{T}) where T = (v .= zero(T); v)
+zero!(v::AbstractVector{T}) where {T} = (v .= zero(T); v)
 
 function zero!(a::AlgebraElement)
     a.coeffs .= zero(first(coeffs(a)))
