@@ -23,7 +23,8 @@ end
 # AlgebraElement specific functions
 
 supp_ind(a::AlgebraElement) = findall(!iszero, coeffs(a))
-supp_ind(a::AlgebraElement{A,T,<:SparseVector}) where {A,T} = coeffs(a).nzind
+supp_ind(a::AlgebraElement{A,T,<:SparseVector}) where {A,T} =
+    (dropzeros!(coeffs(a)); coeffs(a).nzind)
 supp(a::AlgebraElement) = (b = basis(parent(a)); [b[i] for i in supp_ind(a)])
 
 function star(X::AlgebraElement)

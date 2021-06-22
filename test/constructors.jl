@@ -50,8 +50,13 @@
     @test a == dense_a
     @test hash(a) == hash(dense_a)
 
-    @test supp(a) == [s, p]
     @test StarAlgebras.supp_ind(a) == [b[s], b[p]] == StarAlgebras.supp_ind(dense_a)
+    @test supp(a) == [s, p] == StarAlgebras.supp(dense_a)
+
+    aa = a - RG(p)
+    dense_aa = dense_a - RG(p)
+    @test StarAlgebras.supp_ind(aa) == [b[s]] == StarAlgebras.supp_ind(dense_aa)
+    @test supp(aa) == [s] == StarAlgebras.supp(dense_aa)
 
     @test sprint(show, a) == "2·(id) +1·b·c"
     @test sprint(show, -a) == "-2·(id) -1·b·c"
