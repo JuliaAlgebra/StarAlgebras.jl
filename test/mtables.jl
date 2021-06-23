@@ -1,6 +1,6 @@
 @testset "TrivialMStructure" begin
-    b = StarAlgebras.Basis{UInt8}(words([:a, :b, :c], radius=4))
-    k = findfirst(w->length(w)==3, b)-1
+    b = StarAlgebras.Basis{UInt8}(words([:a, :b, :c], radius = 4))
+    k = findfirst(w -> length(w) == 3, b) - 1
 
     mstr = StarAlgebras.TrivialMStructure{false}(b)
 
@@ -20,7 +20,8 @@
     @test tmstr[2, 3] == b[star(b[2])*b[3]]
     @test tmstr[3, 2] == b[star(b[3])*b[2]]
 
-    @test sprint(show, MIME"text/plain"(), tmstr) == "twisted TrivialMStructure over basis with $(length(basis(tmstr))) elements"
+    @test sprint(show, MIME"text/plain"(), tmstr) ==
+          "twisted TrivialMStructure over basis with $(length(basis(tmstr))) elements"
 
     @test_throws StarAlgebras.ProductNotDefined mstr[k+1, k]
 
@@ -28,28 +29,29 @@
         w = mstr[k+1, k]
     catch ex
         @test ex isa StarAlgebras.ProductNotDefined
-        @test sprint(Base.showerror, ex) == "Product of elements 14 and 13 is not defined on the basis or the multiplicative structure could not be completed: a·a·a · c·c = a·a·a·c·c."
+        @test sprint(Base.showerror, ex) ==
+              "Product of elements 14 and 13 is not defined on the basis or the multiplicative structure could not be completed: a·a·a · c·c = a·a·a·c·c."
     end
 end
 
 @testset "MTable" begin
-    b = StarAlgebras.Basis{UInt16}(words([:a, :b, :c, :d], radius=4))
-    k = findfirst(w->length(w)==3, b)-1
+    b = StarAlgebras.Basis{UInt16}(words([:a, :b, :c, :d], radius = 4))
+    k = findfirst(w -> length(w) == 3, b) - 1
 
-    mstr = StarAlgebras.MTable(b, table_size=(k, k))
+    mstr = StarAlgebras.MTable(b, table_size = (k, k))
 
-    @test mstr isa StarAlgebras.MTable{UInt16, false}
+    @test mstr isa StarAlgebras.MTable{UInt16,false}
 
-    @test all(mstr[i,i]≠1 for i in 2:size(mstr, 1))
-    @test all(mstr[1,i]==i for i in 1:size(mstr, 2))
-    @test all(mstr[i,1]==i for i in 1:size(mstr, 1))
+    @test all(mstr[i, i] ≠ 1 for i in 2:size(mstr, 1))
+    @test all(mstr[1, i] == i for i in 1:size(mstr, 2))
+    @test all(mstr[i, 1] == i for i in 1:size(mstr, 1))
 
-    tmstr = StarAlgebras.MTable{true}(b, table_size=(k, k))
+    tmstr = StarAlgebras.MTable{true}(b, table_size = (k, k))
 
-    @test tmstr isa StarAlgebras.MTable{UInt16, true}
-    @test all(tmstr[i,i]!=1 for i in 2:size(tmstr, 1))
-    @test all(tmstr[1,i]==i for i in 1:size(tmstr, 2))
-    @test all(tmstr[i,1]≠ i for i in 1:size(tmstr, 1) if b[i] != star(b[i]))
+    @test tmstr isa StarAlgebras.MTable{UInt16,true}
+    @test all(tmstr[i, i] != 1 for i in 2:size(tmstr, 1))
+    @test all(tmstr[1, i] == i for i in 1:size(tmstr, 2))
+    @test all(tmstr[i, 1] ≠ i for i in 1:size(tmstr, 1) if b[i] != star(b[i]))
 end
 
 @testset "CachedMTable" begin

@@ -73,19 +73,23 @@ Base.eltype(a::AlgebraElement) = eltype(coeffs(a))
 
 function Base.zero(A::AbstractStarAlgebra, T = Int)
     hasbasis(A) && return AlgebraElement(spzeros(T, length(basis(A))), A)
-    throw("Algebra without basis; to construct zero use the `AlgebraElement` constructor directly.")
+    throw(
+        "Algebra without basis; to construct zero use the `AlgebraElement` constructor directly.",
+    )
 end
 
 function Base.one(A::AbstractStarAlgebra, T = Int)
     hasbasis(A) && return A(one(object(A)), T)
-    throw("Algebra without basis; to construct one use the `AlgebraElement` constructor directly.")
+    throw(
+        "Algebra without basis; to construct one use the `AlgebraElement` constructor directly.",
+    )
 end
 
 Base.zero(a::AlgebraElement) = (b = similar(a); return zero!(b))
 Base.one(a::AlgebraElement) = one(parent(a))
 Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
 
-function Base.isone(a::AlgebraElement, T = Int)
+function Base.isone(a::AlgebraElement)
     b = basis(parent(a))
     k = findfirst(!iszero, coeffs(a))
     k === nothing && return false

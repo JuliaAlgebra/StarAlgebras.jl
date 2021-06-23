@@ -234,7 +234,7 @@ Test Passed
 
 #### WARNING!
 
-Before using this mode you should consult the code (and potentially its author:) and understand very precisely what and where is happening!
+Before using this mode you should consult the code (and potentially its author :) and understand very precisely what and where is happening!
 
 
 -----

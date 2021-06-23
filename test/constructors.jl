@@ -1,6 +1,6 @@
 @testset "Algebra and Elements" begin
     A = [:a, :b, :c]
-    b = StarAlgebras.Basis{UInt8}(words(A, radius=2))
+    b = StarAlgebras.Basis{UInt8}(words(A, radius = 2))
     l = length(b)
 
     RG = StarAlgebra(one(first(b)), b, (4, 4))
@@ -10,10 +10,10 @@
     @test AlgebraElement(a, RG) isa AlgebraElement
     @test all(RG(g) isa AlgebraElement{typeof(RG)} for g in b)
 
-    @test_throws AssertionError AlgebraElement([1,2,3], RG)
-    @test AlgebraElement([1,2,3,0,0,0,0,0,0,0,0,0,0], RG) isa AlgebraElement
+    @test_throws AssertionError AlgebraElement([1, 2, 3], RG)
+    @test AlgebraElement([1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], RG) isa AlgebraElement
 
-    p = Word(A, [2,3])
+    p = Word(A, [2, 3])
     a = RG(p)
     @test coeffs(a)[b[p]] == 1
     @test coeffs(a) isa SparseVector

@@ -8,7 +8,7 @@ StarAlgebras.star(g::GroupElement) = inv(g)
     G = CyclicGroup(6)
     b = StarAlgebras.Basis{UInt8}(collect(G))
     l = length(b)
-    RG = StarAlgebra(G, b, (l,l))
+    RG = StarAlgebra(G, b, (l, l))
 
     @test sprint(show, RG) == "*-algebra of Group of residues modulo 6"
 
@@ -18,37 +18,37 @@ StarAlgebras.star(g::GroupElement) = inv(g)
         @test -a isa AlgebraElement
         @test coeffs(-a) == -coeffs(a)
 
-        @test 2*a isa AlgebraElement
-        @test eltype(2*a) == typeof(2)
-        @test coeffs(2*a) == 2coeffs(a)
+        @test 2 * a isa AlgebraElement
+        @test eltype(2 * a) == typeof(2)
+        @test coeffs(2 * a) == 2coeffs(a)
 
-        @test 2.0*a isa AlgebraElement
-        @test eltype(2.0*a) == typeof(2.0)
-        @test coeffs(2.0*a) == 2.0*coeffs(a)
+        @test 2.0 * a isa AlgebraElement
+        @test eltype(2.0 * a) == typeof(2.0)
+        @test coeffs(2.0 * a) == 2.0 * coeffs(a)
 
-        @test coeffs(a/2) == coeffs(a)/2
-        b = a/2
+        @test coeffs(a / 2) == coeffs(a) / 2
+        b = a / 2
         @test b isa AlgebraElement
-        @test eltype(b) == typeof(1/2)
-        @test coeffs(b/2) == 0.25*coeffs(a)
+        @test eltype(b) == typeof(1 / 2)
+        @test coeffs(b / 2) == 0.25 * coeffs(a)
 
-        c = a//1
+        c = a // 1
 
         @test eltype(c) == Rational{Int}
-        @test c//4 isa AlgebraElement
-        @test c//big(4) isa AlgebraElement
-        @test eltype(c//(big(4)//1)) == Rational{BigInt}
+        @test c // 4 isa AlgebraElement
+        @test c // big(4) isa AlgebraElement
+        @test eltype(c // (big(4) // 1)) == Rational{BigInt}
 
-        @test (1.0a)*1//2 == (0.5a) == c//2
+        @test (1.0a) * 1 // 2 == (0.5a) == c // 2
     end
 
     @testset "Additive structure" begin
         a = AlgebraElement(ones(Int, order(G)), RG)
-        b = sum((-1)^isodd(g.residual)*RG(g) for g in G)
+        b = sum((-1)^isodd(g.residual) * RG(g) for g in G)
 
         @test a == AlgebraElement(ones(Int, order(G)), RG) == sum(RG(g) for g in G)
 
-        @test 1/2*(a+b).coeffs == [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
+        @test 1 / 2 * (a + b).coeffs == [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 
         g = CyclicGroupElement(2, G)
         h = CyclicGroupElement(3, G)
@@ -61,9 +61,9 @@ StarAlgebras.star(g::GroupElement) = inv(g)
 
         @test a + b - 2a == b - a
 
-        @test 1//2*2a == a
-        @test a + 2a == (3//1)*a
-        @test 2a - (1//1)*a == a
+        @test 1 // 2 * 2a == a
+        @test a + 2a == (3 // 1) * a
+        @test 2a - (1 // 1) * a == a
     end
 
     @testset "Multiplicative structure" begin
@@ -71,14 +71,14 @@ StarAlgebras.star(g::GroupElement) = inv(g)
         for g in G, h in G
             a = RG(g)
             b = RG(h)
-            @test a*b == RG(g*h)
-            @test (a+b)*(a+b) == a*a + a*b + b*a + b*b
+            @test a * b == RG(g * h)
+            @test (a + b) * (a + b) == a * a + a * b + b * a + b * b
         end
 
         for g in G
             @test star(RG(g)) == RG(inv(g))
-            @test (one(RG)-RG(g))*star(one(RG)-RG(g)) ==
-            2*one(RG) - RG(g) - RG(inv(g))
+            @test (one(RG) - RG(g)) * star(one(RG) - RG(g)) ==
+                  2 * one(RG) - RG(g) - RG(inv(g))
             @test aug(one(RG) - RG(g)) == 0
         end
 
@@ -92,13 +92,13 @@ StarAlgebras.star(g::GroupElement) = inv(g)
         # a = RG(1) + RG(perm"(2,3)") + RG(perm"(1,2,3)")
         # b = RG(1) - RG(perm"(1,2)(3)") - RG(perm"(1,2,3)")
 
-        @test a*b == StarAlgebras.mul!(a,a,b)
+        @test a * b == StarAlgebras.mul!(a, a, b)
 
         @test aug(a) == 3
         @test aug(b) == -1
-        @test aug(a)*aug(b) == aug(a*b) == aug(b*a)
+        @test aug(a) * aug(b) == aug(a * b) == aug(b * a)
 
-        z = sum((one(RG)-RG(g))*star(one(RG)-RG(g)) for g in G)
+        z = sum((one(RG) - RG(g)) * star(one(RG) - RG(g)) for g in G)
         @test aug(z) == 0
 
         @test supp(z) == basis(parent(z))
@@ -142,8 +142,8 @@ StarAlgebras.star(g::GroupElement) = inv(g)
     @testset "Mutable API and trivial mstructure" begin
 
         A = [:a, :b, :c]
-        b = StarAlgebras.Basis{UInt16}(words(A, radius=8))
-        l = findfirst(w->length(w)>4, b)-1
+        b = StarAlgebras.Basis{UInt16}(words(A, radius = 8))
+        l = findfirst(w -> length(w) > 4, b) - 1
 
         RG = StarAlgebra(one(first(b)), b)
 
@@ -170,20 +170,22 @@ StarAlgebras.star(g::GroupElement) = inv(g)
             Xc = AlgebraElement(coeffs(X), RGc)
             Yc = AlgebraElement(coeffs(Y), RGc)
 
-            @test coeffs(X*Y) == coeffs(Xc*Yc) == coeffs(StarAlgebras.mul!(Z, X, Y))
+            @test coeffs(X * Y) == coeffs(Xc * Yc) == coeffs(StarAlgebras.mul!(Z, X, Y))
 
-            @test coeffs(X^2) == coeffs(Xc^2) == coeffs(X*X)
-            @test coeffs(Y^2) == coeffs(Yc^2) == coeffs(Y*Y)
+            @test coeffs(X^2) == coeffs(Xc^2) == coeffs(X * X)
+            @test coeffs(Y^2) == coeffs(Yc^2) == coeffs(Y * Y)
 
-            @test coeffs(Z) == StarAlgebras.mul!(coeffs(W), coeffs(X), coeffs(Y), RG.mstructure)
+            @test coeffs(Z) ==
+                  StarAlgebras.mul!(coeffs(W), coeffs(X), coeffs(Y), RG.mstructure)
             @test coeffs(Z) == coeffs(W)
-            @test coeffs(Z) == StarAlgebras.mul!(coeffs(W), coeffs(X), coeffs(Y), RGc.mstructure)
+            @test coeffs(Z) ==
+                  StarAlgebras.mul!(coeffs(W), coeffs(X), coeffs(Y), RGc.mstructure)
             @test coeffs(Z) == coeffs(W)
 
             StarAlgebras.zero!(W)
             StarAlgebras.fmac!(coeffs(W), coeffs(X), coeffs(Y), RG.mstructure)
 
-            @test coeffs(2*X*Y) == coeffs(StarAlgebras.mul!(W, W, 2))
+            @test coeffs(2 * X * Y) == coeffs(StarAlgebras.mul!(W, W, 2))
         end
     end
 end
@@ -191,8 +193,8 @@ end
 
 @testset "Group Algebra caching" begin
     A = [:a, :b, :c]
-    b = StarAlgebras.Basis{UInt8}(words(A, radius=4))
-    k = findfirst(w->length(w)==3, b)-1
+    b = StarAlgebras.Basis{UInt8}(words(A, radius = 4))
+    k = findfirst(w -> length(w) == 3, b) - 1
 
     RG = StarAlgebra(Word(A, Int[]), b, (k, k))
     @test RG isa StarAlgebra

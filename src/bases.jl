@@ -5,7 +5,7 @@ struct Basis{T,I,A<:AbstractVector{T}} <: AbstractBasis{T,I}
     rbasis::Dict{T,I}
 end
 
-function Basis{I}(basis::AbstractVector) where I
+function Basis{I}(basis::AbstractVector) where {I}
     length(basis) <= typemax(I) ||
         throw("index type $I is to small for basis of length $(length(basis))")
     @assert !(eltype(basis) <: Integer)
