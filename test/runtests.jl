@@ -9,4 +9,6 @@ include("test_example_words.jl")
     include("mtables.jl")
     include("constructors.jl")
     include("arithmetic.jl")
+
+    include("sum_of_squares.jl")
 end
