@@ -114,7 +114,6 @@ Base.@propagate_inbounds function cache!(cmt::CachedMTable, i::Integer, j::Integ
     if !_iscached(cmt, i, j)
         b = basis(cmt)
         g, h = b[i], b[j]
-        @debug "Caching $i, $j" g h
         gh = _product(cmt, g, h)
         gh in b || throw(ProductNotDefined(i, j, "$g · $h = $gh"))
         cmt.table[i, j] = b[gh]
@@ -147,7 +146,8 @@ Base.@propagate_inbounds function cache!(
         g = star(b[i])
         for j in suppY
             if !_iscached(cmt, i, j)
-                gh = _product(Val(false), g, b[j])
+                h = b[j]
+                gh = _product(Val(false), g, h)
                 gh in b || throw(ProductNotDefined(i, j, "$g · $h = $gh"))
                 cmt.table[i, j] = b[gh]
             end
