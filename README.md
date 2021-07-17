@@ -7,18 +7,18 @@
 
 ----
 
-The package implements `*`-algebras with basis. The prime example use is group/monoid algebras (or rings). An example usage can be as follows.
+The package implements `*`-algebras with basis. The prime example use is group/monoid algebras (or rings) (or their finite dimensional subspaces). An example usage can be as follows.
 
 ```julia
 julia> using StarAlgebras
 
-julia> using AbstractAlgebra
+julia> using PermutationGroups
 
-julia> G = SymmetricGroup(3)
+julia> G = PermGroup(perm"(1,2)", perm"(1,2,3)")
 Full symmetric group over 3 elements
 
 julia> b = StarAlgebras.Basis{UInt8}(collect(G))
-6-element Basis{Perm{Int64}, UInt8, Vector{Perm{Int64}}}:
+6-element StarAlgebras.Basis{Permutation{...}, UInt8, Vector{...}}:
  ()
  (1,2)
  (1,3,2)
@@ -26,8 +26,8 @@ julia> b = StarAlgebras.Basis{UInt8}(collect(G))
  (1,2,3)
  (1,3)
 
-julia> RG = StarAlgebra(G, b)
-*-Algebra of Full symmetric group over 3 elements
+ julia> RG = StarAlgebra(G, b)
+ *-algebra of Permutation group on 2 generators of order 6
 
 ```
 
@@ -48,54 +48,60 @@ julia> RG(-5.0) # coerce a scalar to the ring
 julia> RG(rand(G)) # the indicator function on a random element of G
 1·(1,3,2)
 
-julia> f = AlgebraElement(rand(-3:3, order(Int, G)), RG) # an element given by vectors of coefficients in the basis
-2·() -3·(1,2) +3·(1,3,2) -3·(2,3) -1·(1,2,3)
+julia> f = AlgebraElement(rand(-3:3, length(b)), RG) # an element given by vectors of coefficients in the basis
+1·() -1·(2,3) +3·(1,2) -1·(1,3,2) -3·(1,3) +3·(1,2,3)
 
 ```
 One may work with such element using the following functions:
 ```julia
 julia> StarAlgebras.coeffs(f)
 6-element Vector{Int64}:
-  2
+  1
+ -1
+  3
+ -1
  -3
   3
- -3
- -1
-  0
 
-julia> StarAlgebras.star(p::Generic.Perm) = inv(p); star(f) # the star involution
-2·() -3·(1,2) -1·(1,3,2) -3·(2,3) +3·(1,2,3)
+julia> StarAlgebras.star(p::PermutationGroups.AbstractPerm) = inv(p); star(f) # the star involution
+1·() -1·(2,3) +3·(1,2) +3·(1,3,2) -3·(1,3) -1·(1,2,3)
 
-julia> g = rand(G); StarAlgebras.coeffs(RG(g)) # note the type of coefficients
+julia> g = rand(G); g
+(1,2,3)
+
+julia> StarAlgebras.coeffs(RG(g)) # note the type of coefficients
 6-element SparseArrays.SparseVector{Int64, UInt8} with 1 stored entry:
-  [1]  =  1
+  [6]  =  1
 
 julia> x = one(RG) - 3RG(g); supp(x) # support of the funtion
-1-element Vector{Perm{Int64}}:
+2-element Vector{Permutation{...}:
  ()
+ (1,2,3)
 
 julia> x(g) # value of x at g
--2
+-3
 
 julia> x[g] += 3; x # modification of x in-place
 1·()
 
 julia> aug(f) # sum of coefficients
--2
+2
 
-julia> using LinearAlgebra; norm(f, 2) # Hilbert norm
-5.656854249492381
+julia> using LinearAlgebra; norm(f, 2) # 2-norm
+5.477225575051661
 ```
 
 Using this we can define e.g. a few projections in `RG` and check their orthogonality:
 ```julia
 julia> using Test
 
-julia> l = order(Int, G)
+julia> Base.sign(p::PermutationGroups.Permutation) = sign(p.perm);
+
+julia> l = length(b)
 6
 
 julia> P = sum(RG(g) for g in b) // l # projection to the subspace fixed by G
-1//6·() +1//6·(1,2) +1//6·(1,3,2) +1//6·(2,3) +1//6·(1,2,3) +1//6·(1,3)
+1//6·() +1//6·(2,3) +1//6·(1,2) +1//6·(1,3,2) +1//6·(1,3) +1//6·(1,2,3)
 
 julia> @test P * P == P
 Test Passed
@@ -107,7 +113,7 @@ julia> @test P3 * P3 == P3
 Test Passed
 
 julia> P2 = (RG(1) + RG(b[2])) // 2 # projection to the C₂-fixed subspace
-1//2·() +1//2·(1,2)
+1//2·() +1//2·(2,3)
 
 julia> @test P2 * P2 == P2
 Test Passed
@@ -116,7 +122,7 @@ julia> @test P2 * P3 == P3 * P2 == P # their intersection is precisely the same 
 Test Passed
 
 julia> P2m = (RG(1) - RG(b[2])) // 2 # orthogonal C₂-fixed subspace
-1//2·() -1//2·(1,2)
+1//2·() -1//2·(2,3)
 
 julia> @test P2m * P2m == P2m
 Test Passed
@@ -129,27 +135,27 @@ Test Passed
 
 ### More advanced use
 
-`RG = StarAlgebra(G, b)` creates the algebra with `TrivialMStructure`, i.e. a multiplicative structure which computes product of basis elements every time it needs it. This of course may be wastefull, e.g. the computed products could be stored in a matrix for future use. There are two options here:
+`RG = StarAlgebra(G, b)` creates the algebra with `TrivialMStructure`, i.e. a multiplicative structure which computes product of basis elements every time it needs it. This of course may be wastefull, e.g. the computed products could be stored in a cache for future use. There are two options here:
 ```julia
 julia> mt = StarAlgebras.MTable(b, table_size=(length(b), length(b)))
 6×6 StarAlgebras.MTable{UInt8, false, Matrix{UInt8}}:
  0x01  0x02  0x03  0x04  0x05  0x06
- 0x02  0x01  0x04  0x03  0x06  0x05
- 0x03  0x06  0x05  0x02  0x01  0x04
- 0x04  0x05  0x06  0x01  0x02  0x03
- 0x05  0x04  0x01  0x06  0x03  0x02
- 0x06  0x03  0x02  0x05  0x04  0x01
+ 0x02  0x01  0x06  0x05  0x04  0x03
+ 0x03  0x04  0x01  0x02  0x06  0x05
+ 0x04  0x03  0x05  0x06  0x02  0x01
+ 0x05  0x06  0x04  0x03  0x01  0x02
+ 0x06  0x05  0x02  0x01  0x03  0x04
 
 ```
-creates an eagerly computed multiplication table on elements of `b`. Keyword `table_size` is used to specify the table size (above: it's the whole multiplication table). One can use the indexing syntax `mt[i,j]` to compute the **index** of the product of `i`-th and `j`-th elements of the basis. For example
+creates an eagerly computed multiplication table on elements of `b`. Keyword `table_size` is used to specify the table size (above: it's the whole multiplication table). Since `MTable<:AbstractMatrix`, one can use the indexing syntax `mt[i,j]` to compute the **index** of the product of `i`-th and `j`-th elements of the basis. For example
 ```julia
-julia> g = perm"(1,2,3)"; h = perm"(2,3)";
+julia> g = G(perm"(1,2,3)"); h = G(perm"(2,3)");
 
 julia> i, j = b[g], b[h] # indices of g and h in basis b
-(0x05, 0x04)
+(0x06, 0x02)
 
 julia> k = mt[i,j] # the index of the product
-0x06
+0x05
 
 julia> @test b[k] == g*h
 Test Passed
@@ -172,7 +178,7 @@ This may be advisable when a few products are computed repeatedly on a quite lar
 
 ```julia
 julia> RGc = StarAlgebra(G, b, cmt)
-*-Algebra of Full symmetric group over 3 elements
+*-algebra of Permutation group on 2 generators of order 6
 
 ```
 should be functinally equivalent to `RG` above, however it will cache computation of products lazily. A word of caution is needed here though. Even though `RGc` and `RG` are functionally equivalent, they are not **comparable** in the sense that e.g.
@@ -198,7 +204,7 @@ julia> tcmt = StarAlgebras.CachedMTable{true}(b, table_size=(length(b), length(b
 This multiplicative structure is **twisted** in the sense that `tcmt[i,j]` does not compute the product of `i`-th and `j`-th elements of the basis, but rather the `star` of `i`-th and `j`-th. An example
 ```julia
 julia> k = tcmt[i,j]
-0x02
+0x03
 
 julia> @test star(b[i])*b[j] == b[k]
 Test Passed
@@ -212,7 +218,7 @@ Test Passed
 julia> @test tcmt[tcmt[3, 5], 4] == 0x06 # star(star(b[3])*b[5])*b[4] = star(b[5])*b[3]*b[4]
 Test Passed
 
-julia> @test tcmt[3, tcmt[5, 4]] == 0x04 # star(b[3])*star(b[5])*b[4]
+julia> @test tcmt[3, tcmt[5, 4]] == 0x01 # star(b[3])*star(b[5])*b[4]
 Test Passed
 ```
 
@@ -221,7 +227,7 @@ However, writing sums of heritian squares is a breeze:
 julia> tRG = StarAlgebra(G, b, tcmt)
 *-Algebra of Full symmetric group over 3 elements
 
-julia> x = tRG(perm"(1,2,3)")
+julia> x = tRG(G(perm"(1,2,3)"))
 1·(1,2,3)
 
 julia> X = one(tRG) - x
