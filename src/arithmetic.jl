@@ -9,12 +9,21 @@ Base.:(//)(X::AlgebraElement, a::Number) = AlgebraElement(coeffs(X) .// a, paren
 
 # ring structure:
 Base.:-(X::AlgebraElement) = neg!(similar(X), X)
+
+function _prealocate_output(X::AlgebraElement, Y::AlgebraElement)
+    T = promote_type(eltype(X), eltype(Y))
+    if coeffs(Y) isa DenseArray
+        return similar(Y, T)
+    end
+    return similar(X, T)
+end
+
 Base.:+(X::AlgebraElement, Y::AlgebraElement) =
-    add!(similar(X, promote_type(eltype(X), eltype(Y))), X, Y)
+    add!(_prealocate_output(X, Y), X, Y)
 Base.:-(X::AlgebraElement, Y::AlgebraElement) =
-    sub!(similar(X, promote_type(eltype(X), eltype(Y))), X, Y)
+    sub!(_prealocate_output(X, Y), X, Y)
 Base.:*(X::AlgebraElement, Y::AlgebraElement) =
-    mul!(similar(X, promote_type(eltype(X), eltype(Y))), X, Y)
+    mul!(_prealocate_output(X, Y), X, Y)
 
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
