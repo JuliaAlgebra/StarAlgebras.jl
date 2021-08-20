@@ -34,14 +34,14 @@ function neg!(res::AlgebraElement, X::AlgebraElement)
 end
 
 function add!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
-    @assert parent(res) === parent(X) == parent(Y)
+    @assert parent(res) === parent(X) === parent(Y)
     # res = (res === X || res === Y) ? similar(res) : res
     res.coeffs .= coeffs(X) .+ coeffs(Y)
     return res
 end
 
 function sub!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
-    @assert parent(res) === parent(X) == parent(Y)
+    @assert parent(res) === parent(X) === parent(Y)
     # res = (res === X || res === Y) ? similar(res) : res
     res.coeffs .= coeffs(X) .- coeffs(Y)
     return res
@@ -65,6 +65,7 @@ function mul!(
 end
 
 function mul!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
+    @assert parent(res) === parent(X) === parent(Y)
     res = (res === X || res === Y) ? zero(res) : zero!(res)
     return fmac!(res, X, Y)
 end
