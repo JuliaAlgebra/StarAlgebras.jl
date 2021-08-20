@@ -80,24 +80,12 @@ function mul!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
 end
 
 function fmac!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
-    A = parent(res)
-    fmac!(coeffs(res), coeffs(X), coeffs(Y), A.mstructure)
+    fmac!(coeffs(res), coeffs(X), coeffs(Y), parent(res).mstructure)
     return res
 end
 
-function fmac!(
-    res::AbstractVector,
-    X::SparseVector,
-    Y::SparseVector,
-    mstr::MultiplicativeStructure,
-)
-    for j in Y.nzind
-        for i in X.nzind
-            res[mstr[i, j]] += X[i] * Y[j]
-        end
-    end
-    return res
-end
+_nzidx(v::AbstractVector) = eachindex(v)
+_nzidx(v::AbstractSparseVector) = SparseArrays.nonzeroinds(v)
 
 function fmac!(
     res::AbstractVector,
@@ -105,9 +93,10 @@ function fmac!(
     Y::AbstractVector,
     mstr::MultiplicativeStructure,
 )
-    for j in eachindex(Y)
-        for i in eachindex(X)
-            res[mstr[i, j]] += X[i] * Y[j]
+    @inbounds for j in _nzidx(Y)
+        Yj = Y[j]
+        for i in _nzidx(X)
+            res[mstr[i, j]] += X[i] * Yj
         end
     end
     return res
