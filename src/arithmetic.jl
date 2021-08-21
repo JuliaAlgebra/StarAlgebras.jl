@@ -9,12 +9,21 @@ Base.:(//)(X::AlgebraElement, a::Number) = AlgebraElement(coeffs(X) .// a, paren
 
 # ring structure:
 Base.:-(X::AlgebraElement) = neg!(similar(X), X)
+
+function _prealocate_output(X::AlgebraElement, Y::AlgebraElement)
+    T = promote_type(eltype(X), eltype(Y))
+    if coeffs(Y) isa DenseArray
+        return similar(Y, T)
+    end
+    return similar(X, T)
+end
+
 Base.:+(X::AlgebraElement, Y::AlgebraElement) =
-    add!(similar(X, promote_type(eltype(X), eltype(Y))), X, Y)
+    add!(_prealocate_output(X, Y), X, Y)
 Base.:-(X::AlgebraElement, Y::AlgebraElement) =
-    sub!(similar(X, promote_type(eltype(X), eltype(Y))), X, Y)
+    sub!(_prealocate_output(X, Y), X, Y)
 Base.:*(X::AlgebraElement, Y::AlgebraElement) =
-    mul!(similar(X, promote_type(eltype(X), eltype(Y))), X, Y)
+    mul!(_prealocate_output(X, Y), X, Y)
 
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
@@ -34,14 +43,14 @@ function neg!(res::AlgebraElement, X::AlgebraElement)
 end
 
 function add!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
-    @assert parent(res) === parent(X) == parent(Y)
+    @assert parent(res) === parent(X) === parent(Y)
     # res = (res === X || res === Y) ? similar(res) : res
     res.coeffs .= coeffs(X) .+ coeffs(Y)
     return res
 end
 
 function sub!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
-    @assert parent(res) === parent(X) == parent(Y)
+    @assert parent(res) === parent(X) === parent(Y)
     # res = (res === X || res === Y) ? similar(res) : res
     res.coeffs .= coeffs(X) .- coeffs(Y)
     return res
@@ -65,29 +74,18 @@ function mul!(
 end
 
 function mul!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
+    @assert parent(res) === parent(X) === parent(Y)
     res = (res === X || res === Y) ? zero(res) : zero!(res)
     return fmac!(res, X, Y)
 end
 
 function fmac!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
-    A = parent(res)
-    fmac!(coeffs(res), coeffs(X), coeffs(Y), A.mstructure)
+    fmac!(coeffs(res), coeffs(X), coeffs(Y), parent(res).mstructure)
     return res
 end
 
-function fmac!(
-    res::AbstractVector,
-    X::SparseVector,
-    Y::SparseVector,
-    mstr::MultiplicativeStructure,
-)
-    for j in Y.nzind
-        for i in X.nzind
-            res[mstr[i, j]] += X[i] * Y[j]
-        end
-    end
-    return res
-end
+_nzidx(v::AbstractVector) = eachindex(v)
+_nzidx(v::AbstractSparseVector) = SparseArrays.nonzeroinds(v)
 
 function fmac!(
     res::AbstractVector,
@@ -95,9 +93,10 @@ function fmac!(
     Y::AbstractVector,
     mstr::MultiplicativeStructure,
 )
-    for j in eachindex(Y)
-        for i in eachindex(X)
-            res[mstr[i, j]] += X[i] * Y[j]
+    @inbounds for j in _nzidx(Y)
+        Yj = Y[j]
+        for i in _nzidx(X)
+            res[mstr[i, j]] += X[i] * Yj
         end
     end
     return res

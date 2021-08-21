@@ -156,7 +156,7 @@ StarAlgebras.star(g::GroupElement) = inv(g)
 
         @test all(RG.mstructure[1:121, 1:121] .== RGc.mstructure)
 
-        Z = zero(RGc)
+        Z = zero(RG)
         W = zero(RGc)
 
         let g = b[rand(1:121)]
