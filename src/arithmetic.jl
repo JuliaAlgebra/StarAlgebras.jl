@@ -79,8 +79,9 @@ function fmac!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
     return res
 end
 
-_nzidx(v::AbstractVector) = eachindex(v)
-_nzidx(v::AbstractSparseVector) = SparseArrays.nonzeroinds(v)
+_nzpairs(v::AbstractVector) = pairs(v)
+_nzpairs(v::AbstractSparseVector) =
+    zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
 
 function fmac!(
     res::AbstractVector,
@@ -88,10 +89,11 @@ function fmac!(
     Y::AbstractVector,
     mstr::MultiplicativeStructure,
 )
-    @inbounds for j in _nzidx(Y)
-        Yj = Y[j]
-        for i in _nzidx(X)
-            res[mstr[i, j]] += X[i] * Yj
+    @assert res !== X
+    @assert res !== Y
+    for (j, y) in _nzpairs(Y)
+        for (i, x) in _nzpairs(X)
+            res[mstr[i, j]] += x * y
         end
     end
     return res
