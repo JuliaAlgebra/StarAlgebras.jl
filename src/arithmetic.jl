@@ -26,10 +26,8 @@ Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
 # mutable API; TODO: replace with MutableArithmetic
 
-zero!(v::AbstractVector{T}) where {T} = (v .= zero(T); v)
-
 function zero!(a::AlgebraElement)
-    a.coeffs .= zero(first(coeffs(a)))
+    a.coeffs .= zero(eltype(coeffs(a)))
     return a
 end
 
@@ -55,7 +53,7 @@ end
 
 function mul!(res::AlgebraElement, X::AlgebraElement, a::Number)
     @assert parent(res) === parent(X)
-    # res = (res === X || res === Y) ? similar(res) : res
+    # res = (res === X) ? similar(res) : res
     res.coeffs .= a .* coeffs(X)
     return res
 end
@@ -66,7 +64,7 @@ function mul!(
     Y::AbstractVector,
     ms::MultiplicativeStructure,
 )
-    res = (res === X || res === Y) ? zero(res) : zero!(res)
+    res = (res === X || res === Y) ? zero(res) : (res .= zero(eltype(res)))
     return fmac!(res, X, Y, ms)
 end
 
