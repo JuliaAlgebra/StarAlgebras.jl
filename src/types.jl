@@ -116,3 +116,10 @@ end
 
 Base.similar(X::AlgebraElement, ::Type{T} = eltype(X)) where {T} =
     AlgebraElement(similar(coeffs(X), T), parent(X))
+
+function AlgebraElement{T}(X::AlgebraElement) where T
+    v = coeffs(X)
+    w = similar(v, T)
+    w .= v
+    return AlgebraElement(w, parent(X))
+end

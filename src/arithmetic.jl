@@ -10,29 +10,24 @@ Base.:(//)(X::AlgebraElement, a::Number) = AlgebraElement(coeffs(X) .// a, paren
 # ring structure:
 Base.:-(X::AlgebraElement) = neg!(similar(X), X)
 
-function _prealocate_output(X::AlgebraElement, Y::AlgebraElement)
-    T = promote_type(eltype(X), eltype(Y))
+function _preallocate_output(X::AlgebraElement, Y::AlgebraElement, op)
+    T = Base._return_type(op, Tuple{eltype(X),eltype(Y)})
     if coeffs(Y) isa DenseArray
         return similar(Y, T)
     end
     return similar(X, T)
 end
 
-Base.:+(X::AlgebraElement, Y::AlgebraElement) =
-    add!(_prealocate_output(X, Y), X, Y)
-Base.:-(X::AlgebraElement, Y::AlgebraElement) =
-    sub!(_prealocate_output(X, Y), X, Y)
-Base.:*(X::AlgebraElement, Y::AlgebraElement) =
-    mul!(_prealocate_output(X, Y), X, Y)
+Base.:+(X::AlgebraElement, Y::AlgebraElement) = add!(_preallocate_output(X, Y, +), X, Y)
+Base.:-(X::AlgebraElement, Y::AlgebraElement) = sub!(_preallocate_output(X, Y, -), X, Y)
+Base.:*(X::AlgebraElement, Y::AlgebraElement) = mul!(_preallocate_output(X, Y, *), X, Y)
 
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
 # mutable API; TODO: replace with MutableArithmetic
 
-zero!(v::AbstractVector{T}) where {T} = (v .= zero(T); v)
-
 function zero!(a::AlgebraElement)
-    a.coeffs .= zero(first(coeffs(a)))
+    a.coeffs .= zero(eltype(coeffs(a)))
     return a
 end
 
@@ -58,7 +53,7 @@ end
 
 function mul!(res::AlgebraElement, X::AlgebraElement, a::Number)
     @assert parent(res) === parent(X)
-    # res = (res === X || res === Y) ? similar(res) : res
+    # res = (res === X) ? similar(res) : res
     res.coeffs .= a .* coeffs(X)
     return res
 end
@@ -69,7 +64,7 @@ function mul!(
     Y::AbstractVector,
     ms::MultiplicativeStructure,
 )
-    res = (res === X || res === Y) ? zero(res) : zero!(res)
+    res = (res === X || res === Y) ? zero(res) : (res .= zero(eltype(res)))
     return fmac!(res, X, Y, ms)
 end
 
@@ -84,8 +79,9 @@ function fmac!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
     return res
 end
 
-_nzidx(v::AbstractVector) = eachindex(v)
-_nzidx(v::AbstractSparseVector) = SparseArrays.nonzeroinds(v)
+_nzpairs(v::AbstractVector) = pairs(v)
+_nzpairs(v::AbstractSparseVector) =
+    zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
 
 function fmac!(
     res::AbstractVector,
@@ -93,10 +89,11 @@ function fmac!(
     Y::AbstractVector,
     mstr::MultiplicativeStructure,
 )
-    @inbounds for j in _nzidx(Y)
-        Yj = Y[j]
-        for i in _nzidx(X)
-            res[mstr[i, j]] += X[i] * Yj
+    @assert res !== X
+    @assert res !== Y
+    for (j, y) in _nzpairs(Y)
+        for (i, x) in _nzpairs(X)
+            res[mstr[i, j]] += x * y
         end
     end
     return res
