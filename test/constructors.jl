@@ -13,6 +13,12 @@
     @test_throws AssertionError AlgebraElement([1, 2, 3], RG)
     @test AlgebraElement([1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], RG) isa AlgebraElement
 
+    x = AlgebraElement([1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], RG)
+    @test AlgebraElement{Float64}(x) isa AlgebraElement
+    y = AlgebraElement{Float64}(x)
+    @test parent(x) === parent(y)
+    @test x == y
+
     p = Word(A, [2, 3])
     a = RG(p)
     @test coeffs(a)[b[p]] == 1
