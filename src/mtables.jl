@@ -129,3 +129,4 @@ function cache!(
     return cmt
 end
 
+complete!(cmt::CachedMTable) = cache!(cmt, 1:size(cmt, 1), 1:size(cmt, 2))

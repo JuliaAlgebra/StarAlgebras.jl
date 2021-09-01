@@ -223,4 +223,7 @@ end
     @test StarAlgebras._check(RG.mstructure)
 
     @test all(!iszero, RG.mstructure.table)
+
+    RG = StarAlgebra(Word(A, Int[]), b, (k, k), precompute=true)
+    @test all(!iszero, RG.mstructure.table)
 end
