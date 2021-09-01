@@ -1,7 +1,7 @@
-abstract type AbstractStarAlgebra end
+abstract type AbstractStarAlgebra{O,T} end
 
 struct StarAlgebra{O,T,M<:MultiplicativeStructure,B<:AbstractBasis{T}} <:
-       AbstractStarAlgebra
+       AbstractStarAlgebra{O,T}
     object::O
     mstructure::M
     basis::B
@@ -96,22 +96,25 @@ function Base.isone(a::AlgebraElement)
     isone(a[k]) || return false
     return isone(b[k])
 end
+let SA = @static VERSION < v"1.3.0" ? :StarAlgebra : :AbstractStarAlgebra
+    @eval begin
+        function (A::$SA{O,T})(elt::T, S = Int) where {O,T}
+            if hasbasis(A)
+                b = basis(A)
+                i = b[elt]
+                return AlgebraElement(sparsevec([i], [one(S)], length(b)), A)
+            else
+                throw("Algebra without basis: cannot coerce $elt.")
+            end
+        end
 
-function (A::AbstractStarAlgebra)(elt, T = Int)
-    if hasbasis(A)
-        b = basis(A)
-        i = b[elt]
-        return AlgebraElement(sparsevec([i], [one(T)], length(b)), A)
-    else
-        throw("Algebra without basis: cannot coerce $elt.")
+        function (A::$SA)(x::Number)
+            g = one(object(A))
+            res = A(g, typeof(x))
+            res = mul!(res, res, x)
+            return res
+        end
     end
-end
-
-function (A::AbstractStarAlgebra)(x::Number)
-    g = one(object(A))
-    res = A(g, typeof(x))
-    res = mul!(res, res, x)
-    return res
 end
 
 Base.similar(X::AlgebraElement, ::Type{T} = eltype(X)) where {T} =
