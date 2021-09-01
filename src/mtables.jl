@@ -47,25 +47,18 @@ function MTable{Tw}(basis::AbstractBasis; table_size) where {Tw}
     return MTable{Tw}(table)
 end
 
-function complete!(table, basis, ::Val{false})
-    Threads.@threads for j in 1:size(table, 2)
-        y = basis[j]
-        for i in 1:size(table, 1)
-            table[i, j] = basis[_product(Val(false), basis[i], y)]
+for twisted in (:true, :false)
+    @eval begin
+        function complete!(table, basis, v::Val{$twisted})
+            Threads.@threads for j in 1:size(table, 2)
+                y = basis[j]
+                for i in 1:size(table, 1)
+                    table[i, j] = basis[_product(v, basis[i], y)]
+                end
+            end
+            return table
         end
     end
-    return table
-end
-
-function complete!(table, basis, ::Val{true})
-    Threads.@threads for i in 1:size(table, 1)
-        x = star(basis[i])
-        for j in 1:size(table, 2)
-            # star(x)*y
-            table[i, j] = basis[_product(Val(false), x, basis[j])]
-        end
-    end
-    return table
 end
 
 basis(mt::MTable) = throw("No basis is defined for a simple $(typeof(mt))")
@@ -121,11 +114,11 @@ Base.@propagate_inbounds function cache!(cmt::CachedMTable, i::Integer, j::Integ
     return cmt
 end
 
-Base.@propagate_inbounds function cache!(
-    cmt::CachedMTable{T,I,B,M,false},
+function cache!(
+    cmt::CachedMTable,
     suppX::AbstractVector{<:Integer},
     suppY::AbstractVector{<:Integer},
-) where {T,I,B,M}
+)
     Threads.@threads for j in suppY
         for i in suppX
             if !_iscached(cmt, i, j)
@@ -136,22 +129,3 @@ Base.@propagate_inbounds function cache!(
     return cmt
 end
 
-Base.@propagate_inbounds function cache!(
-    cmt::CachedMTable{T,I,B,M,true},
-    suppX::AbstractVector{<:Integer},
-    suppY::AbstractVector{<:Integer},
-) where {T,I,B,M}
-    b = basis(cmt)
-    Threads.@threads for i in suppX
-        g = star(b[i])
-        for j in suppY
-            if !_iscached(cmt, i, j)
-                h = b[j]
-                gh = _product(Val(false), g, h)
-                gh in b || throw(ProductNotDefined(i, j, "$g · $h = $gh"))
-                cmt.table[i, j] = b[gh]
-            end
-        end
-    end
-    return cmt
-end
