@@ -34,15 +34,17 @@ function StarAlgebra{Tw}(obj, basis::AbstractBasis) where {Tw}
 end
 
 # CachedMStructure:
-StarAlgebra(obj, basis::AbstractBasis, cache_size::Tuple{<:Integer,Integer}) =
-    StarAlgebra{false}(obj, basis, cache_size)
+StarAlgebra(obj, basis::AbstractBasis, cache_size::Tuple{<:Integer,Integer}; precompute=false) =
+    StarAlgebra{false}(obj, basis, cache_size, precompute=precompute)
 
 function StarAlgebra{Tw}(
     obj,
     basis::AbstractBasis,
-    cache_size::Tuple{<:Integer,Integer},
+    cache_size::Tuple{<:Integer,Integer};
+    precompute=false
 ) where {Tw}
     mstr = CachedMTable{Tw}(basis, table_size = cache_size)
+    precompute && complete!(mstr)
     return StarAlgebra(obj, basis, mstr)
 end
 
