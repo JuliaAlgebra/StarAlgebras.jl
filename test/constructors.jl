@@ -10,6 +10,9 @@
     @test AlgebraElement(a, RG) isa AlgebraElement
     @test all(RG(g) isa AlgebraElement{typeof(RG)} for g in b)
 
+    @test typeof(zero(RG)) == typeof(RG(0))
+    @test typeof(one(RG)) == typeof(RG(1))
+
     @test_throws AssertionError AlgebraElement([1, 2, 3], RG)
     @test AlgebraElement([1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], RG) isa AlgebraElement
 
