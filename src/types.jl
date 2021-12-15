@@ -74,7 +74,10 @@ Base.eltype(a::AlgebraElement) = eltype(coeffs(a))
 ### constructing elements
 
 function Base.zero(A::AbstractStarAlgebra, T = Int)
-    hasbasis(A) && return AlgebraElement(spzeros(T, length(basis(A))), A)
+    if hasbasis(A)
+        I = SparseArrays.indtype(basis(A))
+        return AlgebraElement(sparsevec(I[], T[], length(basis(A))), A)
+    end
     throw(
         "Algebra without basis; to construct zero use the `AlgebraElement` constructor directly.",
     )
@@ -113,7 +116,7 @@ let SA = @static VERSION < v"1.3.0" ? :StarAlgebra : :AbstractStarAlgebra
         function (A::$SA)(x::Number)
             g = one(object(A))
             res = A(g, typeof(x))
-            res = mul!(res, res, x)
+            res[g] *= x
             return res
         end
     end
