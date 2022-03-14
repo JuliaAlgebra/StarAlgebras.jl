@@ -89,6 +89,11 @@ StarAlgebras.star(g::GroupElement) = inv(g)
         a = RG(1) + RG(g) + RG(h)
         b = RG(1) - RG(k) - RG(h)
 
+        @test norm(a) == norm(b)
+        @test LinearAlgebra.dot(a, coeffs(a)) ≈
+              norm(a)^2 ≈
+              LinearAlgebra.dot(coeffs(a), a)
+
         # a = RG(1) + RG(perm"(2,3)") + RG(perm"(1,2,3)")
         # b = RG(1) - RG(perm"(1,2)(3)") - RG(perm"(1,2,3)")
 

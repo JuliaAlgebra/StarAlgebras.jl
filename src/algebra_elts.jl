@@ -42,3 +42,7 @@ end
 
 LinearAlgebra.norm(a::AlgebraElement, p::Real) = LinearAlgebra.norm(coeffs(a), p)
 aug(a::AlgebraElement) = sum(coeffs(a))
+
+LinearAlgebra.dot(a::AlgebraElement, v::AbstractVector) =
+    LinearAlgebra.dot(StarAlgebras.coeffs(a), v)
+LinearAlgebra.dot(v::AbstractVector, a::AlgebraElement) = LinearAlgebra.dot(a, v)
