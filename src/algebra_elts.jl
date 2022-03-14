@@ -14,11 +14,14 @@ Base.getindex(a::AlgebraElement{<:StarAlgebra{O,T}}, x::T) where {O,T} =
 
 Base.setindex!(a::AlgebraElement, v, i::Integer) = a.coeffs[i] = v
 
-function Base.setindex!(a::AlgebraElement{<:StarAlgebra{O,T}}, v, t::T) where {O,T}
+function Base.setindex!(
+    a::AlgebraElement{<:StarAlgebra{O,T}},
+    v,
+    t::T,
+) where {O,T}
     b = basis(parent(a))
     return a[b[t]] = v
 end
-
 
 # AlgebraElement specific functions
 
@@ -40,7 +43,8 @@ function star(X::AlgebraElement)
     return AlgebraElement(sparsevec(idcs, vals, length(b)), A)
 end
 
-LinearAlgebra.norm(a::AlgebraElement, p::Real) = LinearAlgebra.norm(coeffs(a), p)
+LinearAlgebra.norm(a::AlgebraElement, p::Real) =
+    LinearAlgebra.norm(coeffs(a), p)
 aug(a::AlgebraElement) = sum(coeffs(a))
 
 LinearAlgebra.dot(a::AlgebraElement, v::AbstractVector) =
