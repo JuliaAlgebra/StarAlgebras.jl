@@ -46,7 +46,9 @@ StarAlgebras.star(g::GroupElement) = inv(g)
         a = AlgebraElement(ones(Int, order(G)), RG)
         b = sum((-1)^isodd(g.residual) * RG(g) for g in G)
 
-        @test a == AlgebraElement(ones(Int, order(G)), RG) == sum(RG(g) for g in G)
+        @test a ==
+              AlgebraElement(ones(Int, order(G)), RG) ==
+              sum(RG(g) for g in G)
 
         @test 1 / 2 * (a + b).coeffs == [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 
@@ -67,7 +69,6 @@ StarAlgebras.star(g::GroupElement) = inv(g)
     end
 
     @testset "Multiplicative structure" begin
-
         for g in G, h in G
             a = RG(g)
             b = RG(h)
@@ -88,6 +89,11 @@ StarAlgebras.star(g::GroupElement) = inv(g)
 
         a = RG(1) + RG(g) + RG(h)
         b = RG(1) - RG(k) - RG(h)
+
+        @test norm(a) == norm(b)
+        @test LinearAlgebra.dot(a, coeffs(a)) ≈
+              norm(a)^2 ≈
+              LinearAlgebra.dot(coeffs(a), a)
 
         # a = RG(1) + RG(perm"(2,3)") + RG(perm"(1,2,3)")
         # b = RG(1) - RG(perm"(1,2)(3)") - RG(perm"(1,2,3)")
@@ -140,7 +146,6 @@ StarAlgebras.star(g::GroupElement) = inv(g)
     end
 
     @testset "Mutable API and trivial mstructure" begin
-
         A = [:a, :b, :c]
         b = StarAlgebras.Basis{UInt16}(words(A, radius = 8))
         l = findfirst(w -> length(w) > 4, b) - 1
@@ -170,16 +175,26 @@ StarAlgebras.star(g::GroupElement) = inv(g)
             Xc = AlgebraElement(coeffs(X), RGc)
             Yc = AlgebraElement(coeffs(Y), RGc)
 
-            @test coeffs(X * Y) == coeffs(Xc * Yc) == coeffs(StarAlgebras.mul!(Z, X, Y))
+            @test coeffs(X * Y) ==
+                  coeffs(Xc * Yc) ==
+                  coeffs(StarAlgebras.mul!(Z, X, Y))
 
             @test coeffs(X^2) == coeffs(Xc^2) == coeffs(X * X)
             @test coeffs(Y^2) == coeffs(Yc^2) == coeffs(Y * Y)
 
-            @test coeffs(Z) ==
-                  StarAlgebras.mul!(coeffs(W), coeffs(X), coeffs(Y), RG.mstructure)
+            @test coeffs(Z) == StarAlgebras.mul!(
+                coeffs(W),
+                coeffs(X),
+                coeffs(Y),
+                RG.mstructure,
+            )
             @test coeffs(Z) == coeffs(W)
-            @test coeffs(Z) ==
-                  StarAlgebras.mul!(coeffs(W), coeffs(X), coeffs(Y), RGc.mstructure)
+            @test coeffs(Z) == StarAlgebras.mul!(
+                coeffs(W),
+                coeffs(X),
+                coeffs(Y),
+                RGc.mstructure,
+            )
             @test coeffs(Z) == coeffs(W)
 
             StarAlgebras.zero!(W)
@@ -189,7 +204,6 @@ StarAlgebras.star(g::GroupElement) = inv(g)
         end
     end
 end
-
 
 @testset "Group Algebra caching" begin
     A = [:a, :b, :c]
@@ -216,7 +230,9 @@ end
 
     @test supp(D) == b[1:k]
 
-    @test_throws StarAlgebras.ProductNotDefined StarAlgebras._check(RG.mstructure)
+    @test_throws StarAlgebras.ProductNotDefined StarAlgebras._check(
+        RG.mstructure,
+    )
 
     @test D * D isa AlgebraElement
 
@@ -224,6 +240,6 @@ end
 
     @test all(!iszero, RG.mstructure.table)
 
-    RG = StarAlgebra(Word(A, Int[]), b, (k, k), precompute=true)
+    RG = StarAlgebra(Word(A, Int[]), b, (k, k), precompute = true)
     @test all(!iszero, RG.mstructure.table)
 end
