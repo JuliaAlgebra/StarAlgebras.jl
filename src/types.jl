@@ -43,7 +43,7 @@ function StarAlgebra{Tw}(
     cache_size::Tuple{<:Integer,Integer};
     precompute=false
 ) where {Tw}
-    mstr = CachedMTable{Tw}(basis, table_size = cache_size)
+    mstr = CachedMTable{Tw}(basis, table_size=cache_size)
     precompute && complete!(mstr)
     return StarAlgebra(obj, basis, mstr)
 end
@@ -73,7 +73,7 @@ Base.eltype(a::AlgebraElement) = eltype(coeffs(a))
 
 ### constructing elements
 
-function Base.zero(A::AbstractStarAlgebra, T = Int)
+function Base.zero(A::AbstractStarAlgebra, T=Int)
     if hasbasis(A)
         I = SparseArrays.indtype(basis(A))
         return AlgebraElement(sparsevec(I[], T[], length(basis(A))), A)
@@ -83,7 +83,7 @@ function Base.zero(A::AbstractStarAlgebra, T = Int)
     )
 end
 
-function Base.one(A::AbstractStarAlgebra, T = Int)
+function Base.one(A::AbstractStarAlgebra, T=Int)
     hasbasis(A) && return A(one(object(A)), T)
     throw(
         "Algebra without basis; to construct one use the `AlgebraElement` constructor directly.",
@@ -120,10 +120,10 @@ end
     end
 end
 
-Base.similar(X::AlgebraElement, ::Type{T} = eltype(X)) where {T} =
+Base.similar(X::AlgebraElement, ::Type{T}=eltype(X)) where {T} =
     AlgebraElement(similar(coeffs(X), T), parent(X))
 
-function AlgebraElement{T}(X::AlgebraElement) where T
+function AlgebraElement{T}(X::AlgebraElement) where {T}
     v = coeffs(X)
     w = similar(v, T)
     w .= v

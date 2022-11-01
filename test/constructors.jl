@@ -1,6 +1,6 @@
 @testset "Algebra and Elements" begin
     A = [:a, :b, :c]
-    b = StarAlgebras.Basis{UInt8}(words(A, radius = 2))
+    b = StarAlgebras.Basis{UInt8}(words(A, radius=2))
     l = length(b)
 
     RG = StarAlgebra(one(first(b)), b, (4, 4))
