@@ -27,6 +27,11 @@ end
         @test eltype(2 * a) == typeof(2)
         @test coeffs(2 * a) == 2coeffs(a)
 
+        @test eltype(2a) == Int
+        y = div(2a, 2)
+        @test y == a
+        @test eltype(y) == Int
+
         @test 2.0 * a isa AlgebraElement
         @test eltype(2.0 * a) == typeof(2.0)
         @test coeffs(2.0 * a) == 2.0 * coeffs(a)

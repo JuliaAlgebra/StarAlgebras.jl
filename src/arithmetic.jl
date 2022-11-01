@@ -6,6 +6,7 @@ Base.:(/)(X::AlgebraElement, a::Number) = inv(a) * X
 
 # TODO: handle this through mul!?
 Base.:(//)(X::AlgebraElement, a::Number) = AlgebraElement(coeffs(X) .// a, parent(X))
+Base.:div(X::AlgebraElement, a::Number) = AlgebraElement(div.(coeffs(X), a), parent(X))
 
 # ring structure:
 Base.:-(X::AlgebraElement) = neg!(similar(X), X)
