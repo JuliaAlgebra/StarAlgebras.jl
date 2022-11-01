@@ -101,24 +101,22 @@ function Base.isone(a::AlgebraElement)
     isone(a[k]) || return false
     return isone(b[k])
 end
-let SA = @static VERSION < v"1.3.0" ? :StarAlgebra : :AbstractStarAlgebra
-    @eval begin
-        function (A::$SA{O,T})(elt::T, S = Int) where {O,T}
-            if hasbasis(A)
-                b = basis(A)
-                i = b[elt]
-                return AlgebraElement(sparsevec([i], [one(S)], length(b)), A)
-            else
-                throw("Algebra without basis: cannot coerce $elt.")
-            end
+@eval begin
+    function (A::AbstractStarAlgebra{O,T})(elt::T, S=Int) where {O,T}
+        if hasbasis(A)
+            b = basis(A)
+            i = b[elt]
+            return AlgebraElement(sparsevec([i], [one(S)], length(b)), A)
+        else
+            throw("Algebra without basis: cannot coerce $elt.")
         end
+    end
 
-        function (A::$SA)(x::Number)
-            g = one(object(A))
-            res = A(g, typeof(x))
-            res[g] *= x
-            return res
-        end
+    function (A::AbstractStarAlgebra)(x::Number)
+        g = one(object(A))
+        res = A(g, typeof(x))
+        res[g] *= x
+        return res
     end
 end
 

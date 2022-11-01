@@ -10,9 +10,5 @@ include("test_example_words.jl")
     include("constructors.jl")
     include("arithmetic.jl")
 
-    if VERSION >= v"1.3.0"
-        using Pkg
-        Pkg.add("Groups")
-        include("sum_of_squares.jl")
-    end
+    include("sum_of_squares.jl")
 end
