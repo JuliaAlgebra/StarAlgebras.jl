@@ -203,6 +203,78 @@ StarAlgebras.star(g::GroupElement) = inv(g)
             @test coeffs(2 * X * Y) == coeffs(StarAlgebras.mul!(W, W, 2))
         end
     end
+
+    @testset "mutable arithmetic" begin
+        A = [:a, :b, :c]
+        bas = StarAlgebras.Basis{UInt16}(words(A, radius=4))
+        l = findfirst(w -> length(w) > 2, bas) - 1
+        RG = StarAlgebra(one(first(bas)), bas, (l, l))
+
+        a = let c = rand(-3:3, l)
+            resize!(c, length(bas))
+            c[l:end] .= 0
+            AlgebraElement(c, RG)
+        end
+        b = let c = rand(-3:3, l)
+            resize!(c, length(bas))
+            c[l:end] .= 0
+            AlgebraElement(c, RG)
+        end
+
+        let d = deepcopy(a)
+            StarAlgebras.zero!(d)
+            StarAlgebras.neg!(d, a)
+
+            d = deepcopy(a)
+            @test !iszero(d)
+            @test @allocated(StarAlgebras.zero!(d)) == 0
+            @test iszero(d)
+
+            @test @allocated(StarAlgebras.neg!(d, a)) == 0
+            @test d == -a
+        end
+
+        let d = deepcopy(a)
+            StarAlgebras.add!(d, d, b)
+            StarAlgebras.add!(d, b, d)
+            StarAlgebras.add!(d, a, b)
+
+            d = deepcopy(a)
+            @test @allocated(StarAlgebras.add!(d, d, b)) == 0
+            @test d == a + b
+
+            d = deepcopy(a)
+            @test @allocated(StarAlgebras.add!(d, b, d)) == 0
+            @test d == a + b
+
+            @test @allocated(StarAlgebras.add!(d, a, b)) == 0
+            @test d == a + b
+        end
+
+        let d = deepcopy(a)
+            StarAlgebras.mul!(d, d, 2)
+            StarAlgebras.mul!(d, a, 2)
+            StarAlgebras.mul!(d, a, b)
+            d = deepcopy(a)
+            StarAlgebras.mul!(d, d, b)
+
+            d = deepcopy(a)
+            @test @allocated(StarAlgebras.mul!(d, d, 2)) == 0
+            @test d == 2a
+
+            @test @allocated(StarAlgebras.mul!(d, a, 2)) == 0
+            @test d == 2a
+
+            @test @allocated(StarAlgebras.mul!(d, a, b)) == 32
+            @test d == a * b
+
+            d = deepcopy(a)
+            @test @allocated(StarAlgebras.mul!(d, d, b)) != 0
+            z = StarAlgebras.mul!(d, d, b)
+            @test z == a * b
+            @test z !== d
+        end
+    end
 end
 
 @testset "Group Algebra caching" begin
