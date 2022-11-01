@@ -4,6 +4,10 @@ import Random
 
 StarAlgebras.star(g::PermutationGroups.GroupElement) = inv(g)
 
+using SparseArrays
+if VERSION < v"1.9"
+    Base.sum(v::SparseVector) = sum(nonzeros(v))
+end
 
 @testset "Arithmetic" begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
