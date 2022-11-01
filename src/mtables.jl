@@ -31,7 +31,7 @@ end
 
 MTable{Tw}(mt::AbstractMatrix{<:Integer}) where {Tw} = MTable{eltype(mt),Tw,typeof(mt)}(mt)
 
-MTable(b::AbstractBasis; table_size) = MTable{false}(b; table_size = table_size)
+MTable(b::AbstractBasis; table_size) = MTable{false}(b; table_size=table_size)
 
 function MTable{Tw}(basis::AbstractBasis; table_size) where {Tw}
     @assert length(table_size) == 2
@@ -78,7 +78,7 @@ struct CachedMTable{T,I,B<:Basis{T,I},M,Twisted} <: AbstractMTable{I,Twisted}
 end
 
 CachedMTable(basis::AbstractBasis; table_size) =
-    CachedMTable{false}(basis; table_size = table_size)
+    CachedMTable{false}(basis; table_size=table_size)
 
 function CachedMTable{Tw}(basis::AbstractBasis{T,I}; table_size) where {Tw,T,I}
     return CachedMTable{Tw}(basis, zeros(I, table_size))

@@ -10,9 +10,9 @@ __needs_parens(a::AlgebraElement) = true
 
 function _coeff_elt_print(io, c, elt)
     print(io, c, "·")
-    __needs_parens(elt) && print(io, "(")
+    __needs_parens(elt) && print(io, '(')
     print(io, elt)
-    __needs_parens(elt) && print(io, ")")
+    __needs_parens(elt) && print(io, ')')
     return
 end
 
@@ -33,10 +33,12 @@ function Base.show(io::IO, a::AlgebraElement)
             if counter == 1
                 _coeff_elt_print(io, c, elt)
             else
-                print(io, ' ')
-                __prints_with_minus(c) || print(io, '+')
+                if __prints_with_minus(c)
+                    print(io, ' ')
+                else
+                    print(io, ' ', '+')
+                end
                 _coeff_elt_print(io, c, elt)
-                counter == length(nzeros) || print(io, ' ')
             end
         end
     else

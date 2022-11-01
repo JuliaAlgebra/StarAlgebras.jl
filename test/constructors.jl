@@ -1,6 +1,6 @@
 @testset "Algebra and Elements" begin
     A = [:a, :b, :c]
-    b = StarAlgebras.Basis{UInt8}(words(A, radius = 2))
+    b = StarAlgebras.Basis{UInt8}(words(A, radius=2))
     l = length(b)
 
     RG = StarAlgebra(one(first(b)), b, (4, 4))
@@ -72,6 +72,17 @@
     z[b[s]] = 2
     @test AlgebraElement(z, RG) == a
     @test sprint(show, AlgebraElement(z, RG)) == "2.0·(id) +1.0·b·c"
+    @test sprint(show, 2one(RG) - RG(p)) == "2·(id) -1·b·c"
 
     @test LinearAlgebra.norm(a, 1) == 3
+
+    @test copy(a) == a
+    @test copy(a) !== a
+    @test coeffs(copy(a)) !== coeffs(a)
+    @test parent(copy(a)) === parent(a)
+
+    @test deepcopy(a) == a
+    @test deepcopy(a) !== a
+    @test coeffs(deepcopy(a)) !== coeffs(a)
+    @test parent(deepcopy(a)) === parent(a)
 end

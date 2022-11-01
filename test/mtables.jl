@@ -1,5 +1,5 @@
 @testset "TrivialMStructure" begin
-    b = StarAlgebras.Basis{UInt8}(words([:a, :b, :c], radius = 4))
+    b = StarAlgebras.Basis{UInt8}(words([:a, :b, :c], radius=4))
     k = findfirst(w -> length(w) == 3, b) - 1
 
     mstr = StarAlgebras.TrivialMStructure{false}(b)
@@ -35,10 +35,10 @@
 end
 
 @testset "MTable" begin
-    b = StarAlgebras.Basis{UInt16}(words([:a, :b, :c, :d], radius = 4))
+    b = StarAlgebras.Basis{UInt16}(words([:a, :b, :c, :d], radius=4))
     k = findfirst(w -> length(w) == 3, b) - 1
 
-    mstr = StarAlgebras.MTable(b, table_size = (k, k))
+    mstr = StarAlgebras.MTable(b, table_size=(k, k))
 
     @test mstr isa StarAlgebras.MTable{UInt16,false}
 
@@ -46,7 +46,7 @@ end
     @test all(mstr[1, i] == i for i in 1:size(mstr, 2))
     @test all(mstr[i, 1] == i for i in 1:size(mstr, 1))
 
-    tmstr = StarAlgebras.MTable{true}(b, table_size = (k, k))
+    tmstr = StarAlgebras.MTable{true}(b, table_size=(k, k))
 
     @test tmstr isa StarAlgebras.MTable{UInt16,true}
     @test all(tmstr[i, i] != 1 for i in 2:size(tmstr, 1))
@@ -55,13 +55,13 @@ end
 end
 
 @testset "CachedMTable" begin
-    b = StarAlgebras.Basis{UInt8}(words([:a, :b, :c], radius = 4))
+    b = StarAlgebras.Basis{UInt8}(words([:a, :b, :c], radius=4))
     k = findfirst(w -> length(w) == 3, b) - 1
 
-    @test StarAlgebras.CachedMTable(b, table_size = (k, k)) isa
+    @test StarAlgebras.CachedMTable(b, table_size=(k, k)) isa
           StarAlgebras.CachedMTable{Word{Symbol},UInt8,typeof(b),Matrix{UInt8},false}
 
-    @test StarAlgebras.CachedMTable{true}(b, table_size = (k, k)) isa
+    @test StarAlgebras.CachedMTable{true}(b, table_size=(k, k)) isa
           StarAlgebras.CachedMTable{Word{Symbol},UInt8,typeof(b),Matrix{UInt8},true}
 
     @test StarAlgebras.CachedMTable(b, spzeros(UInt8, k, k)) isa StarAlgebras.CachedMTable{
@@ -82,7 +82,7 @@ end
     }
 
     for mstr in [
-        StarAlgebras.CachedMTable{false}(b, table_size = (k, k)),
+        StarAlgebras.CachedMTable{false}(b, table_size=(k, k)),
         StarAlgebras.CachedMTable{true}(b, spzeros(UInt8, k, k)),
     ]
 
@@ -106,7 +106,7 @@ end
         @test_throws StarAlgebras.ProductNotDefined mstr[k+1, k]
     end
 
-    tmstr = StarAlgebras.CachedMTable{true}(b, table_size = (k, k))
+    tmstr = StarAlgebras.CachedMTable{true}(b, table_size=(k, k))
 
     @test all(iszero, tmstr.table)
     @test tmstr[1, 2] == 2

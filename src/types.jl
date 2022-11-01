@@ -43,7 +43,7 @@ function StarAlgebra{Tw}(
     cache_size::Tuple{<:Integer,Integer};
     precompute=false
 ) where {Tw}
-    mstr = CachedMTable{Tw}(basis, table_size = cache_size)
+    mstr = CachedMTable{Tw}(basis, table_size=cache_size)
     precompute && complete!(mstr)
     return StarAlgebra(obj, basis, mstr)
 end
@@ -73,7 +73,7 @@ Base.eltype(a::AlgebraElement) = eltype(coeffs(a))
 
 ### constructing elements
 
-function Base.zero(A::AbstractStarAlgebra, T = Int)
+function Base.zero(A::AbstractStarAlgebra, T=Int)
     if hasbasis(A)
         I = SparseArrays.indtype(basis(A))
         return AlgebraElement(sparsevec(I[], T[], length(basis(A))), A)
@@ -83,7 +83,7 @@ function Base.zero(A::AbstractStarAlgebra, T = Int)
     )
 end
 
-function Base.one(A::AbstractStarAlgebra, T = Int)
+function Base.one(A::AbstractStarAlgebra, T=Int)
     hasbasis(A) && return A(one(object(A)), T)
     throw(
         "Algebra without basis; to construct one use the `AlgebraElement` constructor directly.",
@@ -101,31 +101,29 @@ function Base.isone(a::AlgebraElement)
     isone(a[k]) || return false
     return isone(b[k])
 end
-let SA = @static VERSION < v"1.3.0" ? :StarAlgebra : :AbstractStarAlgebra
-    @eval begin
-        function (A::$SA{O,T})(elt::T, S = Int) where {O,T}
-            if hasbasis(A)
-                b = basis(A)
-                i = b[elt]
-                return AlgebraElement(sparsevec([i], [one(S)], length(b)), A)
-            else
-                throw("Algebra without basis: cannot coerce $elt.")
-            end
+@eval begin
+    function (A::AbstractStarAlgebra{O,T})(elt::T, S=Int) where {O,T}
+        if hasbasis(A)
+            b = basis(A)
+            i = b[elt]
+            return AlgebraElement(sparsevec([i], [one(S)], length(b)), A)
+        else
+            throw("Algebra without basis: cannot coerce $elt.")
         end
+    end
 
-        function (A::$SA)(x::Number)
-            g = one(object(A))
-            res = A(g, typeof(x))
-            res[g] *= x
-            return res
-        end
+    function (A::AbstractStarAlgebra)(x::Number)
+        g = one(object(A))
+        res = A(g, typeof(x))
+        res[g] *= x
+        return res
     end
 end
 
-Base.similar(X::AlgebraElement, ::Type{T} = eltype(X)) where {T} =
+Base.similar(X::AlgebraElement, ::Type{T}=eltype(X)) where {T} =
     AlgebraElement(similar(coeffs(X), T), parent(X))
 
-function AlgebraElement{T}(X::AlgebraElement) where T
+function AlgebraElement{T}(X::AlgebraElement) where {T}
     v = coeffs(X)
     w = similar(v, T)
     w .= v

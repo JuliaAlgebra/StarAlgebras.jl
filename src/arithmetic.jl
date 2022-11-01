@@ -6,6 +6,7 @@ Base.:(/)(X::AlgebraElement, a::Number) = inv(a) * X
 
 # TODO: handle this through mul!?
 Base.:(//)(X::AlgebraElement, a::Number) = AlgebraElement(coeffs(X) .// a, parent(X))
+Base.:div(X::AlgebraElement, a::Number) = AlgebraElement(div.(coeffs(X), a), parent(X))
 
 # ring structure:
 Base.:-(X::AlgebraElement) = neg!(similar(X), X)
@@ -33,28 +34,48 @@ end
 
 function neg!(res::AlgebraElement, X::AlgebraElement)
     @assert parent(res) === parent(X)
-    res.coeffs .= -coeffs(X)
+    res.coeffs .= .-coeffs(X)
     return res
 end
 
 function add!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
-    @assert parent(res) === parent(X) === parent(Y)
-    # res = (res === X || res === Y) ? similar(res) : res
-    res.coeffs .= coeffs(X) .+ coeffs(Y)
+    @assert parent(res) === parent(X)
+    @assert parent(X) === parent(Y)
+    if res === X
+        for (idx, y) in _nzpairs(coeffs(Y))
+            res[idx] += y
+        end
+    elseif res === Y
+        for (idx, x) in _nzpairs(coeffs(X))
+            res[idx] += x
+        end
+    else
+        zero!(res)
+        for (idx, x) in _nzpairs(coeffs(X))
+            res[idx] += x
+        end
+        for (idx, y) in _nzpairs(coeffs(Y))
+            res[idx] += y
+        end
+    end
     return res
 end
 
 function sub!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
     @assert parent(res) === parent(X) === parent(Y)
-    # res = (res === X || res === Y) ? similar(res) : res
-    res.coeffs .= coeffs(X) .- coeffs(Y)
+    neg!(res, Y)
+    add!(res, res, X)
     return res
 end
 
 function mul!(res::AlgebraElement, X::AlgebraElement, a::Number)
     @assert parent(res) === parent(X)
-    # res = (res === X) ? similar(res) : res
-    res.coeffs .= a .* coeffs(X)
+    if res !== X
+        zero!(res)
+    end
+    for (idx, x) in _nzpairs(coeffs(X))
+        res.coeffs[idx] = a * x
+    end
     return res
 end
 
@@ -69,12 +90,12 @@ function mul!(
 end
 
 function mul!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
-    @assert parent(res) === parent(X) === parent(Y)
     res = (res === X || res === Y) ? zero(res) : zero!(res)
     return fmac!(res, X, Y)
 end
 
 function fmac!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
+    @assert parent(res) === parent(X) === parent(Y)
     fmac!(coeffs(res), coeffs(X), coeffs(Y), parent(res).mstructure)
     return res
 end
@@ -91,9 +112,33 @@ function fmac!(
 )
     @assert res !== X
     @assert res !== Y
-    for (j, y) in _nzpairs(Y)
-        for (i, x) in _nzpairs(X)
-            res[mstr[i, j]] += x * y
+    lx, ly = size(mstr)
+    @assert all(iszero, @view(X[lx+1:end]))
+    @assert all(iszero, @view(Y[ly+1:end]))
+    for iy in 1:ly
+        y = Y[iy]
+        iszero(y) && continue
+        for ix in 1:lx
+            x = X[ix]
+            iszero(x) && continue
+            res[mstr[ix, iy]] += X[ix] * y
+        end
+    end
+    return res
+end
+
+function fmac!(
+    res::AbstractVector,
+    X::AbstractSparseVector,
+    Y::AbstractSparseVector,
+    mstr::MultiplicativeStructure,
+)
+    @assert res !== X
+    @assert res !== Y
+    for iy in SparseArrays.nonzeroinds(Y)
+        y = Y[iy]
+        for ix in SparseArrays.nonzeroinds(X)
+            res[mstr[ix, iy]] += X[ix] * y
         end
     end
     return res

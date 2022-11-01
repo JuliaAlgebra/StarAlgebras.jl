@@ -50,3 +50,9 @@ aug(a::AlgebraElement) = sum(coeffs(a))
 LinearAlgebra.dot(a::AlgebraElement, v::AbstractVector) =
     LinearAlgebra.dot(StarAlgebras.coeffs(a), v)
 LinearAlgebra.dot(v::AbstractVector, a::AlgebraElement) = LinearAlgebra.dot(a, v)
+
+Base.copy(a::AlgebraElement) = AlgebraElement(copy(coeffs(a)), parent(a))
+function Base.deepcopy_internal(a::AlgebraElement, stackdict::IdDict)
+    haskey(stackdict, a) && return stackdict[a]
+    return AlgebraElement(deepcopy(coeffs(a)), parent(a))
+end

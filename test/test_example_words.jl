@@ -30,20 +30,15 @@ end
 
 function StarAlgebras.star(w::Word)
     newletters = similar(w.letters)
-    A = w.alphabet
 
     # star(:a) = :b
     # star(:b) = :a
     # star(:c) = :c
 
+    star_d = Dict(1 => 2, 2 => 1)
+
     for (i, l) in enumerate(Iterators.reverse(w.letters))
-        k = if A[l] === :a
-            2
-        elseif A[l] === :b
-            1
-        else
-            l
-        end
+        k = haskey(star_d, l) ? star_d[l] : l
         newletters[i] = k
     end
     return Word(w.alphabet, newletters)
