@@ -1,16 +1,17 @@
 using GroupsCore
+using PermutationGroups
 import Random
 
-include(joinpath(pathof(GroupsCore), "..", "..", "test", "cyclic.jl"))
-StarAlgebras.star(g::GroupElement) = inv(g)
+StarAlgebras.star(g::PermutationGroups.GroupElement) = inv(g)
+
 
 @testset "Arithmetic" begin
-    G = CyclicGroup(6)
+    G = PermGroup(perm"(1,2,3)", perm"(1,2)")
     b = StarAlgebras.Basis{UInt8}(collect(G))
     l = length(b)
     RG = StarAlgebra(G, b, (l, l))
 
-    @test sprint(show, RG) == "*-algebra of Group of residues modulo 6"
+    @test contains(sprint(show, RG), "*-algebra of Permutation group")
 
     @testset "Module structure" begin
         a = AlgebraElement(ones(Int, order(G)), RG)
@@ -44,17 +45,16 @@ StarAlgebras.star(g::GroupElement) = inv(g)
 
     @testset "Additive structure" begin
         a = AlgebraElement(ones(Int, order(G)), RG)
-        b = sum((-1)^isodd(g.residual) * RG(g) for g in G)
+        b = sum(sign(g) * RG(g) for g in G)
 
         @test a ==
               AlgebraElement(ones(Int, order(G)), RG) ==
               sum(RG(g) for g in G)
 
-        @test 1 / 2 * (a + b).coeffs == [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
+        @test 1 / 2 * (coeffs(a + b)) == [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 
-        g = CyclicGroupElement(2, G)
-        h = CyclicGroupElement(3, G)
-        k = CyclicGroupElement(5, G)
+        g, h = gens(G)
+        k = g * h
 
         a = RG(1) + RG(g) + RG(h)
         b = RG(1) - RG(k) - RG(h)
@@ -83,9 +83,8 @@ StarAlgebras.star(g::GroupElement) = inv(g)
             @test aug(one(RG) - RG(g)) == 0
         end
 
-        g = CyclicGroupElement(2, G)
-        h = CyclicGroupElement(3, G)
-        k = CyclicGroupElement(5, G)
+        g, h = PermutationGroups.gens(G)
+        k = g * h
 
         a = RG(1) + RG(g) + RG(h)
         b = RG(1) - RG(k) - RG(h)
@@ -94,9 +93,6 @@ StarAlgebras.star(g::GroupElement) = inv(g)
         @test LinearAlgebra.dot(a, coeffs(a)) ≈
               norm(a)^2 ≈
               LinearAlgebra.dot(coeffs(a), a)
-
-        # a = RG(1) + RG(perm"(2,3)") + RG(perm"(1,2,3)")
-        # b = RG(1) - RG(perm"(1,2)(3)") - RG(perm"(1,2,3)")
 
         @test a * b == StarAlgebras.mul!(a, a, b)
 
@@ -107,47 +103,40 @@ StarAlgebras.star(g::GroupElement) = inv(g)
         z = sum((one(RG) - RG(g)) * star(one(RG) - RG(g)) for g in G)
         @test aug(z) == 0
 
-        @test supp(z) == basis(parent(z))
+        @test supp(z) == StarAlgebras.basis(parent(z))
         @test supp(RG(1) + RG(g)) == [one(G), g]
-        @test supp(a) == [one(G), g, h]
+        @test supp(a) == [one(G), h, g]
 
-        if false
-            @testset "Projections in Symm(3)" begin
-                G = SymmetricGroup(3)
-                b = StarAlgebras.Basis{UInt8}(collect(G))
-                l = length(b)
+        @testset "Projections in star algebras" begin
+            b = StarAlgebras.basis(RG)
+            l = length(b)
+            P = sum(RG(g) for g in b) // l
+            @test P * P == P
 
-                RG = StarAlgebra(G, b)
-                @test RG isa StarAlgebra
+            P3 = 2 * sum(RG(g) for g in b if sign(g) > 0) // l
+            @test P3 * P3 == P3
 
-                P = sum(RG(g) for g in b) // l
-                @test P * P == P
+            PAlt = sum(sign(g) * RG(g) for g in b) // l
+            @test PAlt * PAlt == PAlt
 
-                P3 = 2 * sum(RG(g) for g in b if sign(g) > 0) // l
-                @test P3 * P3 == P3
+            @test P3 * PAlt == PAlt * P3
 
-                PAlt = sum(sign(g) * RG(g) for g in b) // l
-                @test PAlt * PAlt == PAlt
+            P2 = (RG(1) + RG(b[2])) // 2
+            @test P2 * P2 == P2
 
-                @test P3 * PAlt == PAlt * P3
+            @test P2 * P3 == P3 * P2 == P
 
-                P2 = (RG(1) + RG(b[2])) // 2
-                @test P2 * P2 == P2
+            P2m = (RG(1) - RG(b[2])) // 2
+            @test P2m * P2m == P2m
 
-                @test P2 * P3 == P3 * P2 == P
-
-                P2m = (RG(1) - RG(b[2])) // 2
-                @test P2m * P2m == P2m
-
-                @test P2m * P3 == P3 * P2m == PAlt
-                @test iszero(P2m * P2)
-            end
+            @test P2m * P3 == P3 * P2m == PAlt
+            @test iszero(P2m * P2)
         end
     end
 
     @testset "Mutable API and trivial mstructure" begin
         A = [:a, :b, :c]
-        b = StarAlgebras.Basis{UInt16}(words(A, radius = 8))
+        b = StarAlgebras.Basis{UInt16}(words(A, radius=8))
         l = findfirst(w -> length(w) > 4, b) - 1
 
         RG = StarAlgebra(one(first(b)), b)
@@ -279,7 +268,7 @@ end
 
 @testset "Group Algebra caching" begin
     A = [:a, :b, :c]
-    b = StarAlgebras.Basis{UInt8}(words(A, radius = 4))
+    b = StarAlgebras.Basis{UInt8}(words(A, radius=4))
     k = findfirst(w -> length(w) == 3, b) - 1
 
     RG = StarAlgebra(Word(A, Int[]), b, (k, k))
@@ -312,6 +301,6 @@ end
 
     @test all(!iszero, RG.mstructure.table)
 
-    RG = StarAlgebra(Word(A, Int[]), b, (k, k), precompute = true)
+    RG = StarAlgebra(Word(A, Int[]), b, (k, k), precompute=true)
     @test all(!iszero, RG.mstructure.table)
 end
