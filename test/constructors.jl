@@ -75,4 +75,14 @@
     @test sprint(show, 2one(RG) - RG(p)) == "2·(id) -1·b·c"
 
     @test LinearAlgebra.norm(a, 1) == 3
+
+    @test copy(a) == a
+    @test copy(a) !== a
+    @test coeffs(copy(a)) !== coeffs(a)
+    @test parent(copy(a)) === parent(a)
+
+    @test deepcopy(a) == a
+    @test deepcopy(a) !== a
+    @test coeffs(deepcopy(a)) !== coeffs(a)
+    @test parent(deepcopy(a)) === parent(a)
 end
