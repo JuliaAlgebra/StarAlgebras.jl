@@ -40,6 +40,8 @@ end
     k = findfirst(w -> length(w) == 3, b) - 1
     mstr = StarAlgebras.MTable(b, table_size=(k, k))
 
+    @test_throws String StarAlgebras.basis(mstr)
+
     @test mstr isa StarAlgebras.MTable{UInt16}
     @test all(
         mstr[i, j] == b[b[i]*b[j]] for i in axes(mstr, 1) for j in axes(mstr, 2)
@@ -63,8 +65,18 @@ end
     @test mstr isa StarAlgebras.CachedMTable{UInt8,Word{Symbol}}
     @test mstr.table.table isa Matrix{UInt8}
 
+    @test_throws StarAlgebras.ProductNotDefined StarAlgebras._check(mstr.table.table, StarAlgebras.basis(mstr))
+
+    StarAlgebras.complete!(mstr)
+    @test all(!iszero, mstr.table)
+
     mstr_sparse = StarAlgebras.CachedMTable(b, spzeros(UInt8, k, k))
     @test issparse(mstr_sparse.table.table)
+
+    StarAlgebras.complete!(mstr_sparse.table.table, basis(mstr))
+    @test all(!iszero, mstr.table.table)
+
+    @test mstr == mstr_sparse
 
     mstr = StarAlgebras.CachedMTable(b, table_size=(k, k))
 

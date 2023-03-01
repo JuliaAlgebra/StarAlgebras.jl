@@ -47,7 +47,7 @@ function complete!(table::AbstractMatrix, basis::AbstractBasis, lck=Threads.Spin
         for i in axes(table, 1)
             xy = basis[i] * y
             lock(lck) do
-                table[i, j] = xy
+                table[i, j] = basis[xy]
             end
         end
     end

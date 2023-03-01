@@ -17,9 +17,9 @@ struct StarAlgebra{O,T,M<:MultiplicativeStructure,B<:AbstractBasis{T}} <:
 
     function StarAlgebra(obj, mstr::MultiplicativeStructure)
         O = typeof(obj)
-        T = Symbol
+        T = eltype(obj)
         M = typeof(mstr)
-        B = Basis{T,Int}
+        B = Basis{T,eltype(mstr)}
 
         return new{O,T,M,B}(obj, mstr)
     end
@@ -108,7 +108,7 @@ function (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T}
         i = b[elt]
         return AlgebraElement(sparsevec([i], [1], length(b)), A)
     else
-        throw("Algebra without basis: cannot coerce $elt.")
+        throw("Algebra without basis: cannot coerce $elt")
     end
 end
 
@@ -118,7 +118,7 @@ function (A::AbstractStarAlgebra)(x::Number)
         i = b[one(object(A))]
         return AlgebraElement(sparsevec([i], [x], length(b)), A)
     else
-        throw("Algebra without basis: cannot coerce $elt.")
+        throw("Algebra without basis: cannot coerce $x")
     end
 end
 
