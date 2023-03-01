@@ -30,6 +30,16 @@ supp_ind(a::AlgebraElement{A,T,<:SparseVector}) where {A,T} =
     (dropzeros!(coeffs(a)); SparseArrays.nonzeroinds(coeffs(a)))
 supp(a::AlgebraElement) = (b = basis(parent(a)); [b[i] for i in supp_ind(a)])
 
+function star(A::StarAlgebra, i::Integer)
+    @assert i > 0
+    if i < max(size(A.mstructure)...)
+        return _get(A.mstructure, -signed(i))
+    else
+        b = basis(A)
+        return b[star(b[i])]
+    end
+end
+
 function star(X::AlgebraElement)
     A = parent(X)
     b = basis(A)
@@ -37,7 +47,7 @@ function star(X::AlgebraElement)
     idcs = similar(supp_X)
     vals = similar(idcs, eltype(X))
     for (i, idx) in enumerate(supp_X)
-        idcs[i] = b[star(b[idx])]
+        idcs[i] = star(parent(X), idx)
         vals[i] = X[idx]
     end
     return AlgebraElement(sparsevec(idcs, vals, length(b)), A)

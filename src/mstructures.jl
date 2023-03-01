@@ -24,6 +24,7 @@ TrivialMStructure(basis::AbstractBasis{T,I}) where {T,I} =
 
 basis(mstr::TrivialMStructure) = mstr.basis
 Base.size(mstr::TrivialMStructure) = (l = length(basis(mstr)); (l, l))
+_get(mstr::TrivialMStructure, i) = i ≥ 0 ? i : (b = basis(mstr); b[star(b[-i])])
 
 Base.@propagate_inbounds function Base.getindex(
     mstr::TrivialMStructure,
@@ -31,8 +32,8 @@ Base.@propagate_inbounds function Base.getindex(
     j::Integer,
 )
     b = basis(mstr)
-    g = i ≥ 0 ? b[i] : star(b[-i])
-    h = j ≥ 0 ? b[j] : star(b[-j])
+    i, j = _get(mstr, i), _get(mstr, j)
+    g, h = b[i], b[j]
     gh = g * h
     gh in b || throw(ProductNotDefined(i, j, "$g · $h = $gh"))
     return basis(mstr)[gh]
