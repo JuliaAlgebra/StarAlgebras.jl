@@ -54,5 +54,5 @@ LinearAlgebra.dot(v::AbstractVector, a::AlgebraElement) = LinearAlgebra.dot(a, v
 Base.copy(a::AlgebraElement) = AlgebraElement(copy(coeffs(a)), parent(a))
 function Base.deepcopy_internal(a::AlgebraElement, stackdict::IdDict)
     haskey(stackdict, a) && return stackdict[a]
-    return AlgebraElement(deepcopy(coeffs(a)), parent(a))
+    return AlgebraElement(Base.deepcopy_internal(coeffs(a), stackdict), parent(a))
 end
