@@ -83,44 +83,49 @@ end
 
 ## CachedMTables
 
-struct CachedMTable{T,I,B<:Basis{T,I},M,Twisted} <: AbstractMTable{I,Twisted}
+struct CachedMTable{I,T,B<:AbstractBasis{T,I},M<:MTable} <: AbstractMTable{I}
     basis::B
     table::M
+    lock::Threads.SpinLock
 end
 
-CachedMTable(basis::AbstractBasis; table_size) =
-    CachedMTable{false}(basis; table_size=table_size)
-
-function CachedMTable{Tw}(basis::AbstractBasis{T,I}; table_size) where {Tw,T,I}
-    return CachedMTable{Tw}(basis, zeros(I, table_size))
+function CachedMTable(basis::AbstractBasis{T,I}; table_size) where {T,I}
+    return CachedMTable(basis, zeros(I, table_size))
 end
 
-CachedMTable(basis::AbstractBasis, mt::AbstractMatrix{<:Integer}) =
-    CachedMTable{false}(basis, mt)
-
-function CachedMTable{Tw}(
+function CachedMTable(
     basis::AbstractBasis{T,I},
     mt::AbstractMatrix{<:Integer},
-) where {Tw,T,I}
-    return CachedMTable{T,I,typeof(basis),typeof(mt),Tw}(basis, mt)
+) where {T,I}
+    star_of = _star_of(basis, max(size(mt)...))
+    mtable = MTable(mt, star_of)
+    return CachedMTable(basis, mtable, Threads.SpinLock())
 end
 
 basis(m::CachedMTable) = m.basis
+Base.@propagate_inbounds _iscached(cmt::CachedMTable, i, j) = _iscached(cmt.table, i, j)
+Base.@propagate_inbounds _get(cmt::CachedMTable, i::Integer) = _get(cmt.table, i)
 
 Base.@propagate_inbounds function Base.getindex(cmt::CachedMTable, i::Integer, j::Integer)
-    cache!(cmt, i, j)
-    return cmt.table[i, j]
+    @boundscheck checkbounds(Bool, cmt, abs(i), abs(j)) ||
+                 throw(ProductNotDefined(i, j, "out of Mtable bounds"))
+    @inbounds begin
+        i = _get(cmt, i)
+        j = _get(cmt, j)
+        if !_iscached(cmt, i, j)
+            cache!(cmt, i, j)
+        end
+        return cmt.table[i, j]
+    end
 end
 
 Base.@propagate_inbounds function cache!(cmt::CachedMTable, i::Integer, j::Integer)
-    @boundscheck checkbounds(Bool, cmt, i, j) ||
-                 throw(ProductNotDefined(i, j, "out of Mtable bounds"))
-    if !_iscached(cmt, i, j)
-        b = basis(cmt)
-        g, h = b[i], b[j]
-        gh = _product(cmt, g, h)
-        gh in b || throw(ProductNotDefined(i, j, "$g · $h = $gh"))
-        cmt.table[i, j] = b[gh]
+    b = basis(cmt)
+    g, h = b[i], b[j]
+    gh = g * h
+    gh in b || throw(ProductNotDefined(i, j, "$g · $h = $gh"))
+    lock(cmt.lock) do
+        cmt.table.table[i, j] = b[gh]
     end
     return cmt
 end
