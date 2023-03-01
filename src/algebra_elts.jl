@@ -53,6 +53,8 @@ function star(X::AlgebraElement)
     return AlgebraElement(sparsevec(idcs, vals, length(b)), A)
 end
 
+Base.adjoint(a::AlgebraElement) = star(a)
+
 LinearAlgebra.norm(a::AlgebraElement, p::Real) =
     LinearAlgebra.norm(coeffs(a), p)
 aug(a::AlgebraElement) = sum(coeffs(a))
