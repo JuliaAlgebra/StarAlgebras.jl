@@ -26,24 +26,19 @@ struct StarAlgebra{O,T,M<:MultiplicativeStructure,B<:AbstractBasis{T}} <:
 end
 
 # TrivialMStructure:
-StarAlgebra(obj, basis::AbstractBasis) = StarAlgebra{false}(obj, basis)
-
-function StarAlgebra{Tw}(obj, basis::AbstractBasis) where {Tw}
-    mstr = TrivialMStructure{Tw}(basis)
+function StarAlgebra(obj, basis::AbstractBasis)
+    mstr = TrivialMStructure(basis)
     return StarAlgebra(obj, basis, mstr)
 end
 
 # CachedMStructure:
-StarAlgebra(obj, basis::AbstractBasis, cache_size::Tuple{<:Integer,Integer}; precompute=false) =
-    StarAlgebra{false}(obj, basis, cache_size, precompute=precompute)
-
-function StarAlgebra{Tw}(
+function StarAlgebra(
     obj,
     basis::AbstractBasis,
     cache_size::Tuple{<:Integer,Integer};
     precompute=false
-) where {Tw}
-    mstr = CachedMTable{Tw}(basis, table_size=cache_size)
+)
+    mstr = CachedMTable(basis, table_size=cache_size)
     precompute && complete!(mstr)
     return StarAlgebra(obj, basis, mstr)
 end
@@ -53,7 +48,6 @@ hasbasis(A::StarAlgebra) = isdefined(A, :basis)
 basis(A::StarAlgebra) = A.basis
 object(A::StarAlgebra) = A.object
 # Base.eltype(A::StarAlgebra{O,B}) where {O,B} = eltype(B)
-
 
 struct AlgebraElement{A,T,V<:AbstractVector{T}}
     coeffs::V
