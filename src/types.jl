@@ -66,21 +66,26 @@ Base.parent(a::AlgebraElement) = a.parent
 Base.eltype(a::AlgebraElement) = eltype(coeffs(a))
 
 ### constructing elements
-
-function Base.zero(A::AbstractStarAlgebra, T=Int)
+Base.zero(A::AbstractStarAlgebra) = zero(Int, A)
+function Base.zero(T::Type, A::AbstractStarAlgebra)
     if hasbasis(A)
         I = SparseArrays.indtype(basis(A))
         return AlgebraElement(sparsevec(I[], T[], length(basis(A))), A)
     end
     throw(
-        "Algebra without basis; to construct zero use the `AlgebraElement` constructor directly.",
+        "Algebra without basis; use the `AlgebraElement` constructor directly.",
     )
 end
 
-function Base.one(A::AbstractStarAlgebra, T=Int)
-    hasbasis(A) && return A(one(object(A)), T)
+Base.one(A::AbstractStarAlgebra) = one(Int, A)
+function Base.one(T::Type, A::AbstractStarAlgebra)
+    if hasbasis(A)
+        b = basis(A)
+        i = b[one(object(A))]
+        return AlgebraElement(sparsevec([i], [one(T)], length(b)), A)
+    end
     throw(
-        "Algebra without basis; to construct one use the `AlgebraElement` constructor directly.",
+        "Algebra without basis; use the `AlgebraElement` constructor directly.",
     )
 end
 
@@ -95,27 +100,28 @@ function Base.isone(a::AlgebraElement)
     isone(a[k]) || return false
     return isone(b[k])
 end
-@eval begin
-    function (A::AbstractStarAlgebra{O,T})(elt::T, S=Int) where {O,T}
-        if hasbasis(A)
-            b = basis(A)
-            i = b[elt]
-            return AlgebraElement(sparsevec([i], [one(S)], length(b)), A)
-        else
-            throw("Algebra without basis: cannot coerce $elt.")
-        end
-    end
 
-    function (A::AbstractStarAlgebra)(x::Number)
-        g = one(object(A))
-        res = A(g, typeof(x))
-        res[g] *= x
-        return res
+function (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T}
+    if hasbasis(A)
+        b = basis(A)
+        i = b[elt]
+        return AlgebraElement(sparsevec([i], [1], length(b)), A)
+    else
+        throw("Algebra without basis: cannot coerce $elt.")
     end
 end
 
-Base.similar(X::AlgebraElement, ::Type{T}=eltype(X)) where {T} =
-    AlgebraElement(similar(coeffs(X), T), parent(X))
+function (A::AbstractStarAlgebra)(x::Number)
+    if hasbasis(A)
+        b = basis(A)
+        i = b[one(object(A))]
+        return AlgebraElement(sparsevec([i], [x], length(b)), A)
+    else
+        throw("Algebra without basis: cannot coerce $elt.")
+    end
+end
+
+Base.similar(X::AlgebraElement, T=eltype(X)) = AlgebraElement(similar(coeffs(X), T), parent(X))
 
 function AlgebraElement{T}(X::AlgebraElement) where {T}
     v = coeffs(X)
