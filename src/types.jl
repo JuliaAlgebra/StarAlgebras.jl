@@ -98,7 +98,8 @@ function Base.isone(a::AlgebraElement)
     k = findfirst(!iszero, coeffs(a))
     k === nothing && return false
     isone(a[k]) || return false
-    return isone(b[k])
+    isone(b[k]) || return false
+    return isnothing(findnext(!iszero, coeffs(a), k + 1))
 end
 
 function (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T}
