@@ -26,7 +26,6 @@ function Base.show(io::IO, a::AlgebraElement)
             print(io, zero(T))
         end
     elseif hasbasis(A)
-        elts = String[]
         nzeros = findall(!iszero, coeffs(a))
         for (counter, idx) in enumerate(nzeros)
             c, elt = coeffs(a)[idx], basis(A)[idx]
@@ -48,9 +47,7 @@ function Base.show(io::IO, a::AlgebraElement)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", mstr::TrivialMStructure)
-    Tw = _istwisted(mstr)
     l = length(basis(mstr))
-    Tw && print(io, "twisted ")
     print(io, "TrivialMStructure over basis with $l elements")
     return
 end

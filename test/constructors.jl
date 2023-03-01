@@ -33,6 +33,7 @@
     @test sprint(show, zero(RG)) == "0·(id)"
     @test sprint(show, one(RG)) == "1·(id)"
     @test isone(one(a))
+    @test !isone(x)
     @test iszero(zero(a))
     @test sprint(show, a) == "1·b·c"
     @test sprint(show, -a) == "-1·b·c"
@@ -85,4 +86,16 @@
     @test deepcopy(a) !== a
     @test coeffs(deepcopy(a)) !== coeffs(a)
     @test parent(deepcopy(a)) === parent(a)
+
+    @testset "without basis" begin
+        O = one(first(b))
+        RG2 = StarAlgebra(O, RG.mstructure)
+        @test_throws String zero(RG2)
+        @test_throws String one(RG2)
+        @test_throws String RG2(one(O))
+        @test_throws String RG2(-5)
+
+        @test sprint(show, AlgebraElement(rand(-2:2, 6), RG2)) isa String
+        @test sprint(show, AlgebraElement(zeros(Int, 6), RG2)) isa String
+    end
 end

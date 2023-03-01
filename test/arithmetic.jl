@@ -300,13 +300,9 @@ end
 
     @test supp(D) == b[1:k]
 
-    @test_throws StarAlgebras.ProductNotDefined StarAlgebras._check(
-        RG.mstructure,
-    )
+    @test_throws StarAlgebras.ProductNotDefined all(!iszero, RG.mstructure.table)
 
     @test D * D isa AlgebraElement
-
-    @test StarAlgebras._check(RG.mstructure)
 
     @test all(!iszero, RG.mstructure.table)
 
