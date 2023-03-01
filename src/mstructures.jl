@@ -1,10 +1,4 @@
-abstract type MultiplicativeStructure{Twisted,I} <: AbstractMatrix{I} end
-
-_istwisted(::MultiplicativeStructure{T}) where {T} = T
-_product(ms::MultiplicativeStructure, g, h) = _product(Val(_istwisted(ms)), g, h)
-
-_product(::Val{false}, g, h) = g * h
-_product(::Val{true}, g, h) = star(g) * h
+abstract type MultiplicativeStructure{I} <: AbstractMatrix{I} end
 
 struct ProductNotDefined <: Exception
     i::Any
@@ -21,12 +15,12 @@ function Base.showerror(io::IO, ex::ProductNotDefined)
     print(io, ".")
 end
 
-struct TrivialMStructure{Tw,I,B<:AbstractBasis} <: MultiplicativeStructure{Tw,I}
+struct TrivialMStructure{I,B<:AbstractBasis} <: MultiplicativeStructure{I}
     basis::B
 end
 
-TrivialMStructure{Tw}(basis::AbstractBasis{T,I}) where {Tw,T,I} =
-    TrivialMStructure{Tw,I,typeof(basis)}(basis)
+TrivialMStructure(basis::AbstractBasis{T,I}) where {T,I} =
+    TrivialMStructure{I,typeof(basis)}(basis)
 
 basis(mstr::TrivialMStructure) = mstr.basis
 Base.size(mstr::TrivialMStructure) = (l = length(basis(mstr)); (l, l))
@@ -36,10 +30,10 @@ Base.@propagate_inbounds function Base.getindex(
     i::Integer,
     j::Integer,
 )
-    @boundscheck checkbounds(mstr, i, j)
     b = basis(mstr)
-    g, h = b[i], b[j]
-    gh = _product(mstr, g, h)
+    g = i ≥ 0 ? b[i] : star(b[-i])
+    h = j ≥ 0 ? b[j] : star(b[-j])
+    gh = g * h
     gh in b || throw(ProductNotDefined(i, j, "$g · $h = $gh"))
-    return b[gh]
+    return basis(mstr)[gh]
 end
