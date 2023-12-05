@@ -43,11 +43,8 @@ function StarAlgebra(
     return StarAlgebra(obj, basis, mstr)
 end
 
-hasbasis(A::StarAlgebra) = isdefined(A, :basis)
-
 basis(A::StarAlgebra) = A.basis
 object(A::StarAlgebra) = A.object
-# Base.eltype(A::StarAlgebra{O,B}) where {O,B} = eltype(B)
 
 struct AlgebraElement{A,T,V<:AbstractVector{T}}
     coeffs::V
