@@ -46,7 +46,7 @@ end
 basis(A::StarAlgebra) = A.basis
 object(A::StarAlgebra) = A.object
 
-struct AlgebraElement{A,T,V<:AbstractVector{T}}
+struct AlgebraElement{A,T,V}
     coeffs::V
     parent::A
 
