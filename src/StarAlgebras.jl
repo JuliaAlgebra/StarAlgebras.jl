@@ -11,6 +11,8 @@ include("bases.jl")
 include("mstructures.jl")
 include("mtables.jl")
 
+include("coefficients.jl")
+
 include("types.jl")
 include("algebra_elts.jl")
 include("arithmetic.jl")
