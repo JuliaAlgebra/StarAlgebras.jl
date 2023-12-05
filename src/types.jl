@@ -38,7 +38,7 @@ function StarAlgebra(
     cache_size::Tuple{<:Integer,Integer};
     precompute=false
 )
-    mstr = CachedMTable(basis, table_size=cache_size)
+    mstr = MTable(basis, size=cache_size)
     precompute && complete!(mstr)
     return StarAlgebra(obj, basis, mstr)
 end
