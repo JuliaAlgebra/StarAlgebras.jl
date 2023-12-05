@@ -1,12 +1,26 @@
-abstract type MultiplicativeStructure{I} <: AbstractMatrix{I} end
 
-struct ProductNotDefined <: Exception
+"""
+    MultiplicativeStructure{I}
+Structure representing multiplication w.r.t its basis.
+
+Implements
+* `basis(ms::MultiplicativeStructure{I}) → AbstractBasis{T,I}`
+* `Basis.getindex(ms::MultiplicativeStructure{I}, i::I, j::I) →
+        Union{AbstractCoefficients, AbstractVector}`
+   the product of `i` and `j` represented by coefficients in `basis(ms)`.
+
+When the product is not representable faithfully,
+   `ProductNotWellDefined` exception should be thrown.
+"""
+abstract type MultiplicativeStructure{I} end
+
+struct ProductNotWellDefined <: Exception
     i::Any
     j::Any
     msg::Any
 end
 
-function Base.showerror(io::IO, ex::ProductNotDefined)
+function Base.showerror(io::IO, ex::ProductNotWellDefined)
     print(io, "Product of elements $(ex.i) and $(ex.j) is not defined on the basis")
     print(io, " or the multiplicative structure could not be completed")
     if isdefined(ex, :msg)
@@ -15,26 +29,20 @@ function Base.showerror(io::IO, ex::ProductNotDefined)
     print(io, ".")
 end
 
-struct TrivialMStructure{I,B<:AbstractBasis} <: MultiplicativeStructure{I}
+struct LazyMStructure{I,B<:AbstractBasis} <: MultiplicativeStructure{I}
     basis::B
 end
 
-TrivialMStructure(basis::AbstractBasis{T,I}) where {T,I} =
-    TrivialMStructure{I,typeof(basis)}(basis)
+LazyMStructure(basis::AbstractBasis{T,I}) where {T,I} =
+    LazyMStructure{I,typeof(basis)}(basis)
 
-basis(mstr::TrivialMStructure) = mstr.basis
-Base.size(mstr::TrivialMStructure) = (l = length(basis(mstr)); (l, l))
-_get(mstr::TrivialMStructure, i) = i ≥ 0 ? i : (b = basis(mstr); b[star(b[-i])])
-
+basis(mstr::LazyMStructure) = mstr.basis
 Base.@propagate_inbounds function Base.getindex(
-    mstr::TrivialMStructure,
-    i::Integer,
-    j::Integer,
+    mstr::LazyMStructure{I},
+    g::I,
+    h::I,
 )
-    b = basis(mstr)
-    i, j = _get(mstr, i), _get(mstr, j)
-    g, h = b[i], b[j]
     gh = g * h
-    gh in b || throw(ProductNotDefined(i, j, "$g · $h = $gh"))
-    return basis(mstr)[gh]
+    gh in basis(mstr) || throw(ProductNotWellDefined(i, j, "$g · $h = $gh"))
+    return DiracDelta(gh)
 end

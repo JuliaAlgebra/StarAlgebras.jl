@@ -25,13 +25,13 @@ struct StarAlgebra{O,T,M<:MultiplicativeStructure,B<:AbstractBasis{T}} <:
     end
 end
 
-# TrivialMStructure:
+# LazylMStructure:
 function StarAlgebra(obj, basis::AbstractBasis)
-    mstr = TrivialMStructure(basis)
+    mstr = LazyMStructure(basis)
     return StarAlgebra(obj, basis, mstr)
 end
 
-# CachedMStructure:
+# MTable:
 function StarAlgebra(
     obj,
     basis::AbstractBasis,

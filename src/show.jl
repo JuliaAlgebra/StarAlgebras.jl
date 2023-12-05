@@ -46,7 +46,7 @@ function Base.show(io::IO, a::AlgebraElement)
     end
 end
 
-function Base.show(io::IO, ::MIME"text/plain", mstr::TrivialMStructure)
+function Base.show(io::IO, ::MIME"text/plain", mstr::LazyMStructure)
     l = length(basis(mstr))
     print(io, "TrivialMStructure over basis with $l elements")
     return
