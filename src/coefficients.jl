@@ -1,5 +1,6 @@
 """
-    implements `Base.keys`, `Base.values`
+    abstract type AbstractCoefficients{V,K} end
+Implements `Base.keys`, `Base.values`.
 """
 abstract type AbstractCoefficients{V,K} end
 
@@ -8,7 +9,7 @@ struct DiracDelta{V,K} <: AbstractCoefficients{V,K}
     element::K
 end
 DiracDelta(x) = DiracDelta(1, x)
-Base.getindex(δ::DiracDelta{V,K}, i::K) =
+Base.getindex(δ::DiracDelta{V,K}, i::K) where {V,K} =
     ifelse(i == δ.element, δ.value, zero(δ.value))
 
 Base.keys(δ::DiracDelta) = (δ.element,)
@@ -21,13 +22,6 @@ end
 
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
 Base.values(sc::SparseCoefficients) = sc.values
-
-function SparseCoefficients(
-    values::AbstractVector{V},
-    basis_elements::AbstractVector{K}
-) where {K,V}
-    return SparseCoefficients{V,K,typeof(values),typeof(basis)}(values, basis_elements)
-end
 
 function mul!(
     ms::MultiplicativeStructure,

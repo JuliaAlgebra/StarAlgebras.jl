@@ -38,7 +38,7 @@ end
 @testset "MTable" begin
     b = StarAlgebras.Basis{UInt16}(words([:a, :b, :c, :d], radius=4))
     k = findfirst(w -> length(w) == 3, b) - 1
-    mstr = StarAlgebras.MTable(b, table_size=(k, k))
+    mstr = StarAlgebras.MTable(b, size=(k, k))
 
     @test_throws String StarAlgebras.basis(mstr)
 

@@ -9,7 +9,7 @@
 
       b = StarAlgebras.Basis{UInt32}(E_R)
 
-      mstr = StarAlgebras.MTable(b, table_size=(sizes[RADIUS], sizes[RADIUS]))
+      mstr = StarAlgebras.MTable(b, size=(sizes[RADIUS], sizes[RADIUS]))
 
       RG = StarAlgebra(F, b, mstr)
 

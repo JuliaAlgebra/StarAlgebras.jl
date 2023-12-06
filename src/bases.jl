@@ -11,7 +11,7 @@ abstract type AbstractBasis{T,I} end
 
 Base.eltype(::Type{<:AbstractBasis{T}}) where {T} = T
 Base.keytype(::Type{<:AbstractBasis{T,I}}) where {T,I} = I
-Base.keytype(b::AbstractBasis) = SparseArrays.indtype(typeof(b))
+Base.keytype(b::AbstractBasis) = keytype(typeof(b))
 
 """
     ImplicitBasis{T,I}
@@ -40,15 +40,21 @@ function Basis{I}(basis::AbstractVector) where {I}
 end
 
 Base.size(b::Basis) = size(b.basis)
+Base.length(b::Basis) = length(b.basis)
+Base.keys(b::Basis) = keys(b.basis)
+Base.iterate(b::Basis) = iterate(b.basis)
+Base.iterate(b::Basis, state) = iterate(b.basis, state)
 Base.IndexStyle(::Type{<:Basis{T,I,A}}) where {T,I,A} = Base.IndexStyle(A)
-
-Base.@propagate_inbounds Base.getindex(b::Basis{T,I}, i::I) = b.basis[i]
-Base.@propagate_inbounds Base.getindex(b::Basis{T}, g::T) where {T} = b.rbasis[g]
 
 Base.in(g, b::Basis) = haskey(b.rbasis, g)
 
+Base.@propagate_inbounds Base.getindex(b::Basis{T,I}, i::I) where {T,I} = b.basis[i]
+Base.@propagate_inbounds Base.getindex(b::Basis{T}, g::T) where {T} = b.rbasis[g]
+
 # convenience only:
-Base.@propagate_inbounds function Base.getindex(b::Basis, i::Integer)
-    idx = convert(SparseArrays.indtype(b), i)
+Base.@propagate_inbounds function Base.getindex(b::Basis{T,I}, i::Integer) where {T,I<:Integer}
+    idx = convert(keytype(b), i)
     return b[idx]
 end
+# To break ambiguity
+Base.@propagate_inbounds Base.getindex(b::Basis{T,I}, i::I) where {T,I<:Integer} = b.basis[i]

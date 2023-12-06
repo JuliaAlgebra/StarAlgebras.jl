@@ -22,7 +22,7 @@ struct MTable{I,M<:AbstractMatrix{I},B<:AbstractBasis{I}} <: MultiplicativeStruc
     basis::B
 end
 
-function MTable(basis::AbstractBasis{V,K}; size::Tuple{Int,Int}) where {K<:Integer}
+function MTable(basis::AbstractBasis{V,K}; size::Tuple{Int,Int}) where {V,K<:Integer}
     return MTable(zeros(K, size), _star_of(basis, max(size...)), basis)
 end
 
@@ -30,7 +30,7 @@ basis(mt::MTable) = mt.basis
 Base.size(mt::MTable) = size(mt.table)
 
 Base.@propagate_inbounds __iscomputed(mt::MTable, i, j) = !iszero(mt.table[i, j])
-function Base.@propagate_inbounds Base.getindex(mt::MTable, i::Integer, j::Integer)
+Base.@propagate_inbounds function Base.getindex(mt::MTable, i::Integer, j::Integer)
     i = ifelse(i ≥ 0, i, oftype(i, mt.star_of[abs(i)]))
     j = ifelse(j ≥ 0, j, oftype(j, mt.star_of[abs(j)]))
     @boundscheck checkbounds(mt.table, i, j)
@@ -50,7 +50,7 @@ Base.@propagate_inbounds function __compute_product!(mt::MTable, i::Integer, j::
     return mt
 end
 
-function complete!(table::AbstractMatrix, basis::AbstractBasis{V,K}) where {K<:Integer}
+function complete!(table::AbstractMatrix, basis::AbstractBasis{V,K}) where {V,K<:Integer}
     Base.require_one_based_indexing(table)
     Threads.@threads for j in axes(table, 2)
         y = basis[j]
