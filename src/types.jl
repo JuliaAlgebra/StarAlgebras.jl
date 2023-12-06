@@ -19,7 +19,7 @@ struct StarAlgebra{O,T,M<:MultiplicativeStructure,B<:AbstractBasis{T}} <:
         O = typeof(obj)
         T = eltype(obj)
         M = typeof(mstr)
-        B = Basis{T,eltype(mstr)}
+        B = FixedBasis{T,eltype(mstr)}
 
         return new{O,T,M,B}(obj, mstr)
     end
