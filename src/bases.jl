@@ -19,6 +19,55 @@ Implicit bases are not stored in memory and can be potentially infinite.
 """
 abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
+mutable struct DiracBasis{T,I,S,St} <: ImplicitBasis{T,I}
+    basis::Vector{T}
+    dict::Dict{T,I}
+    object::S # any iterable
+    state::St
+    function DiracBasis{I}(itr) where {I}
+        elt, state = let k = iterate(itr)
+            @assert !isnothing(k)
+            k
+        end
+        T, S, St = typeof(elt), typeof(itr), typeof(state)
+        return new{T,I,S,St}([elt], Dict(elt => I(1)), itr, state)
+    end
+end
+
+Base.haslength(db::DiracBasis) = Base.haslength(db.basis)
+function Base.length(db::DiracBasis)
+    @assert Base.haslength(db)
+    return length(db.object)
+end
+
+StarAlgebras.object(db::DiracBasis) = db.object
+
+function Base.in(g, db::DiracBasis)
+    haskey(db.dict, g) && return true
+    g in db.object && return true
+    return false
+end
+
+function Base.getindex(db::DiracBasis{T}, g::T) where {T}
+    g in db || throw(KeyError(g))
+    if !haskey(db.dict, g)
+        k = iterate(db.object, db.state)
+        while !isnothing(k)
+            h, st = k
+            if !haskey(db.dict, h)
+                push!(db.basis, h)
+                db.dict[h] = length(db.basis)
+            end
+            if h == g
+                db.state = st
+                break
+            end
+            k = iterate(db.object, db.state)
+        end
+    end
+    return db.dict[g]
+end
+
 """
     ExplicitBasis
 Explicit bases are stored in an `AbstractVector` and hence immutable
