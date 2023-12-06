@@ -11,6 +11,15 @@ Base.valtype(b::AbstractCoefficients) = valtype(typeof(b))
 
 Base.iszero(sc::AbstractCoefficients) = isempty(keys(sc))
 
+function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
+    for x in (ac1, ac2)
+        if !__iscanonical(x)
+            __canonicalize!(x)
+        end
+    end
+    return keys(ac1) == keys(ac2) && values(ac1) == values(ac2)
+end
+
 struct DiracDelta{K,V} <: AbstractCoefficients{K,V}
     element::K
     value::V
@@ -18,6 +27,8 @@ end
 DiracDelta(x) = DiracDelta(x, 1)
 Base.getindex(δ::DiracDelta{K,V}, i::K) where {K,V} =
     ifelse(i == δ.element, δ.value, zero(δ.value))
+
+__iscanonical(::DiracDelta) = true
 
 Base.keys(δ::DiracDelta) = (δ.element,)
 Base.values(δ::DiracDelta) = (δ.value,)
