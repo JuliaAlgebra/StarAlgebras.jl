@@ -8,10 +8,11 @@ export aug, basis, coeffs, star, supp
 
 include("bases.jl")
 
+include("coefficients.jl")
 include("mstructures.jl")
 include("mtables.jl")
 
-include("coefficients.jl")
+
 
 include("types.jl")
 include("algebra_elts.jl")

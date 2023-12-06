@@ -1,3 +1,17 @@
+struct ProductNotWellDefined <: Exception
+    i::Any
+    j::Any
+    msg::Any
+end
+
+function Base.showerror(io::IO, ex::ProductNotWellDefined)
+    print(io, "Product of elements $(ex.i) and $(ex.j) is not defined on the basis")
+    print(io, " or the multiplicative structure could not be completed")
+    if isdefined(ex, :msg)
+        print(io, ": $(ex.msg)")
+    end
+    print(io, ".")
+end
 
 """
     MultiplicativeStructure{I}
@@ -14,19 +28,20 @@ When the product is not representable faithfully,
 """
 abstract type MultiplicativeStructure{I} end
 
-struct ProductNotWellDefined <: Exception
-    i::Any
-    j::Any
-    msg::Any
-end
-
-function Base.showerror(io::IO, ex::ProductNotWellDefined)
-    print(io, "Product of elements $(ex.i) and $(ex.j) is not defined on the basis")
-    print(io, " or the multiplicative structure could not be completed")
-    if isdefined(ex, :msg)
-        print(io, ": $(ex.msg)")
+function mul!(
+    ms::MultiplicativeStructure,
+    res::SparseCoefficients,
+    v::AbstractCoefficients,
+    w::AbstractCoefficients,
+)
+    for (kv, a) in pairs(v)
+        for (kw, b) in pairs(w)
+            c = ms[kv, kw] # c is an AbstractCoefficients
+            unsafe_append!(res, c => a * b)
+        end
     end
-    print(io, ".")
+    __canonicalize!(res)
+    return res
 end
 
 struct LazyMStructure{I,B<:AbstractBasis} <: MultiplicativeStructure{I}

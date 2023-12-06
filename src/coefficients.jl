@@ -23,21 +23,6 @@ end
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
 Base.values(sc::SparseCoefficients) = sc.values
 
-function mul!(
-    ms::MultiplicativeStructure,
-    res::SparseCoefficients,
-    v::AbstractCoefficients,
-    w::AbstractCoefficients,
-)
-    for (a, kv) in pairs(v)
-        for (b, kw) in pairs(w)
-            c = ms[kv, kw]
-            unsafe_append!(res, c => a * b)
-        end
-    end
-    __canonicalize!(res)
-    return res
-end
 
 function unsafe_append!(mc::SparseCoefficients, p::Pair{<:SparseCoefficients,T}) where {T}
     c, val = p
