@@ -61,3 +61,7 @@ Base.@propagate_inbounds function Base.getindex(
     gh in basis(mstr) || throw(ProductNotWellDefined(i, j, "$g · $h = $gh"))
     return DiracDelta(gh)
 end
+
+Base.@propagate_inbounds function Base.getindex(::LazyMStructure{I,<:DiracBasis{T}}, x::T, y::T) where {I,T}
+    return StarAlgebras.DiracDelta(x * y)
+end
