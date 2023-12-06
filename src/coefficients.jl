@@ -4,6 +4,13 @@ Implements `Base.keys`, `Base.values`.
 """
 abstract type AbstractCoefficients{K,V} end
 
+Base.keytype(::Type{<:AbstractCoefficients{K}}) where {K} = K
+Base.valtype(::Type{<:AbstractCoefficients{K,V}}) where {K,V} = V
+Base.keytype(b::AbstractCoefficients) = keytype(typeof(b))
+Base.valtype(b::AbstractCoefficients) = valtype(typeof(b))
+
+Base.iszero(sc::AbstractCoefficients) = isempty(keys(sc))
+
 struct DiracDelta{K,V} <: AbstractCoefficients{K,V}
     element::K
     value::V
@@ -38,6 +45,7 @@ Base.keys(sc::SparseCoefficients) = sc.basis_elements
 Base.values(sc::SparseCoefficients) = sc.values
 
 Base.zero(sc::SparseCoefficients) = SparseCoefficients(empty(keys(sc)), empty(values(sc)))
+
 
 function unsafe_append!(mc::SparseCoefficients, p::Pair{<:AbstractCoefficients,T}) where {T}
     c, val = p
