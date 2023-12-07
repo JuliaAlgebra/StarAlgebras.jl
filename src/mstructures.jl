@@ -14,19 +14,19 @@ function Base.showerror(io::IO, ex::ProductNotWellDefined)
 end
 
 """
-    MultiplicativeStructure{I}
+    MultiplicativeStructure{T}
 Structure representing multiplication w.r.t its basis.
 
 Implements
-* `basis(ms::MultiplicativeStructure{I}) → AbstractBasis{T,I}`
-* `Basis.getindex(ms::MultiplicativeStructure{I}, i::I, j::I) →
+* `basis(ms::MultiplicativeStructure{T}) → AbstractBasis{T}`
+* `Basis.getindex(ms::MultiplicativeStructure{T}, i::T, j::T) →
         Union{AbstractCoefficients, AbstractVector}`
    the product of `i` and `j` represented by coefficients in `basis(ms)`.
 
 When the product is not representable faithfully,
    `ProductNotWellDefined` exception should be thrown.
 """
-abstract type MultiplicativeStructure{I} end
+abstract type MultiplicativeStructure{T} end
 
 function mul!(
     ms::MultiplicativeStructure,
@@ -44,24 +44,17 @@ function mul!(
     return res
 end
 
-struct LazyMStructure{I,B<:AbstractBasis} <: MultiplicativeStructure{I}
+struct LazyMStructure{T,B<:AbstractBasis{T}} <: MultiplicativeStructure{T}
     basis::B
 end
 
-LazyMStructure(basis::AbstractBasis{T,I}) where {T,I} =
-    LazyMStructure{I,typeof(basis)}(basis)
+LazyMStructure(basis::AbstractBasis{T}) where {T} =
+    LazyMStructure{T,typeof(basis)}(basis)
 
 basis(mstr::LazyMStructure) = mstr.basis
-Base.@propagate_inbounds function Base.getindex(
-    mstr::LazyMStructure{I},
-    g::I,
-    h::I,
-) where {I}
-    gh = g * h
-    gh in basis(mstr) || throw(ProductNotWellDefined(i, j, "$g · $h = $gh"))
-    return DiracDelta(gh)
-end
 
-Base.@propagate_inbounds function Base.getindex(::LazyMStructure{I,<:DiracBasis{T}}, x::T, y::T) where {I,T}
-    return StarAlgebras.DiracDelta(x * y)
+function Base.getindex(::LazyMStructure{<:DiracBasis{T}}, x::T, y::T) where {T}
+    gh = g * h
+    gh in basis(mstr) || throw(ProductNotWellDefined(g, h, "$g · $h = $gh"))
+    return DiracDelta(gh)
 end

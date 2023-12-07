@@ -1,9 +1,18 @@
-function _star_of(basis::AbstractBasis, len::Integer)
-    return [basis[star(basis[i])] for i in 1:len]
+function _star_of(basis::AbstractBasis, condition)
+    star_keys = Vector{keytype(basis)}()
+    k = iterate(basis)
+    while !isnothing(k)
+        elt, st = k
+        condition(elts, elt) || break
+        push!(star_keys, basis[star(elt)])
+        k = iterate(basis, st)
+    end
+    return star_keys
+    # return [basis[star(elt)] for i in 1:len]
 end
 
 """
-    MTable{I}
+    MTable{T, I} <: MultiplicativeStructure{T}
 Multiplicative table, stored explicitly as an AbstractMatrix{I}.
 
 Requires integer keys in `basis(mt)`.
@@ -16,14 +25,20 @@ Requires integer keys in `basis(mt)`.
     mt[-i, j] == b[star(b[i])*b[j]]
     ```
 """
-struct MTable{I,M<:AbstractMatrix{I},B<:AbstractBasis{I}} <: MultiplicativeStructure{I}
-    table::M
-    star_of::Vector{I}
+struct MTable{
+    T,
+    I,
+    B<:AbstractBasis{T,I},
+    M<:AbstractMatrix{I},
+    V<:AbstractVector{I},
+} <: MultiplicativeStructure{I}
     basis::B
+    table::M
+    star_of::V
 end
 
-function MTable(basis::AbstractBasis{V,K}; size::Tuple{Int,Int}) where {V,K<:Integer}
-    return MTable(zeros(K, size), _star_of(basis, max(size...)), basis)
+function MTable(basis::DiracBasis{T,I}; size::Tuple{Int,Int}) where {V,K<:Integer}
+    return MTable(zeros(K, size), _star_of(basis, (x -> x[1] < max(size...))), basis)
 end
 
 basis(mt::MTable) = mt.basis
