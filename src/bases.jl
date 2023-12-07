@@ -24,45 +24,51 @@ mutable struct DiracBasis{T,I,S,St} <: ImplicitBasis{T,I}
     dict::Dict{T,I}
     object::S # any iterable
     state::St
+    lock::Threads.SpinLock
+
     function DiracBasis{I}(itr) where {I}
         elt, state = let k = iterate(itr)
             @assert !isnothing(k)
             k
         end
         T, S, St = typeof(elt), typeof(itr), typeof(state)
-        return new{T,I,S,St}([elt], Dict(elt => I(1)), itr, state)
+        return new{T,I,S,St}([elt], Dict(elt => I(1)), itr, state, Threads.SpinLock())
     end
 end
 
-Base.haslength(db::DiracBasis) = Base.haslength(db.basis)
 function Base.length(db::DiracBasis)
     @assert Base.haslength(db)
     return length(db.object)
 end
 
-StarAlgebras.object(db::DiracBasis) = db.object
+object(db::DiracBasis) = db.object
+Base.eltype(db::DiracBasis) = eltype(object(db))
+Base.IteratorSize(::Type{<:DiracBasis{T,I,S}}) where {T,I,S} = Base.IteratorSize(S)
 
-function Base.in(g, db::DiracBasis)
-    haskey(db.dict, g) && return true
-    g in db.object && return true
-    return false
-end
+Base.iterate(db::DiracBasis) = iterate(object(db))
+Base.iterate(db::DiracBasis, st) = iterate(object(db), st)
+
+Base.in(g, db::DiracBasis) = g in object(db)
 
 function Base.getindex(db::DiracBasis{T}, g::T) where {T}
     g in db || throw(KeyError(g))
     if !haskey(db.dict, g)
-        k = iterate(db.object, db.state)
-        while !isnothing(k)
-            h, st = k
-            if !haskey(db.dict, h)
-                push!(db.basis, h)
-                db.dict[h] = length(db.basis)
+        lock(db.lock) do
+            if !haskey(db.dict, g) # it could be computed while we waited
+                k = iterate(db.object, db.state)
+                while !isnothing(k)
+                    h, st = k
+                    if !haskey(db.dict, h)
+                        push!(db.basis, h)
+                        db.dict[h] = length(db.basis)
+                    end
+                    if h == g
+                        db.state = st
+                        break
+                    end
+                    k = iterate(db.object, db.state)
+                end
             end
-            if h == g
-                db.state = st
-                break
-            end
-            k = iterate(db.object, db.state)
         end
     end
     return db.dict[g]
