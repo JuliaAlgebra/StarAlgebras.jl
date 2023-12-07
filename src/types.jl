@@ -50,17 +50,17 @@ struct AlgebraElement{A,T,V}
     coeffs::V
     parent::A
 
-    function AlgebraElement(coeffs::AbstractVector, A::AbstractStarAlgebra)
-        if hasbasis(A)
-            @assert length(coeffs) == length(basis(A))
-        end
-        return new{typeof(A),eltype(coeffs),typeof(coeffs)}(coeffs, A)
+    function AlgebraElement(coeffs, A::AbstractStarAlgebra)
+        #if hasbasis(A)
+        #    @assert length(coeffs) == length(basis(A))
+        #end
+        return new{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
     end
 end
 
 coeffs(a::AlgebraElement) = a.coeffs
 Base.parent(a::AlgebraElement) = a.parent
-Base.eltype(a::AlgebraElement) = eltype(coeffs(a))
+Base.eltype(a::AlgebraElement) = valtype(coeffs(a))
 
 ### constructing elements
 Base.zero(A::AbstractStarAlgebra) = zero(Int, A)

@@ -37,8 +37,8 @@ struct MTable{
     star_of::V
 end
 
-function MTable(basis::DiracBasis{T,I}; size::Tuple{Int,Int}) where {V,K<:Integer}
-    return MTable(zeros(K, size), _star_of(basis, (x -> x[1] < max(size...))), basis)
+function MTable(basis::DiracBasis{T,I}; size::Tuple{Int,Int}) where {T,I<:Integer}
+    return MTable(zeros(I, size), _star_of(basis, (x -> x[1] < max(size...))), basis)
 end
 
 basis(mt::MTable) = mt.basis

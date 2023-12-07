@@ -25,12 +25,15 @@ function Base.show(io::IO, a::AlgebraElement)
         else
             print(io, zero(T))
         end
-    elseif hasbasis(A)
-        nzeros = findall(!iszero, coeffs(a))
-        for (counter, idx) in enumerate(nzeros)
-            c, elt = coeffs(a)[idx], basis(A)[idx]
-            if counter == 1
+    else #if hasbasis(A)
+        #nzeros = findall(!iszero, coeffs(a))
+        first = true
+        for (idx, value) in zip(keys(coeffs(a)), values(coeffs(a)))
+        #for (counter, idx) in enumerate(nzeros)
+            c, elt = value, basis(A)[idx]
+            if first
                 _coeff_elt_print(io, c, elt)
+                first = false
             else
                 if __prints_with_minus(c)
                     print(io, ' ')
@@ -40,9 +43,9 @@ function Base.show(io::IO, a::AlgebraElement)
                 _coeff_elt_print(io, c, elt)
             end
         end
-    else
-        println(io, "algebra element without defined basis")
-        show(io, MIME("text/plain"), a.coeffs)
+#    else
+#        println(io, "algebra element without defined basis")
+#        show(io, MIME("text/plain"), a.coeffs)
     end
 end
 

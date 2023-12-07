@@ -48,9 +48,6 @@ struct LazyMStructure{T,B<:AbstractBasis{T}} <: MultiplicativeStructure{T}
     basis::B
 end
 
-LazyMStructure(basis::AbstractBasis{T}) where {T} =
-    LazyMStructure{T,typeof(basis)}(basis)
-
 basis(mstr::LazyMStructure) = mstr.basis
 
 function Base.getindex(::LazyMStructure{<:DiracBasis{T}}, x::T, y::T) where {T}

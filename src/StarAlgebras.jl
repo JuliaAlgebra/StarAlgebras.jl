@@ -3,6 +3,8 @@ module StarAlgebras
 using SparseArrays
 import LinearAlgebra
 
+import MutableArithmetics as MA
+
 export StarAlgebra, AlgebraElement
 export aug, basis, coeffs, star, supp
 

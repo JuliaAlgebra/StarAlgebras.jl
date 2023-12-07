@@ -32,7 +32,7 @@ Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 # mutable API; TODO: replace with MutableArithmetic
 
 function zero!(a::AlgebraElement)
-    a.coeffs .= zero(eltype(coeffs(a)))
+    MA.operate!(zero, a.coeffs)
     return a
 end
 

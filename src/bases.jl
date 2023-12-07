@@ -10,6 +10,7 @@ Implements a bijection between basis elements and integers.
 abstract type AbstractBasis{T,I} end
 
 Base.eltype(::Type{<:AbstractBasis{T}}) where {T} = T
+Base.eltype(b::AbstractBasis) = eltype(typeof(b))
 Base.keytype(::Type{<:AbstractBasis{T,I}}) where {T,I} = I
 Base.keytype(b::AbstractBasis) = keytype(typeof(b))
 

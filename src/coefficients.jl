@@ -52,11 +52,20 @@ struct SparseCoefficients{
     values::Vv
 end
 
+function MA.operate!(::typeof(zero), s::SparseCoefficients)
+    empty!(s.basis_elements)
+    empty!(s.values)
+    return s
+end
+
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
 Base.values(sc::SparseCoefficients) = sc.values
 
 Base.zero(sc::SparseCoefficients) = SparseCoefficients(empty(keys(sc)), empty(values(sc)))
 
+function Base.similar(s::SparseCoefficients, ::Type{T}) where {T}
+    return SparseCoefficients(similar(s.basis_elements), similar(s.values, T))
+end
 
 function unsafe_append!(mc::SparseCoefficients, p::Pair{<:AbstractCoefficients,T}) where {T}
     c, val = p
@@ -67,7 +76,23 @@ function unsafe_append!(mc::SparseCoefficients, p::Pair{<:AbstractCoefficients,T
     return mc
 end
 
+function fmac!(
+    res::AlgebraElement{A,T,<:SparseCoefficients},
+    X::AlgebraElement{A,T,<:SparseCoefficients},
+    Y::AlgebraElement{A,T,<:SparseCoefficients},
+) where {A,T}
+    x = coeffs(X)
+    y = coeffs(Y)
+    for (kx, vx) in zip(x.basis_elements, x.values)
+        for (ky, vy) in zip(y.basis_elements, y.values)
+            MA.operate!(MA.add_mul, res, vx * vy, basis(parent(X))[kx], basis(parent(Y))[ky])
+        end
+    end
+    return res
+end
+
+
 function __canonicalize!(res::SparseCoefficients)
-    @error "in __canonicalize!: Not implemented yet"
+@error "in __canonicalize!: Not implemented yet"
     return res
 end
