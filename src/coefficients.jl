@@ -77,7 +77,28 @@ function unsafe_append!(mc::SparseCoefficients, p::Pair{<:AbstractCoefficients,T
     return mc
 end
 
+function __iscanonical(res::SparseCoefficients)
+    issorted(keys(res)) || return false
+    allunique(keys(res)) || return false
+    return true
+end
+
 function __canonicalize!(res::SparseCoefficients)
-@error "in __canonicalize!: Not implemented yet"
+    if !issorted(keys(res))
+        p = sortperm(res.basis_elements)
+        permute!(res.basis_elements, p)
+        permute!(res.values, p)
+    end
+    todelete = BitSet()
+    for i in lastindex(res.basis_elements):firstindex(res.basis_elements)+1
+        if res.basis_elements[i] == res.basis_elements[i-1]
+            res.values[i-1] += res.values[i]
+            push!(todelete, i)
+        elseif iszero(res.values[i])
+            push!(todelete, i)
+        end
+    end
+    deleteat!(res.basis_elements, todelete)
+    deleteat!(res.values, todelete)
     return res
 end
