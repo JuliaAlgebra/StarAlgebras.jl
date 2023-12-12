@@ -50,8 +50,8 @@ end
 
 basis(mstr::LazyMStructure) = mstr.basis
 
-function Base.getindex(::LazyMStructure{<:DiracBasis{T}}, x::T, y::T) where {T}
-    gh = g * h
-    gh in basis(mstr) || throw(ProductNotWellDefined(g, h, "$g · $h = $gh"))
-    return DiracDelta(gh)
+function Base.getindex(mstr::LazyMStructure{T,<:DiracBasis{T}}, x::T, y::T) where {T}
+    xy = x * y
+    xy in basis(mstr) || throw(ProductNotWellDefined(x, x, "$x · $y = $xy"))
+    return DiracDelta(xy)
 end
