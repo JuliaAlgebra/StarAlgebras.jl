@@ -33,9 +33,17 @@ __iscanonical(::DiracDelta) = true
 Base.keys(δ::DiracDelta) = (δ.element,)
 Base.values(δ::DiracDelta) = (δ.value,)
 
-function Base.show(io::IO, δ::DiracDelta)
+function Base.show(io::IO, ::MIME"text/plain", δ::DiracDelta)
     ioc = IOContext(io, :limit => true)
     print(ioc, "DiracDelta at ")
+    if isone(δ.value)
+        print(ioc, δ.element)
+    else
+        print(ioc, δ.value, '*', δ.element)
+    end
+end
+function Base.show(io::IO, δ::DiracDelta)
+    ioc = IOContext(io, :limit => true)
     if isone(δ.value)
         print(ioc, δ.element)
     else

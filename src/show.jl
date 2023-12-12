@@ -9,7 +9,7 @@ __needs_parens(::Any) = false
 __needs_parens(a::AlgebraElement) = true
 
 function _coeff_elt_print(io, c, elt)
-    print(io, c, "·")
+    print(io, c, '·')
     __needs_parens(elt) && print(io, '(')
     print(io, elt)
     __needs_parens(elt) && print(io, ')')
@@ -19,17 +19,12 @@ end
 function Base.show(io::IO, a::AlgebraElement)
     A = parent(a)
     if iszero(a)
-        T = eltype(a)
-        if hasbasis(A)
-            _coeff_elt_print(io, zero(T), first(basis(A)))
-        else
-            print(io, zero(T))
-        end
-    else #if hasbasis(A)
-        #nzeros = findall(!iszero, coeffs(a))
+        T = valtype(a)
+        _coeff_elt_print(io, zero(T), first(basis(A)))
+    else
         first = true
-        for (idx, value) in zip(keys(coeffs(a)), values(coeffs(a)))
-        #for (counter, idx) in enumerate(nzeros)
+        for (idx, value) in pairs(coeffs(a))
+            iszero(value) && continue
             c, elt = value, basis(A)[idx]
             if first
                 _coeff_elt_print(io, c, elt)
@@ -43,15 +38,14 @@ function Base.show(io::IO, a::AlgebraElement)
                 _coeff_elt_print(io, c, elt)
             end
         end
-#    else
-#        println(io, "algebra element without defined basis")
-#        show(io, MIME("text/plain"), a.coeffs)
     end
 end
 
 function Base.show(io::IO, ::MIME"text/plain", mstr::LazyMStructure)
-    print(io, "LazyMStructure of", object(basis(mstr)))
-    if Base.haslength(basis(mstr))
-        print(io, " and basis with $(length(basis(mstr))) elements")
-    end
+    print(io, "LazyMStructure of ", object(basis(mstr)), " over ")
+    print(io, basis(mstr) isa ImplicitBasis ? "implicit" : "explicit")
+    print(io, " basis with ")
+
+    print(io, Base.haslength(basis(mstr)) ? length(basis(mstr)) : "indefinite number of")
+    print(io, " elements")
 end
