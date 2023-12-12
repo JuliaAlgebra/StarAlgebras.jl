@@ -36,6 +36,8 @@ function zero!(a::AlgebraElement)
     return a
 end
 
+MA.operate!(::typeof(zero), v::SparseVector) = (v .*= 0; v)
+
 function neg!(res::AlgebraElement, X::AlgebraElement)
     @assert parent(res) === parent(X)
     res.coeffs .= .-coeffs(X)
