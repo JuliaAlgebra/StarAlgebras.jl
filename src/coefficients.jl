@@ -42,6 +42,7 @@ function Base.show(io::IO, δ::DiracDelta)
         print(ioc, δ.value, '*', δ.element)
     end
 end
+
 struct SparseCoefficients{
     K,
     V,
@@ -75,22 +76,6 @@ function unsafe_append!(mc::SparseCoefficients, p::Pair{<:AbstractCoefficients,T
     end
     return mc
 end
-
-function fmac!(
-    res::AlgebraElement{A,T,<:SparseCoefficients},
-    X::AlgebraElement{A,T,<:SparseCoefficients},
-    Y::AlgebraElement{A,T,<:SparseCoefficients},
-) where {A,T}
-    x = coeffs(X)
-    y = coeffs(Y)
-    for (kx, vx) in zip(x.basis_elements, x.values)
-        for (ky, vy) in zip(y.basis_elements, y.values)
-            MA.operate!(MA.add_mul, res, vx * vy, basis(parent(X))[kx], basis(parent(Y))[ky])
-        end
-    end
-    return res
-end
-
 
 function __canonicalize!(res::SparseCoefficients)
 @error "in __canonicalize!: Not implemented yet"
