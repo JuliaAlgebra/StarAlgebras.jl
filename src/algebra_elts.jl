@@ -41,16 +41,8 @@ function star(A::StarAlgebra, i::Integer)
 end
 
 function star(X::AlgebraElement)
-    A = parent(X)
-    b = basis(A)
-    supp_X = supp_ind(X)
-    idcs = similar(supp_X)
-    vals = similar(idcs, eltype(X))
-    for (i, idx) in enumerate(supp_X)
-        idcs[i] = star(parent(X), idx)
-        vals[i] = X[idx]
-    end
-    return AlgebraElement(sparsevec(idcs, vals, length(b)), A)
+    res = star(basis(parent(X)), coeffs(X))
+    return AlgebraElement(res, parent(X))
 end
 
 Base.adjoint(a::AlgebraElement) = star(a)

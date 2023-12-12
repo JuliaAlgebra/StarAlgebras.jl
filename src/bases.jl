@@ -129,3 +129,12 @@ Base.@propagate_inbounds function Base.getindex(b::FixedBasis{T,I}, i::Integer) 
 end
 # To break ambiguity
 Base.@propagate_inbounds Base.getindex(b::FixedBasis{T,I}, i::I) where {T,I<:Integer} = b.basis[i]
+
+function star(basis::FixedBasis, coeffs::SparseVector)
+    nzidcs = basis.star_of[SparseArrays.nonzeroinds(coeffs)]
+    nzvals = copy(SparseArrays.nonzeros(coeffs))
+
+    v = sparsevec(nzidcs, nzvals, length(coeffs))
+    dropzeros!(v)
+    return v
+end
