@@ -51,7 +51,12 @@ Base.iterate(db::DiracBasis, st) = iterate(object(db), st)
 
 Base.in(g, db::DiracBasis) = g in object(db)
 
-function Base.getindex(db::DiracBasis{T}, g::T) where {T}
+function Base.getindex(db::DiracBasis{T}, x::T) where {T}
+    @assert x in object(db)
+    return DiracDelta(x)
+end
+
+function __cache(db::DiracBasis{T}, g::T) where {T}
     g in db || throw(KeyError(g))
     if !haskey(db.dict, g)
         lock(db.lock) do
