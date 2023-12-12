@@ -82,17 +82,26 @@ Explicit bases are stored in an `AbstractVector` and hence immutable
 """
 abstract type ExplicitBasis{T,I} <: AbstractBasis{T,I} end
 
+function __star_of!(star_of::Vector{<:Integer}, basis::AbstractBasis{T,<:Integer}) where {T}
+    for idx in eachindex(star_of)
+        star_of[idx] = basis[star(basis[idx])]
+    end
+    return star_of
+end
 struct FixedBasis{T,I,A<:AbstractVector{T}} <: ExplicitBasis{T,I}
     basis::A
     rbasis::Dict{T,I}
+    star_of::Vector{I}
 end
 
-function FixedBasis{I}(basis::AbstractVector) where {I}
-    Base.require_one_based_indexing(basis)
-    length(basis) <= typemax(I) ||
-        throw("index type $I is to small for basis of length $(length(basis))")
-    @assert !(eltype(basis) <: Integer)
-    return FixedBasis(basis, Dict(b => I(idx) for (idx, b) in pairs(basis)))
+function FixedBasis{I}(elts::AbstractVector) where {I}
+    Base.require_one_based_indexing(elts)
+    length(elts) <= typemax(I) ||
+        throw("index type $I is to small for basis of length $(length(elts))")
+    @assert !(eltype(elts) <: Integer)
+    fb = FixedBasis(elts, Dict(b => I(idx) for (idx, b) in pairs(elts)), Vector{I}(undef, length(elts)))
+    __star_of!(fb.star_of, fb)
+    return fb
 end
 
 Base.size(b::FixedBasis) = size(b.basis)
@@ -109,6 +118,7 @@ Base.@propagate_inbounds Base.getindex(b::FixedBasis{T}, g::T) where {T} = b.rba
 
 # convenience only:
 Base.@propagate_inbounds function Base.getindex(b::FixedBasis{T,I}, i::Integer) where {T,I<:Integer}
+    i = ifelse(i > 0, i, oftype(i, b.star_of[abs(i)]))
     idx = convert(keytype(b), i)
     return b[idx]
 end
