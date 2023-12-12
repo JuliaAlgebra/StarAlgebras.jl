@@ -102,3 +102,15 @@ function __canonicalize!(res::SparseCoefficients)
     deleteat!(res.values, todelete)
     return res
 end
+
+function star(basis::AbstractBasis, d::SparseCoefficients)
+    k = star.(Ref(basis), keys(d))
+    v = star.(values(d))
+    return SparseCoefficients(k, v)
+end
+
+star(basis::AbstractBasis, d::DiracDelta) =
+    DiracDelta(star(basis, d.element), star(d.value))
+
+star(basis::AbstractBasis, i::Integer) = basis[-i]
+star(::AbstractBasis, x) = star(x)
