@@ -21,6 +21,12 @@ include("sparse_coeffs.jl")
 include("mstructures.jl")
 include("mtables.jl")
 
+# AbstractBases
+## abstract definitions
+include("bases.jl")
+# concrete implementations
+include("bases_dirac.jl")
+include("bases_fixed.jl")
 
 
 include("types.jl")
