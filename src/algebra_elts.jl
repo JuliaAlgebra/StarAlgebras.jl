@@ -23,7 +23,7 @@ Base.adjoint(a::AlgebraElement) = star(a)
 
 LinearAlgebra.norm(a::AlgebraElement, p::Real) =
     LinearAlgebra.norm(coeffs(a), p)
-aug(a::AlgebraElement) = sum(coeffs(a))
+aug(a::AlgebraElement) = aug(coeffs(a))
 
 LinearAlgebra.dot(a::AlgebraElement, v::AbstractVector) =
     LinearAlgebra.dot(StarAlgebras.coeffs(a), v)

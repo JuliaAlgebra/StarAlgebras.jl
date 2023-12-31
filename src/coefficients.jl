@@ -20,3 +20,6 @@ function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
     return keys(ac1) == keys(ac2) && values(ac1) == values(ac2)
 end
 
+aug(ac::AbstractCoefficients) = sum(c * aug(x) for (x, c) in pairs(ac))
+aug(v::AbstractVector) = sum(v)
+aug(x::Any) = 1 # ???? dubious...
