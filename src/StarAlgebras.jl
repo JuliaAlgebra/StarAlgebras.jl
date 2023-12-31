@@ -10,14 +10,13 @@ export aug, basis, coeffs, star, supp
 
 # AbstractCoefficients
 ## abstract definitions
-include("bases.jl")
-
 include("coefficients.jl")
 ## concrete implementations
 include("diracs.jl")
 include("diracs_augmented.jl")
 include("sparse_coeffs.jl")
 
+# MultiplicativeStructures
 include("mstructures.jl")
 include("mtables.jl")
 
@@ -31,8 +30,10 @@ include("bases_fixed.jl")
 # star depends only on basis and coefficients
 include("star.jl")
 
+# Algebras and elts
 include("types.jl")
 include("algebra_elts.jl")
+
 include("arithmetic.jl")
 include("show.jl")
 

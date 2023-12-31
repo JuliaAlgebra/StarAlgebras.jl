@@ -19,7 +19,7 @@ end
 function Base.show(io::IO, a::AlgebraElement)
     A = parent(a)
     if iszero(a)
-        T = valtype(a)
+        T = valtype(coeffs(a))
         _coeff_elt_print(io, zero(T), first(basis(A)))
     else
         first = true
@@ -41,8 +41,8 @@ function Base.show(io::IO, a::AlgebraElement)
     end
 end
 
-function Base.show(io::IO, ::MIME"text/plain", mstr::LazyMStructure)
-    print(io, "LazyMStructure of ", object(basis(mstr)), " over ")
+function Base.show(io::IO, ::MIME"text/plain", mstr::DiracMStructure)
+    print(io, "DiracMStructure of ", object(basis(mstr)), " over ")
     print(io, basis(mstr) isa ImplicitBasis ? "implicit" : "explicit")
     print(io, " basis with ")
 

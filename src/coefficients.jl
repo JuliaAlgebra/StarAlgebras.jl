@@ -9,7 +9,7 @@ Base.valtype(::Type{<:AbstractCoefficients{K,V}}) where {K,V} = V
 Base.keytype(b::AbstractCoefficients) = keytype(typeof(b))
 Base.valtype(b::AbstractCoefficients) = valtype(typeof(b))
 
-Base.iszero(sc::AbstractCoefficients) = isempty(keys(sc))
+Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
 
 function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
     for x in (ac1, ac2)
