@@ -1,34 +1,26 @@
 abstract type AbstractStarAlgebra{O,T} end
 
-struct StarAlgebra{O,T,M<:MultiplicativeStructure,B<:AbstractBasis{T}} <:
+struct StarAlgebra{O,T,B<:AbstractBasis{T}} <:
        AbstractStarAlgebra{O,T}
     object::O
-    mstructure::M
     basis::B
 
-    function StarAlgebra(obj, basis::AbstractBasis, mstr::MultiplicativeStructure)
+    function StarAlgebra(obj, basis::AbstractBasis)
         O = typeof(obj)
         T = eltype(basis)
-        M = typeof(mstr)
         B = typeof(basis)
 
-        return new{O,T,M,B}(obj, mstr, basis)
+        return new{O,T,B}(obj, basis)
     end
 
-    function StarAlgebra(obj, mstr::MultiplicativeStructure)
-        O = typeof(obj)
-        T = eltype(obj)
-        M = typeof(mstr)
-        B = FixedBasis{T,eltype(mstr)}
+    # function StarAlgebra(obj, mstr::MultiplicativeStructure)
+    #     O = typeof(obj)
+    #     T = eltype(obj)
+    #     M = typeof(mstr)
+    #     B = FixedBasis{T,eltype(mstr)}
 
-        return new{O,T,M,B}(obj, mstr)
-    end
-end
-
-# LazylMStructure:
-function StarAlgebra(obj, basis::AbstractBasis)
-    mstr = LazyMStructure(basis)
-    return StarAlgebra(obj, basis, mstr)
+    #     return new{O,T,M,B}(obj, mstr)
+    # end
 end
 
 # MTable:
@@ -49,13 +41,19 @@ object(A::StarAlgebra) = A.object
 struct AlgebraElement{A,T,V}
     coeffs::V
     parent::A
+end
 
-    function AlgebraElement(coeffs, A::AbstractStarAlgebra)
-        #if hasbasis(A)
-        #    @assert length(coeffs) == length(basis(A))
-        #end
-        return new{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
-    end
+function AlgebraElement(coeffs::AbstractVector, A::AbstractStarAlgebra)
+    @assert Base.haslength(basis(A))
+    @assert length(coeffs) == length(basis(A))
+    return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
+end
+
+function AlgebraElement(
+    coeffs::SparseCoefficients{T},
+    A::AbstractStarAlgebra{O,T}
+) where {O,T}
+    return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
 end
 
 coeffs(a::AlgebraElement) = a.coeffs
