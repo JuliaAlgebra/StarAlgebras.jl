@@ -28,6 +28,8 @@ include("bases.jl")
 include("bases_dirac.jl")
 include("bases_fixed.jl")
 
+# star depends only on basis and coefficients
+include("star.jl")
 
 include("types.jl")
 include("algebra_elts.jl")
