@@ -14,7 +14,7 @@ function Base.showerror(io::IO, ex::ProductNotWellDefined)
 end
 
 """
-    MultiplicativeStructure{T}
+    MultiplicativeStructure
 Structure representing multiplication w.r.t its basis.
 
 Implements
@@ -26,7 +26,7 @@ Implements
 When the product is not representable faithfully,
    `ProductNotWellDefined` exception should be thrown.
 """
-abstract type MultiplicativeStructure{T} end
+abstract type MultiplicativeStructure end
 
 function mul!(
     ms::MultiplicativeStructure,
@@ -34,24 +34,55 @@ function mul!(
     v::AbstractCoefficients,
     w::AbstractCoefficients,
 )
-    for (kv, a) in pairs(v)
-        for (kw, b) in pairs(w)
-            c = ms[kv, kw] # c is an AbstractCoefficients
-            unsafe_append!(res, c => a * b)
-        end
-    end
+    MA.operate!(zero, res)
+    res = fmac!(ms, res, v, w)
     __canonicalize!(res)
     return res
 end
 
-struct LazyMStructure{T,B<:AbstractBasis{T}} <: MultiplicativeStructure{T}
-    basis::B
+function fmac!(
+    ms::MultiplicativeStructure,
+    res::SparseCoefficients,
+    v::AbstractCoefficients,
+    w::AbstractCoefficients,
+)
+    for (kv, a) in pairs(v)
+        for (kw, b) in pairs(w)
+            c = ms(kv, kw) # ::AbstractCoefficients
+            unsafe_append!(res, c => a * b)
+        end
+    end
+    return res
 end
 
-basis(mstr::LazyMStructure) = mstr.basis
+function mul!(
+    ms::MultiplicativeStructure,
+    res::AbstractVector,
+    X::AbstractVector,
+    Y::AbstractVector,
+)
+    res = (res === X || res === Y) ? zero(res) : (res .= zero(eltype(res)))
+    return fmac!(ms, res, X, Y)
+end
 
-function Base.getindex(mstr::LazyMStructure{T,<:DiracBasis{T}}, x::T, y::T) where {T}
-    xy = x * y
-    xy in basis(mstr) || throw(ProductNotWellDefined(x, x, "$x · $y = $xy"))
-    return DiracDelta(xy)
+struct DiracMStructure{Op} <: MultiplicativeStructure
+    op::Op
+end
+
+DiracMStructure() = DiracMStructure(*)
+
+(mstr::DiracMStructure)(x::T, y::T) where {T} = Dirac(mstr.op(x, y))
+(mstr::DiracMStructure)(δx::Dirac, δy::Dirac) = mstr.op(δx, δy)
+
+struct AugmentedMStructure{M<:DiracMStructure} <: MultiplicativeStructure
+    op::M
+end
+
+function (mstr::AugmentedMStructure)(aδx::AugmentedDirac, aδy::AugmentedDirac)
+    δxy = mstr.op(aδx.dirac, aδy.dirac)# :: Dirac
+    c = ifelse(isone(δxy.element), zero(δxy.value), one(δxy.value))
+    aδxy = AugmentedDirac(δxy)
+
+    #(x-1)*(y-1) = 1 - x - y + xy = -1·(x-1) - 1·(y-1) + 1·(xy-1)
+    return SparseCoefficients((aδx, aδy, aδxy), (-one(c), -one(c), c))
 end

@@ -37,37 +37,3 @@ function Base.deepcopy_internal(a::AlgebraElement, IdDict::IdDict)
     end
     return IdDict[a]
 end
-
-function fmac!(
-    res::AlgebraElement{A,T,<:SparseCoefficients},
-    X::AlgebraElement{A,T,<:SparseCoefficients},
-    Y::AlgebraElement{A,T,<:SparseCoefficients},
-) where {A,T}
-    for (kx, vx) in pairs(coeffs(X))
-        for (ky, vy) in pairs(coeffs(Y))
-            res = MA.operate!!(MA.add_mul, res, vx * vy, basis(parent(X))[kx], basis(parent(Y))[ky])
-        end
-    end
-    return res
-end
-
-function MA.operate!!(
-    ::typeof(MA.add_mul),
-    result::AlgebraElement{A,V,<:SparseCoefficients},
-    α::V,
-    a::DiracDelta,
-    b::DiracDelta,
-) where {A,V}
-    (ka,), (va,) = keys(a), values(a)
-    (kb,), (vb,) = keys(b), values(b)
-    xy = ka * kb
-    k = searchsortedfirst(coeffs(result).basis_elements, xy)
-    if k in eachindex(coeffs(result).basis_elements) &&
-       coeffs(result).basis_elements[k] == xy
-        coeffs(result).values[k] += α * va * vb
-    else
-        insert!(coeffs(result).basis_elements, k, xy)
-        insert!(coeffs(result).values, k, α * va * vb)
-    end
-    return result
-end

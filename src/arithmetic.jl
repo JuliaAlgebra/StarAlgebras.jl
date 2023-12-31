@@ -85,67 +85,13 @@ function mul!(res::AlgebraElement, X::AlgebraElement, a::Number)
     return res
 end
 
-function mul!(
-    res::AbstractVector,
-    X::AbstractVector,
-    Y::AbstractVector,
-    ms::MultiplicativeStructure,
-)
-    res = (res === X || res === Y) ? zero(res) : (res .= zero(eltype(res)))
-    return fmac!(res, X, Y, ms)
-end
-
 function mul!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
-    res = (res === X || res === Y) ? zero(res) : zero!(res)
-    return fmac!(res, X, Y)
-end
-
-function fmac!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
     @assert parent(res) === parent(X) === parent(Y)
-    fmac!(coeffs(res), coeffs(X), coeffs(Y), parent(res).mstructure)
+    mstr = mstructure(basis(parent(res)))
+    mul!(mstr, coeffs(res), coeffs(X), coeffs(Y))
     return res
 end
 
 _nzpairs(v::AbstractVector) = pairs(v)
 _nzpairs(v::AbstractSparseVector) =
     zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
-
-function fmac!(
-    res::AbstractVector,
-    X::AbstractVector,
-    Y::AbstractVector,
-    mstr::MultiplicativeStructure,
-)
-    @assert res !== X
-    @assert res !== Y
-    lx, ly = size(mstr)
-    @assert all(iszero, @view(X[lx+1:end]))
-    @assert all(iszero, @view(Y[ly+1:end]))
-    for iy in 1:ly
-        y = Y[iy]
-        iszero(y) && continue
-        for ix in 1:lx
-            x = X[ix]
-            iszero(x) && continue
-            res[mstr[ix, iy]] += X[ix] * y
-        end
-    end
-    return res
-end
-
-function fmac!(
-    res::AbstractVector,
-    X::AbstractSparseVector,
-    Y::AbstractSparseVector,
-    mstr::MultiplicativeStructure,
-)
-    @assert res !== X
-    @assert res !== Y
-    for iy in SparseArrays.nonzeroinds(Y)
-        y = Y[iy]
-        for ix in SparseArrays.nonzeroinds(X)
-            res[mstr[ix, iy]] += X[ix] * y
-        end
-    end
-    return res
-end
