@@ -1,6 +1,10 @@
 # module structure:
-Base.:*(a::Number, X::AlgebraElement) =
-    mul!(similar(X, promote_type(eltype(X), typeof(a))), X, a)
+
+function Base.:*(a::Number, X::AlgebraElement)
+    T = Base._return_type(*, Tuple{eltype(X),typeof(a)})
+    return mul!(similar(X, T), X, a)
+end
+
 Base.:*(X::AlgebraElement, a::Number) = a * X
 Base.:(/)(X::AlgebraElement, a::Number) = inv(a) * X
 
