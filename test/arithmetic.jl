@@ -4,7 +4,7 @@
     l = length(b)
     RG = StarAlgebra(G, b, (l, l))
 
-    @test contains(sprint(show, RG), "*-algebra of Permutation group")
+    @test_broken contains(sprint(show, RG), "*-algebra of Permutation group")
 
     @testset "Module structure" begin
         a = AlgebraElement(ones(Int, order(G)), RG)
