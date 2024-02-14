@@ -1,7 +1,7 @@
-Base.show(io::IO, A::AbstractStarAlgebra) =
-    print(io, "*-algebra of $(object(A))")
-Base.show(io::IO, ::Type{<:StarAlgebra{O,T}}) where {O,T} =
-    print(io, "StarAlgebra{$O, $T, …}")
+function Base.show(io::IO, A::AbstractStarAlgebra)
+    ioc = IOContext(io, :limit => true, :compact => true)
+    return print(ioc, "*-algebra of ", object(A))
+end
 
 __prints_with_minus(::Any) = false
 __prints_with_minus(x::Real) = x < 0

@@ -1,7 +1,4 @@
-using Groups
-
 @testset "sum of squares in FreeGroup *-algebra" begin
-      StarAlgebras.star(g::Groups.GroupElement) = inv(g)
       F = Groups.FreeGroup(4)
       S = [Groups.gens(F); inv.(Groups.gens(F))]
 

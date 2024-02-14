@@ -29,18 +29,13 @@ function Base.:*(w::Word, z::Word)
 end
 
 function StarAlgebras.star(w::Word)
-    newletters = similar(w.letters)
-
     # star(:a) = :b
     # star(:b) = :a
     # star(:c) = :c
 
     star_d = Dict(1 => 2, 2 => 1)
 
-    for (i, l) in enumerate(Iterators.reverse(w.letters))
-        k = haskey(star_d, l) ? star_d[l] : l
-        newletters[i] = k
-    end
+    newletters = [get(star_d, l, l) for l in Iterators.reverse(w.letters)]
     return Word(w.alphabet, newletters)
 end
 
