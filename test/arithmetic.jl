@@ -1,14 +1,3 @@
-using GroupsCore
-using PermutationGroups
-import Random
-
-StarAlgebras.star(g::PermutationGroups.GroupElement) = inv(g)
-
-using SparseArrays
-if VERSION < v"1.9"
-    Base.sum(v::SparseVector) = sum(nonzeros(v))
-end
-
 @testset "Arithmetic" begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
     b = StarAlgebras.Basis{UInt8}(collect(G))
@@ -114,7 +103,7 @@ end
 
         @test supp(z) == StarAlgebras.basis(parent(z))
         @test supp(RG(1) + RG(g)) == [one(G), g]
-        @test supp(a) == [one(G), h, g]
+        @test supp(a) == [one(G), g, h]
 
         @testset "Projections in star algebras" begin
             b = StarAlgebras.basis(RG)
