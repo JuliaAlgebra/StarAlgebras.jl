@@ -62,9 +62,13 @@ function mul!(
     Y::AbstractVector,
 )
     res = (res === X || res === Y) ? zero(res) : (res .= zero(eltype(res)))
-    return fmac!(ms, res, X, Y)
+    fmac!(ms, res, X, Y)
+    res = __canonicalize!(res)
+    return res
 end
 
+__canonicalize!(sv::SparseVector) = dropzeros!(sv)
+__canonicalize!(v::AbstractVector) = v
 struct DiracMStructure{Op} <: MultiplicativeStructure
     op::Op
 end

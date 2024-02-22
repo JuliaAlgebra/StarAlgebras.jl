@@ -80,3 +80,26 @@ function complete!(mt::MTable)
     end
     return mt
 end
+
+function fmac!(
+    ms::MTable,
+    res::AbstractSparseVector,
+    v::AbstractVector,
+    w::AbstractVector,
+)
+    k = nnz(v) * nnz(w)
+    idcs = Vector{keytype(res)}()
+    vals = Vector{eltype(res)}()
+
+    for (kv, a) in _nzpairs(v)
+        for (kw, b) in _nzpairs(w)
+            c = ms(kv, kw)
+            for (k, v) in pairs(c)
+                push!(idcs, ms[k])
+                push!(vals, v * a * b)
+            end
+        end
+    end
+    res .+= sparsevec(idcs, vals, length(res))
+    return res
+end
