@@ -57,6 +57,9 @@ function AlgebraElement(
 end
 
 coeffs(a::AlgebraElement) = a.coeffs
+function coeffs(x::AlgebraElement, b::AbstractBasis)
+    return coeffs(coeffs(x), basis(parent(x)), b)
+end
 Base.parent(a::AlgebraElement) = a.parent
 Base.eltype(a::AlgebraElement) = valtype(coeffs(a))
 

@@ -1,7 +1,11 @@
-using StarAlgebras
 using Test
+using StarAlgebras
+import StarAlgebras as SA
 using LinearAlgebra
 using SparseArrays
+
+
+include("perm_grp_algebra.jl")
 
 include("test_example_words.jl")
 

@@ -1,104 +1,98 @@
-using Pkg
-Pkg.activate(@__DIR__)
-
-using Revise
-using StarAlgebras
-import StarAlgebras as SA
 using PermutationGroups
-import PermutationGroups.AP as AP
+using Random
 
 SA.star(x::Number) = x'
-SA.star(g::AP.AbstractPermutation) = inv(g)
+SA.star(g::PermutationGroups.AP.AbstractPermutation) = inv(g)
 
-G = PermGroup(perm"(1,2,3,4,5,6)", perm"(1,2)")
-g, h = rand(G, 2)
+@testset "POC: group algebra" begin
+    G = PermGroup(perm"(1,2,3,4,5,6)", perm"(1,2)")
+    g = Permutation(perm"(1,4,3,6)(2,5)", G)
+    h = Permutation(perm"(2,4,5,1)", G)
 
-db = SA.DiracBasis{UInt32}(G)
-RG = SA.StarAlgebra(G, db)
+    db = SA.DiracBasis{UInt32}(G)
+    @test SA.mstructure(db) == SA.DiracMStructure(*)
+    @test SA.mstructure(db)(g, h) == SA.Dirac(g * h)
 
-ad = SA.AugmentedBasis(db)
+    @test db[g] isa SA.Dirac
+    @test_throws MethodError db[db[g]]
 
-ad[SA.AugmentedDirac(h)]
+    xcfs = SA.SparseCoefficients([one(G), g], [1, -1])
+    ycfs = SA.SparseCoefficients([one(G), inv(g)], [1, -1])
+    xycfs = SA.SparseCoefficients([one(G), g, inv(g)], [2, -1, -1])
 
-IG = SA.StarAlgebra(G, ad)
+    zcfs = SA.SparseCoefficients([one(G), h], [1, -1])
+    xzcfs = SA.SparseCoefficients([one(G), g, h, g * h], [1, -1, -1, 1])
 
-xcfs = SA.SparseCoefficients([one(G), g], [1, -1])
-x = SA.AlgebraElement(xcfs, RG)
+    RG = SA.StarAlgebra(G, db)
 
-ycfs = SA.SparseCoefficients([one(G), inv(g)], [1, -1])
-y = SA.AlgebraElement(ycfs, RG)
+    x = SA.AlgebraElement(xcfs, RG)
+    y = SA.AlgebraElement(ycfs, RG)
+    xy = SA.AlgebraElement(xycfs, RG)
+    @test x != y
+    @test x' == y
+    @test x * y == xy
 
-zcfs = SA.SparseCoefficients([one(G), h], [1, -1])
-z = SA.AlgebraElement(zcfs, RG)
+    z = SA.AlgebraElement(zcfs, RG)
+    xz = SA.AlgebraElement(xzcfs, RG)
+    @test x * z == xz
 
-xycfs = SA.SparseCoefficients([one(G), g, inv(g)], [2, -1, -1])
-xy = SA.AlgebraElement(xycfs, RG)
+    @testset "Augmented basis" begin
 
-xzcfs = SA.SparseCoefficients([one(G), g, h, g * h], [1, -1, -1, 1])
-xz = SA.AlgebraElement(xzcfs, RG)
+        ad = SA.AugmentedBasis(db)
+        @test SA.mstructure(ad) == SA.AugmentedMStructure(SA.mstructure(db))
+        @test ad[SA.AugmentedDirac(h)] isa SA.AugmentedDirac
 
-@assert x != y
-@assert x' == y
-@assert SA.mstructure(basis(RG))(g, h) == SA.Dirac(g * h)
-@assert x * y == xy
-@assert x * z == xz
+        IG = SA.StarAlgebra(G, ad)
 
-axcfs = SA.coeffs(coeffs(x), basis(RG), basis(IG))
-aycfs = SA.coeffs(coeffs(y), basis(RG), basis(IG))
-azcfs = SA.coeffs(coeffs(z), basis(RG), basis(IG))
-ax = SA.AlgebraElement(axcfs, IG)
-ay = SA.AlgebraElement(aycfs, IG)
-az = SA.AlgebraElement(azcfs, IG)
+        axcfs = SA.coeffs(x, basis(IG))
+        aycfs = SA.coeffs(y, basis(IG))
+        azcfs = SA.coeffs(z, basis(IG))
+        ax = SA.AlgebraElement(axcfs, IG)
+        ay = SA.AlgebraElement(aycfs, IG)
+        az = SA.AlgebraElement(azcfs, IG)
 
-@assert coeffs(ax * ay) == SA.coeffs(coeffs(x * y), basis(RG), basis(IG))
-@assert coeffs(ax * az) == SA.coeffs(coeffs(x * z), basis(RG), basis(IG))
+        @test coeffs(ax * ay) == SA.coeffs(x * y, basis(IG))
+        @test coeffs(ax * az) == SA.coeffs(x * z, basis(IG))
+    end
 
-rcfs = SA.SparseCoefficients(rand(G, 100), rand(-2:2, 100))
-r = SA.AlgebraElement(rcfs, RG)
-scfs = SA.SparseCoefficients(rand(G, 100), rand(-2:2, 100))
-s = SA.AlgebraElement(scfs, RG)
+    @testset "Random elements" begin
+        rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+        r = SA.AlgebraElement(rcfs, RG)
+        scfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+        s = SA.AlgebraElement(scfs, RG)
 
-@time r * s
+        @test aug(r * s) == aug(r) * aug(s)
+    end
+    @testset "Fixed Basis" begin
+        m = PermutationGroups.order(UInt16, G)
+        fb = SA.FixedBasis(collect(G), SA.DiracMStructure(*), (m, m))
 
-aug(r)
-aug(s)
-@assert aug(r * s) == aug(r) * aug(s)
+        @test fb[fb[g]] == g
 
-m = PermutationGroups.order(UInt16, G)
-fb = SA.FixedBasis(collect(G), SA.DiracMStructure(*), (m, m))
-fRG = SA.StarAlgebra(G, fb)
+        fRG = SA.StarAlgebra(G, fb)
 
-fr = SA.AlgebraElement(coeffs(rcfs, basis(RG), basis(fRG)), fRG)
-fs = SA.AlgebraElement(coeffs(scfs, basis(RG), basis(fRG)), fRG)
+        rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+        r = SA.AlgebraElement(rcfs, RG)
+        scfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+        s = SA.AlgebraElement(scfs, RG)
 
-@assert aug(fr) == aug(r)
-@assert aug(fs) == aug(s)
+        @test coeffs(r, basis(fRG)) isa SparseVector
 
-@assert aug(fr * fs) == aug(fr) * aug(fs)
+        fr = SA.AlgebraElement(coeffs(r, basis(fRG)), fRG)
+        fs = SA.AlgebraElement(coeffs(s, basis(fRG)), fRG)
 
-r * s
-fr * fs
-frs = SA.AlgebraElement(coeffs(coeffs(r * s), basis(RG), basis(fRG)), fRG)
-@assert fr * fs == frs
+        @test aug(fr) == aug(r)
+        @test aug(fs) == aug(s)
+        @test aug(fr * fs) == aug(fr) * aug(fs)
 
-fr * fs
-frs
+        rs_cfs = coeffs(r * s, basis(fRG))
+        @test rs_cfs isa AbstractVector
+        @test fr * fs == SA.AlgebraElement(rs_cfs, fRG)
 
-let mt = SA.mstructure(basis(fRG)).table
-    count(i -> isassigned(mt, i), eachindex(mt)), length(mt)
+        a, b = let mt = SA.mstructure(basis(fRG)).table
+            count(i -> isassigned(mt, i), eachindex(mt)), length(mt)
+        end
+        @test a ≤ b
+    end
+
 end
-using BenchmarkTools
-@btime $(star(r)) * $s
-@btime $(star(fr)) * $fs
-
-star(star(fr))
-
-@btime star($fr)
-@btime star($r)
-@edit star(fr)
-
-mulN(a, b, N) = [a * b for i in 1:N]
-
-# using Profile
-
-@profview mulN(fr, fs, 1000)
