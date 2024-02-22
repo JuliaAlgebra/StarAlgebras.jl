@@ -24,8 +24,8 @@ function MTable(
     dims::NTuple{2,I},
 ) where {I<:Integer}
     Base.require_one_based_indexing(elts)
-    @assert length(elts) ≤ first(dims)
-    @assert length(elts) ≤ last(dims)
+    @assert length(elts) ≥ first(dims)
+    @assert length(elts) ≥ last(dims)
 
     relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
     starof = [relts[star(x)] for x in elts]

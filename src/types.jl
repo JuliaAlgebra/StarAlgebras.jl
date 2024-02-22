@@ -74,14 +74,10 @@ end
 
 Base.one(A::AbstractStarAlgebra) = one(Int, A)
 function Base.one(T::Type, A::AbstractStarAlgebra)
-    if hasbasis(A)
-        b = basis(A)
-        i = b[one(object(A))]
-        return AlgebraElement(sparsevec([i], [one(T)], length(b)), A)
-    end
-    throw(
-        "Algebra without basis; use the `AlgebraElement` constructor directly.",
-    )
+    b = basis(A)
+    i = b[one(object(A))]
+    sc = SparseCoefficients([i], [one(T)])
+    return AlgebraElement(sc, A)
 end
 
 Base.zero(a::AlgebraElement) = (b = similar(a); return zero!(b))
