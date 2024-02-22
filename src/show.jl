@@ -40,12 +40,3 @@ function Base.show(io::IO, a::AlgebraElement)
         end
     end
 end
-
-function Base.show(io::IO, ::MIME"text/plain", mstr::DiracMStructure)
-    print(io, "DiracMStructure of ", object(basis(mstr)), " over ")
-    print(io, basis(mstr) isa ImplicitBasis ? "implicit" : "explicit")
-    print(io, " basis with ")
-
-    print(io, Base.haslength(basis(mstr)) ? length(basis(mstr)) : "indefinite number of")
-    print(io, " elements")
-end
