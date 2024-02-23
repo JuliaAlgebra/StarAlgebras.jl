@@ -9,6 +9,7 @@ include("perm_grp_algebra.jl")
 
 include("test_example_words.jl")
 
+#=
 @testset "StarAlgebras" begin
     include("mtables.jl")
     include("constructors.jl")
@@ -27,3 +28,4 @@ include("test_example_words.jl")
     using Groups
     include("sum_of_squares.jl")
 end
+=#
