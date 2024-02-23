@@ -9,9 +9,6 @@ MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-Groups = "0.8"
-GroupsCore = "0.5"
-PermutationGroups = "0.6"
 SparseArrays = "1"
 MutableArithmetics = "1"
 julia = "1.6"
