@@ -81,9 +81,9 @@ function complete!(mt::MTable)
     return mt
 end
 
-function MA.operate_to!(
-    res::AbstractSparseVector,
+function MA.operate!(
     ms::UnsafeAddMul{<:MTable},
+    res::AbstractSparseVector,
     v::AbstractVector,
     w::AbstractVector,
 )

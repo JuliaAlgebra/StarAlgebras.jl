@@ -28,6 +28,15 @@ When the product is not representable faithfully,
 """
 abstract type MultiplicativeStructure end
 
+"""
+    struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
+        structure::M
+    end
+
+The value of `(op::UnsafeAddMul)(a, b, c)` is `a + structure(b, c)`
+where `a` is not expected to be canonicalized before the operation `+`
+and should not be expected to be canonicalized after either.
+"""
 struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
 end
@@ -39,14 +48,14 @@ function MA.operate_to!(
     w::AbstractCoefficients,
 )
     MA.operate!(zero, res)
-    res = MA.operate_to!(res, UnsafeAddMul(ms), v, w)
+    res = MA.operate!(UnsafeAddMul(ms), res, v, w)
     __canonicalize!(res)
     return res
 end
 
-function MA.operate_to!(
-    mc::SparseCoefficients,
+function MA.operate!(
     ::UnsafeAddMul{typeof(*)},
+    mc::SparseCoefficients,
     val,
     c::AbstractCoefficients,
 )
@@ -57,16 +66,16 @@ function MA.operate_to!(
     return mc
 end
 
-function MA.operate_to!(
-    res::SparseCoefficients,
+function MA.operate!(
     ms::UnsafeAddMul,
+    res::SparseCoefficients,
     v::AbstractCoefficients,
     w::AbstractCoefficients,
 )
     for (kv, a) in pairs(v)
         for (kw, b) in pairs(w)
             c = ms.structure(kv, kw) # ::AbstractCoefficients
-            MA.operate_to!(res, UnsafeAddMul(*), a * b, c)
+            MA.operate!(UnsafeAddMul(*), res, a * b, c)
         end
     end
     return res
@@ -82,7 +91,7 @@ function MA.operate_to!(
         throw(ArgumentError("No alias allowed"))
     end
     MA.operate!(zero, res)
-    MA.operate_to!(res, UnsafeAddMul(ms), X, Y)
+    MA.operate!(UnsafeAddMul(ms), res, X, Y)
     res = __canonicalize!(res)
     return res
 end
