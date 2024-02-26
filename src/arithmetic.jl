@@ -2,7 +2,7 @@
 
 function Base.:*(a::Number, X::AlgebraElement)
     T = Base._return_type(*, Tuple{eltype(X),typeof(a)})
-    return mul!(similar(X, T), X, a)
+    return MA.operate_to!(similar(X, T), *, X, a)
 end
 
 Base.:*(X::AlgebraElement, a::Number) = a * X
@@ -25,7 +25,7 @@ end
 
 Base.:+(X::AlgebraElement, Y::AlgebraElement) = MA.operate_to!(_preallocate_output(X, Y, +), +, X, Y)
 Base.:-(X::AlgebraElement, Y::AlgebraElement) = sub!(_preallocate_output(X, Y, -), X, Y)
-Base.:*(X::AlgebraElement, Y::AlgebraElement) = mul!(_preallocate_output(X, Y, *), X, Y)
+Base.:*(X::AlgebraElement, Y::AlgebraElement) = MA.operate_to!(_preallocate_output(X, Y, *), *, X, Y)
 
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
@@ -74,7 +74,7 @@ function sub!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
     return res
 end
 
-function mul!(res::AlgebraElement, X::AlgebraElement, a::Number)
+function MA.operate_to!(res::AlgebraElement, ::typeof(*), X::AlgebraElement, a::Number)
     @assert parent(res) === parent(X)
     if res !== X
         MA.operate!(zero, res)
@@ -85,7 +85,7 @@ function mul!(res::AlgebraElement, X::AlgebraElement, a::Number)
     return res
 end
 
-function mul!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
+function MA.operate_to!(res::AlgebraElement, ::typeof(*), X::AlgebraElement, Y::AlgebraElement)
     @assert parent(res) === parent(X) === parent(Y)
     mstr = mstructure(basis(parent(res)))
     mul!(mstr, coeffs(res), coeffs(X), coeffs(Y))

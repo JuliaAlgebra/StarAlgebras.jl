@@ -92,7 +92,7 @@
               norm(a)^2 ≈
               LinearAlgebra.dot(coeffs(a), a)
 
-        @test a * b == StarAlgebras.mul!(a, a, b)
+        @test a * b == MA.operate_to!(a, *, a, b)
 
         @test aug(a) == 3
         @test aug(b) == -1
@@ -164,7 +164,7 @@
 
             @test coeffs(X * Y) ==
                   coeffs(Xc * Yc) ==
-                  coeffs(StarAlgebras.mul!(Z, X, Y))
+                  coeffs(MA.operate_to!(Z, *, X, Y))
 
             @test coeffs(X^2) == coeffs(Xc^2) == coeffs(X * X)
             @test coeffs(Y^2) == coeffs(Yc^2) == coeffs(Y * Y)
@@ -187,7 +187,7 @@
             MA.operate!(zero, W)
             StarAlgebras.fmac!(coeffs(W), coeffs(X), coeffs(Y), RG.mstructure)
 
-            @test coeffs(2 * X * Y) == coeffs(StarAlgebras.mul!(W, W, 2))
+            @test coeffs(2 * X * Y) == coeffs(MA.operate_to!(W, *, W, 2))
         end
     end
 
@@ -239,25 +239,25 @@
         end
 
         let d = deepcopy(a)
-            StarAlgebras.mul!(d, d, 2)
-            StarAlgebras.mul!(d, a, 2)
-            StarAlgebras.mul!(d, a, b)
+            MA.operate_to!(d, *, d, 2)
+            MA.operate_to!(d, *, a, 2)
+            MA.operate_to!(d, *, a, b)
             d = deepcopy(a)
-            StarAlgebras.mul!(d, d, b)
+            MA.operate_to!(d, *, d, b)
 
             d = deepcopy(a)
-            @test @allocated(StarAlgebras.mul!(d, d, 2)) == 0
+            @test @allocated(MA.operate_to!(d, *, d, 2)) == 0
             @test d == 2a
 
-            @test @allocated(StarAlgebras.mul!(d, a, 2)) == 0
+            @test @allocated(MA.operate_to!(d, *, a, 2)) == 0
             @test d == 2a
 
-            @test @allocated(StarAlgebras.mul!(d, a, b)) == 32
+            @test @allocated(MA.operate_to!(d, *, a, b)) == 32
             @test d == a * b
 
             d = deepcopy(a)
-            @test @allocated(StarAlgebras.mul!(d, d, b)) != 0
-            z = StarAlgebras.mul!(d, d, b)
+            @test @allocated(MA.operate_to!(d, *, d, b)) != 0
+            z = MA.operate_to!(d, *, d, b)
             @test z == a * b
             @test z !== d
         end
