@@ -81,9 +81,9 @@ function complete!(mt::MTable)
     return mt
 end
 
-function fmac!(
-    ms::MTable,
+function MA.operate_to!(
     res::AbstractSparseVector,
+    ms::UnsafeAddMul{<:MTable},
     v::AbstractVector,
     w::AbstractVector,
 )
@@ -93,9 +93,9 @@ function fmac!(
 
     for (kv, a) in _nzpairs(v)
         for (kw, b) in _nzpairs(w)
-            c = ms(kv, kw)
+            c = ms.structure(kv, kw)
             for (k, v) in pairs(c)
-                push!(idcs, ms[k])
+                push!(idcs, ms.structure[k])
                 push!(vals, v * a * b)
             end
         end

@@ -28,6 +28,10 @@ When the product is not representable faithfully,
 """
 abstract type MultiplicativeStructure end
 
+struct UnsafeAddMul{M<:MultiplicativeStructure}
+    structure::M
+end
+
 function MA.operate_to!(
     res::SparseCoefficients,
     ms::MultiplicativeStructure,
@@ -35,20 +39,20 @@ function MA.operate_to!(
     w::AbstractCoefficients,
 )
     MA.operate!(zero, res)
-    res = fmac!(ms, res, v, w)
+    res = MA.operate_to!(res, UnsafeAddMul(ms), v, w)
     __canonicalize!(res)
     return res
 end
 
-function fmac!(
-    ms::MultiplicativeStructure,
+function MA.operate_to!(
     res::SparseCoefficients,
+    ms::UnsafeAddMul,
     v::AbstractCoefficients,
     w::AbstractCoefficients,
 )
     for (kv, a) in pairs(v)
         for (kw, b) in pairs(w)
-            c = ms(kv, kw) # ::AbstractCoefficients
+            c = ms.structure(kv, kw) # ::AbstractCoefficients
             unsafe_append!(res, c => a * b)
         end
     end
@@ -61,8 +65,12 @@ function MA.operate_to!(
     X::AbstractVector,
     Y::AbstractVector,
 )
-    res = (res === X || res === Y) ? zero(res) : (res .= zero(eltype(res)))
-    fmac!(ms, res, X, Y)
+    if res === X || res === Y
+        res = zero(res)
+    else
+        MA.operate!(zero, res)
+    end
+    MA.operate_to!(res, UnsafeAddMul(ms), X, Y)
     res = __canonicalize!(res)
     return res
 end
