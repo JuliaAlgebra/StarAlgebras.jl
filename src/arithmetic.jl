@@ -31,7 +31,7 @@ Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
 # mutable API; TODO: replace with MutableArithmetic
 
-function zero!(a::AlgebraElement)
+function MA.operate!(::typeof(zero), a::AlgebraElement)
     MA.operate!(zero, a.coeffs)
     return a
 end
@@ -56,7 +56,7 @@ function add!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
             res[idx] += x
         end
     else
-        zero!(res)
+        MA.operate!(zero, res)
         for (idx, x) in _nzpairs(coeffs(X))
             res[idx] += x
         end
@@ -77,7 +77,7 @@ end
 function mul!(res::AlgebraElement, X::AlgebraElement, a::Number)
     @assert parent(res) === parent(X)
     if res !== X
-        zero!(res)
+        MA.operate!(zero, res)
     end
     for (idx, x) in _nzpairs(coeffs(X))
         res.coeffs[idx] = a * x

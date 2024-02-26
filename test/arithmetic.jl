@@ -184,7 +184,7 @@
             )
             @test coeffs(Z) == coeffs(W)
 
-            StarAlgebras.zero!(W)
+            MA.operate!(zero, W)
             StarAlgebras.fmac!(coeffs(W), coeffs(X), coeffs(Y), RG.mstructure)
 
             @test coeffs(2 * X * Y) == coeffs(StarAlgebras.mul!(W, W, 2))

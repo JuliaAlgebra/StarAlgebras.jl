@@ -3,6 +3,7 @@ using StarAlgebras
 import StarAlgebras as SA
 using LinearAlgebra
 using SparseArrays
+import MutableArithmetics as MA
 
 
 include("perm_grp_algebra.jl")
