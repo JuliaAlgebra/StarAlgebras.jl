@@ -28,9 +28,9 @@ When the product is not representable faithfully,
 """
 abstract type MultiplicativeStructure end
 
-function mul!(
-    ms::MultiplicativeStructure,
+function MA.operate_to!(
     res::SparseCoefficients,
+    ms::MultiplicativeStructure,
     v::AbstractCoefficients,
     w::AbstractCoefficients,
 )
@@ -55,9 +55,9 @@ function fmac!(
     return res
 end
 
-function mul!(
-    ms::MultiplicativeStructure,
+function MA.operate_to!(
     res::AbstractVector,
+    ms::MultiplicativeStructure,
     X::AbstractVector,
     Y::AbstractVector,
 )

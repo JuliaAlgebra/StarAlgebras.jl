@@ -88,7 +88,7 @@ end
 function MA.operate_to!(res::AlgebraElement, ::typeof(*), X::AlgebraElement, Y::AlgebraElement)
     @assert parent(res) === parent(X) === parent(Y)
     mstr = mstructure(basis(parent(res)))
-    mul!(mstr, coeffs(res), coeffs(X), coeffs(Y))
+    MA.operate_to!(coeffs(res), mstr, coeffs(X), coeffs(Y))
     return res
 end
 

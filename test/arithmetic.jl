@@ -169,18 +169,18 @@
             @test coeffs(X^2) == coeffs(Xc^2) == coeffs(X * X)
             @test coeffs(Y^2) == coeffs(Yc^2) == coeffs(Y * Y)
 
-            @test coeffs(Z) == StarAlgebras.mul!(
+            @test coeffs(Z) == MA.operate_to!(
                 coeffs(W),
+                RG.mstructure,
                 coeffs(X),
                 coeffs(Y),
-                RG.mstructure,
             )
             @test coeffs(Z) == coeffs(W)
-            @test coeffs(Z) == StarAlgebras.mul!(
+            @test coeffs(Z) == MA.operate_to!(
                 coeffs(W),
+                RGc.mstructure,
                 coeffs(X),
                 coeffs(Y),
-                RGc.mstructure,
             )
             @test coeffs(Z) == coeffs(W)
 
