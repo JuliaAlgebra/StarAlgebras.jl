@@ -66,10 +66,9 @@ function MA.operate_to!(
     Y::AbstractVector,
 )
     if res === X || res === Y
-        res = zero(res)
-    else
-        MA.operate!(zero, res)
+        throw(ArgumentError("No alias allowed"))
     end
+    MA.operate!(zero, res)
     MA.operate_to!(res, UnsafeAddMul(ms), X, Y)
     res = __canonicalize!(res)
     return res
