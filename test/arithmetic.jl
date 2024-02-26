@@ -210,14 +210,14 @@
 
         let d = deepcopy(a)
             StarAlgebras.zero!(d)
-            StarAlgebras.neg!(d, a)
+            MA.operate_to!(d, -, a)
 
             d = deepcopy(a)
             @test !iszero(d)
             @test @allocated(StarAlgebras.zero!(d)) == 0
             @test iszero(d)
 
-            @test @allocated(StarAlgebras.neg!(d, a)) == 0
+            @test @allocated(MA.operate_to!(d, -, a)) == 0
             @test d == -a
         end
 

@@ -13,7 +13,7 @@ Base.:(//)(X::AlgebraElement, a::Number) = AlgebraElement(coeffs(X) .// a, paren
 Base.:div(X::AlgebraElement, a::Number) = AlgebraElement(div.(coeffs(X), a), parent(X))
 
 # ring structure:
-Base.:-(X::AlgebraElement) = neg!(similar(X), X)
+Base.:-(X::AlgebraElement) = MA.operate_to!(similar(X), -, X)
 
 function _preallocate_output(X::AlgebraElement, Y::AlgebraElement, op)
     T = Base._return_type(op, Tuple{eltype(X),eltype(Y)})
@@ -38,7 +38,7 @@ end
 
 MA.operate!(::typeof(zero), v::SparseVector) = (v .*= 0; v)
 
-function neg!(res::AlgebraElement, X::AlgebraElement)
+function MA.operate_to!(res::AlgebraElement, ::typeof(-), X::AlgebraElement)
     @assert parent(res) === parent(X)
     res.coeffs .= .-coeffs(X)
     return res
@@ -69,7 +69,7 @@ end
 
 function sub!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
     @assert parent(res) === parent(X) === parent(Y)
-    neg!(res, Y)
+    MA.operate_to!(res, -, Y)
     add!(res, res, X)
     return res
 end
