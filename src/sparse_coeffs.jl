@@ -24,18 +24,6 @@ function Base.similar(s::SparseCoefficients, ::Type{T}) where {T}
     return SparseCoefficients(similar(s.basis_elements), similar(s.values, T))
 end
 
-function unsafe_append!(
-    mc::SparseCoefficients,
-    p::Pair{<:AbstractCoefficients,T},
-) where {T}
-    c, val = p
-    append!(mc.basis_elements, keys(c))
-    for v in values(c)
-        push!(mc.values, val * v)
-    end
-    return mc
-end
-
 function __iscanonical(res::SparseCoefficients)
     issorted(keys(res)) || return false
     allunique(keys(res)) || return false

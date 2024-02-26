@@ -28,7 +28,7 @@ When the product is not representable faithfully,
 """
 abstract type MultiplicativeStructure end
 
-struct UnsafeAddMul{M<:MultiplicativeStructure}
+struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
 end
 
@@ -45,6 +45,19 @@ function MA.operate_to!(
 end
 
 function MA.operate_to!(
+    mc::SparseCoefficients,
+    ::UnsafeAddMul{typeof(*)},
+    val,
+    c::AbstractCoefficients,
+)
+    append!(mc.basis_elements, keys(c))
+    for v in values(c)
+        push!(mc.values, val * v)
+    end
+    return mc
+end
+
+function MA.operate_to!(
     res::SparseCoefficients,
     ms::UnsafeAddMul,
     v::AbstractCoefficients,
@@ -53,7 +66,7 @@ function MA.operate_to!(
     for (kv, a) in pairs(v)
         for (kw, b) in pairs(w)
             c = ms.structure(kv, kw) # ::AbstractCoefficients
-            unsafe_append!(res, c => a * b)
+            MA.operate_to!(res, UnsafeAddMul(*), a * b, c)
         end
     end
     return res

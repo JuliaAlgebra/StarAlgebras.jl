@@ -72,7 +72,7 @@ function coeffs!(
     for (k, v) in pairs(cfs)
         isone(k) && continue
         x = source[k]
-        unsafe_append!(res, SparseCoefficients((target[AugmentedDirac(x)],), (1,)) => v)
+        MA.operate_to!(res, UnsafeAddMul(*), v, SparseCoefficients((target[AugmentedDirac(x)],), (1,)))
     end
     __canonicalize!(res)
     return res
