@@ -38,7 +38,7 @@ end
 basis(A::StarAlgebra) = A.basis
 object(A::StarAlgebra) = A.object
 
-struct AlgebraElement{A,T,V}
+struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     coeffs::V
     parent::A
 end
@@ -83,7 +83,7 @@ function Base.one(T::Type, A::AbstractStarAlgebra)
     return AlgebraElement(sc, A)
 end
 
-Base.zero(a::AlgebraElement) = (b = similar(a); return zero!(b))
+Base.zero(a::AlgebraElement) = (b = similar(a); return MA.operate!(zero, b))
 Base.one(a::AlgebraElement) = one(parent(a))
 Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
 
