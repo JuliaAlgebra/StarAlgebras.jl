@@ -222,19 +222,19 @@
         end
 
         let d = deepcopy(a)
-            StarAlgebras.add!(d, d, b)
-            StarAlgebras.add!(d, b, d)
-            StarAlgebras.add!(d, a, b)
+            MA.operate_to!(d, +, d, b)
+            MA.operate_to!(d, +, b, d)
+            MA.operate_to!(d, +, a, b)
 
             d = deepcopy(a)
-            @test @allocated(StarAlgebras.add!(d, d, b)) == 0
+            @test @allocated(MA.operate_to!(d, +, d, b)) == 0
             @test d == a + b
 
             d = deepcopy(a)
-            @test @allocated(StarAlgebras.add!(d, b, d)) == 0
+            @test @allocated(MA.operate_to!(d, +, b, d)) == 0
             @test d == a + b
 
-            @test @allocated(StarAlgebras.add!(d, a, b)) == 0
+            @test @allocated(MA.operate_to!(d, +, a, b)) == 0
             @test d == a + b
         end
 

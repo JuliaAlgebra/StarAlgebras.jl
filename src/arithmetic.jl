@@ -23,7 +23,7 @@ function _preallocate_output(X::AlgebraElement, Y::AlgebraElement, op)
     return similar(X, T)
 end
 
-Base.:+(X::AlgebraElement, Y::AlgebraElement) = add!(_preallocate_output(X, Y, +), X, Y)
+Base.:+(X::AlgebraElement, Y::AlgebraElement) = MA.operate_to!(_preallocate_output(X, Y, +), +, X, Y)
 Base.:-(X::AlgebraElement, Y::AlgebraElement) = sub!(_preallocate_output(X, Y, -), X, Y)
 Base.:*(X::AlgebraElement, Y::AlgebraElement) = mul!(_preallocate_output(X, Y, *), X, Y)
 
@@ -44,7 +44,7 @@ function MA.operate_to!(res::AlgebraElement, ::typeof(-), X::AlgebraElement)
     return res
 end
 
-function add!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
+function MA.operate_to!(res::AlgebraElement, ::typeof(+), X::AlgebraElement, Y::AlgebraElement)
     @assert parent(res) === parent(X)
     @assert parent(X) === parent(Y)
     if res === X
@@ -70,7 +70,7 @@ end
 function sub!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
     @assert parent(res) === parent(X) === parent(Y)
     MA.operate_to!(res, -, Y)
-    add!(res, res, X)
+    MA.operate_to!(res, +, res, X)
     return res
 end
 
