@@ -24,7 +24,7 @@ function _preallocate_output(X::AlgebraElement, Y::AlgebraElement, op)
 end
 
 Base.:+(X::AlgebraElement, Y::AlgebraElement) = MA.operate_to!(_preallocate_output(X, Y, +), +, X, Y)
-Base.:-(X::AlgebraElement, Y::AlgebraElement) = sub!(_preallocate_output(X, Y, -), X, Y)
+Base.:-(X::AlgebraElement, Y::AlgebraElement) = MA.operate_to!(_preallocate_output(X, Y, -), -, X, Y)
 Base.:*(X::AlgebraElement, Y::AlgebraElement) = MA.operate_to!(_preallocate_output(X, Y, *), *, X, Y)
 
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
@@ -67,7 +67,7 @@ function MA.operate_to!(res::AlgebraElement, ::typeof(+), X::AlgebraElement, Y::
     return res
 end
 
-function sub!(res::AlgebraElement, X::AlgebraElement, Y::AlgebraElement)
+function MA.operate_to!(res::AlgebraElement, ::typeof(-), X::AlgebraElement, Y::AlgebraElement)
     @assert parent(res) === parent(X) === parent(Y)
     MA.operate_to!(res, -, Y)
     MA.operate_to!(res, +, res, X)
