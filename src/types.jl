@@ -43,9 +43,17 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     parent::A
 end
 
-function AlgebraElement(coeffs::AbstractVector, A::AbstractStarAlgebra)
+function _sanity_checks(coeffs, A::AbstractStarAlgebra)
+    @assert keytype(coeffs) == keytype(basis(A))
+end
+function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
+    @assert keytype(coeffs) == keytype(basis(A))
     @assert Base.haslength(basis(A))
     @assert length(coeffs) == length(basis(A))
+end
+
+function AlgebraElement(coeffs, A::AbstractStarAlgebra)
+    _sanity_checks(coeffs, A)
     return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
 end
 

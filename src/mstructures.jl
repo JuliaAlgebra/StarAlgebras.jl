@@ -41,16 +41,13 @@ struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
 end
 
-function MA.operate_to!(
-    res::SparseCoefficients,
-    ms::MultiplicativeStructure,
-    v::AbstractCoefficients,
-    w::AbstractCoefficients,
-)
+function MA.operate_to!(res, ms::MultiplicativeStructure, v, w)
+    if res === v || res === w
+        throw(ArgumentError("No alias allowed"))
+    end
     MA.operate!(zero, res)
     res = MA.operate!(UnsafeAddMul(ms), res, v, w)
-    __canonicalize!(res)
-    return res
+    return __canonicalize!(res)
 end
 
 function MA.operate!(
@@ -66,33 +63,13 @@ function MA.operate!(
     return mc
 end
 
-function MA.operate!(
-    ms::UnsafeAddMul,
-    res::SparseCoefficients,
-    v::AbstractCoefficients,
-    w::AbstractCoefficients,
-)
+function MA.operate!(ms::UnsafeAddMul, res, v, w)
     for (kv, a) in pairs(v)
         for (kw, b) in pairs(w)
-            c = ms.structure(kv, kw) # ::AbstractCoefficients
+            c = ms.structure(kv, kw)
             MA.operate!(UnsafeAddMul(*), res, a * b, c)
         end
     end
-    return res
-end
-
-function MA.operate_to!(
-    res::AbstractVector,
-    ms::MultiplicativeStructure,
-    X::AbstractVector,
-    Y::AbstractVector,
-)
-    if res === X || res === Y
-        throw(ArgumentError("No alias allowed"))
-    end
-    MA.operate!(zero, res)
-    MA.operate!(UnsafeAddMul(ms), res, X, Y)
-    res = __canonicalize!(res)
     return res
 end
 
