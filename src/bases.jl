@@ -11,14 +11,8 @@ abstract type AbstractBasis{T,I} end
 
 Base.eltype(::Type{<:AbstractBasis{T}}) where {T} = T
 Base.eltype(b::AbstractBasis) = eltype(typeof(b))
-Base.keytype(::Type{<:AbstractBasis{T,I}}) where {T,I} = I
-Base.keytype(b::AbstractBasis) = keytype(typeof(b))
-
-key_type(b) = keytype(b)
-# `keytype(::Type{SparseVector{V,K}})` is not defined so it falls
-# back to `keytype{::Type{<:AbstractArray})` which returns `Int`.
-key_type(::Type{SparseArrays.SparseVector{V,K}}) where {V,K} = K
-key_type(v::SparseArrays.SparseVector) = key_type(typeof(v))
+key_type(::Type{<:AbstractBasis{T,I}}) where {T,I} = I
+key_type(b::AbstractBasis) = key_type(typeof(b))
 
 """
     ImplicitBasis{T,I}

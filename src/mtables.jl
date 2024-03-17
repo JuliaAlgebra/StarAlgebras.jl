@@ -88,7 +88,7 @@ function MA.operate!(
     w::AbstractVector,
 )
     k = nnz(v) * nnz(w)
-    idcs = Vector{keytype(res)}()
+    idcs = Vector{key_type(res)}()
     vals = Vector{eltype(res)}()
 
     for (kv, a) in _nzpairs(v)

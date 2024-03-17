@@ -4,10 +4,16 @@ Implements `Base.keys`, `Base.values`.
 """
 abstract type AbstractCoefficients{K,V} end
 
-Base.keytype(::Type{<:AbstractCoefficients{K}}) where {K} = K
+key_type(::Type{<:AbstractCoefficients{K}}) where {K} = K
 Base.valtype(::Type{<:AbstractCoefficients{K,V}}) where {K,V} = V
-Base.keytype(b::AbstractCoefficients) = keytype(typeof(b))
+key_type(b::AbstractCoefficients) = key_type(typeof(b))
 Base.valtype(b::AbstractCoefficients) = valtype(typeof(b))
+
+key_type(b) = keytype(b)
+# `keytype(::Type{SparseVector{V,K}})` is not defined so it falls
+# back to `keytype{::Type{<:AbstractArray})` which returns `Int`.
+key_type(::Type{SparseArrays.SparseVector{V,K}}) where {V,K} = K
+key_type(v::SparseArrays.SparseVector) = key_type(typeof(v))
 
 Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
 

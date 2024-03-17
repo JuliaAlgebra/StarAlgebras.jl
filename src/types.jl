@@ -44,10 +44,10 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
 end
 
 function _sanity_checks(coeffs, A::AbstractStarAlgebra)
-    @assert key_type(coeffs) == keytype(basis(A))
+    @assert key_type(coeffs) == key_type(basis(A))
 end
 function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
-    @assert key_type(coeffs) == keytype(basis(A))
+    @assert key_type(coeffs) == key_type(basis(A))
     @assert Base.haslength(basis(A))
     @assert length(coeffs) == length(basis(A))
 end
