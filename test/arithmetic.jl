@@ -92,7 +92,7 @@
               norm(a)^2 ≈
               LinearAlgebra.dot(coeffs(a), a)
 
-        @test a * b == StarAlgebras.mul!(a, a, b)
+        @test a * b == MA.operate_to!(a, *, a, b)
 
         @test aug(a) == 3
         @test aug(b) == -1
@@ -164,30 +164,30 @@
 
             @test coeffs(X * Y) ==
                   coeffs(Xc * Yc) ==
-                  coeffs(StarAlgebras.mul!(Z, X, Y))
+                  coeffs(MA.operate_to!(Z, *, X, Y))
 
             @test coeffs(X^2) == coeffs(Xc^2) == coeffs(X * X)
             @test coeffs(Y^2) == coeffs(Yc^2) == coeffs(Y * Y)
 
-            @test coeffs(Z) == StarAlgebras.mul!(
+            @test coeffs(Z) == MA.operate_to!(
                 coeffs(W),
+                RG.mstructure,
                 coeffs(X),
                 coeffs(Y),
-                RG.mstructure,
             )
             @test coeffs(Z) == coeffs(W)
-            @test coeffs(Z) == StarAlgebras.mul!(
+            @test coeffs(Z) == MA.operate_to!(
                 coeffs(W),
+                RGc.mstructure,
                 coeffs(X),
                 coeffs(Y),
-                RGc.mstructure,
             )
             @test coeffs(Z) == coeffs(W)
 
-            StarAlgebras.zero!(W)
+            MA.operate!(zero, W)
             StarAlgebras.fmac!(coeffs(W), coeffs(X), coeffs(Y), RG.mstructure)
 
-            @test coeffs(2 * X * Y) == coeffs(StarAlgebras.mul!(W, W, 2))
+            @test coeffs(2 * X * Y) == coeffs(MA.operate_to!(W, *, W, 2))
         end
     end
 
@@ -210,54 +210,54 @@
 
         let d = deepcopy(a)
             StarAlgebras.zero!(d)
-            StarAlgebras.neg!(d, a)
+            MA.operate_to!(d, -, a)
 
             d = deepcopy(a)
             @test !iszero(d)
             @test @allocated(StarAlgebras.zero!(d)) == 0
             @test iszero(d)
 
-            @test @allocated(StarAlgebras.neg!(d, a)) == 0
+            @test @allocated(MA.operate_to!(d, -, a)) == 0
             @test d == -a
         end
 
         let d = deepcopy(a)
-            StarAlgebras.add!(d, d, b)
-            StarAlgebras.add!(d, b, d)
-            StarAlgebras.add!(d, a, b)
+            MA.operate_to!(d, +, d, b)
+            MA.operate_to!(d, +, b, d)
+            MA.operate_to!(d, +, a, b)
 
             d = deepcopy(a)
-            @test @allocated(StarAlgebras.add!(d, d, b)) == 0
+            @test @allocated(MA.operate_to!(d, +, d, b)) == 0
             @test d == a + b
 
             d = deepcopy(a)
-            @test @allocated(StarAlgebras.add!(d, b, d)) == 0
+            @test @allocated(MA.operate_to!(d, +, b, d)) == 0
             @test d == a + b
 
-            @test @allocated(StarAlgebras.add!(d, a, b)) == 0
+            @test @allocated(MA.operate_to!(d, +, a, b)) == 0
             @test d == a + b
         end
 
         let d = deepcopy(a)
-            StarAlgebras.mul!(d, d, 2)
-            StarAlgebras.mul!(d, a, 2)
-            StarAlgebras.mul!(d, a, b)
+            MA.operate_to!(d, *, d, 2)
+            MA.operate_to!(d, *, a, 2)
+            MA.operate_to!(d, *, a, b)
             d = deepcopy(a)
-            StarAlgebras.mul!(d, d, b)
+            MA.operate_to!(d, *, d, b)
 
             d = deepcopy(a)
-            @test @allocated(StarAlgebras.mul!(d, d, 2)) == 0
+            @test @allocated(MA.operate_to!(d, *, d, 2)) == 0
             @test d == 2a
 
-            @test @allocated(StarAlgebras.mul!(d, a, 2)) == 0
+            @test @allocated(MA.operate_to!(d, *, a, 2)) == 0
             @test d == 2a
 
-            @test @allocated(StarAlgebras.mul!(d, a, b)) == 32
+            @test @allocated(MA.operate_to!(d, *, a, b)) == 32
             @test d == a * b
 
             d = deepcopy(a)
-            @test @allocated(StarAlgebras.mul!(d, d, b)) != 0
-            z = StarAlgebras.mul!(d, d, b)
+            @test @allocated(MA.operate_to!(d, *, d, b)) != 0
+            z = MA.operate_to!(d, *, d, b)
             @test z == a * b
             @test z !== d
         end

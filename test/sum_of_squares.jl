@@ -9,7 +9,7 @@
 
       b = StarAlgebras.Basis{UInt32}(E_R)
 
-      mstr = StarAlgebras.MTable(b, table_size=(sizes[RADIUS], sizes[RADIUS]))
+      mstr = StarAlgebras.MTable(b, size=(sizes[RADIUS], sizes[RADIUS]))
 
       RG = StarAlgebra(F, b, mstr)
 
@@ -17,7 +17,7 @@
 
       G = (one(RG) - RG(g))
       @test G' == one(RG) - RG(inv(g))
-      @test G' * G == StarAlgebras.mul!(zero(G), G', G) == 2one(RG) - RG(g) - RG(g)'
+      @test G' * G == MA.operate_to!(zero(G), *, G', G) == 2one(RG) - RG(g) - RG(g)'
       @test star(G * G) == G' * G'
 
       @testset "Sums of hermitian squares" begin

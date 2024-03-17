@@ -1,69 +1,75 @@
 abstract type AbstractStarAlgebra{O,T} end
 
-struct StarAlgebra{O,T,M<:MultiplicativeStructure,B<:AbstractBasis{T}} <:
+struct StarAlgebra{O,T,B<:AbstractBasis{T}} <:
        AbstractStarAlgebra{O,T}
     object::O
-    mstructure::M
     basis::B
 
-    function StarAlgebra(obj, basis::AbstractBasis, mstr::MultiplicativeStructure)
+    function StarAlgebra(obj, basis::AbstractBasis)
         O = typeof(obj)
         T = eltype(basis)
-        M = typeof(mstr)
         B = typeof(basis)
 
-        return new{O,T,M,B}(obj, mstr, basis)
+        return new{O,T,B}(obj, basis)
     end
 
-    function StarAlgebra(obj, mstr::MultiplicativeStructure)
-        O = typeof(obj)
-        T = eltype(obj)
-        M = typeof(mstr)
-        B = Basis{T,eltype(mstr)}
+    # function StarAlgebra(obj, mstr::MultiplicativeStructure)
+    #     O = typeof(obj)
+    #     T = eltype(obj)
+    #     M = typeof(mstr)
+    #     B = FixedBasis{T,eltype(mstr)}
 
-        return new{O,T,M,B}(obj, mstr)
-    end
+    #     return new{O,T,M,B}(obj, mstr)
+    # end
 end
 
-# TrivialMStructure:
-function StarAlgebra(obj, basis::AbstractBasis)
-    mstr = TrivialMStructure(basis)
-    return StarAlgebra(obj, basis, mstr)
-end
-
-# CachedMStructure:
+# MTable:
 function StarAlgebra(
     obj,
     basis::AbstractBasis,
     cache_size::Tuple{<:Integer,Integer};
     precompute=false
 )
-    mstr = CachedMTable(basis, table_size=cache_size)
+    mstr = MTable(basis, size=cache_size)
     precompute && complete!(mstr)
     return StarAlgebra(obj, basis, mstr)
 end
 
-hasbasis(A::StarAlgebra) = isdefined(A, :basis)
-
 basis(A::StarAlgebra) = A.basis
 object(A::StarAlgebra) = A.object
-# Base.eltype(A::StarAlgebra{O,B}) where {O,B} = eltype(B)
 
-struct AlgebraElement{A,T,V<:AbstractVector{T}}
+struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     coeffs::V
     parent::A
+end
 
-    function AlgebraElement(coeffs::AbstractVector, A::AbstractStarAlgebra)
-        if hasbasis(A)
-            @assert length(coeffs) == length(basis(A))
-        end
-        return new{typeof(A),eltype(coeffs),typeof(coeffs)}(coeffs, A)
-    end
+function _sanity_checks(coeffs, A::AbstractStarAlgebra)
+    @assert key_type(coeffs) == key_type(basis(A))
+end
+function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
+    @assert key_type(coeffs) == key_type(basis(A))
+    @assert Base.haslength(basis(A))
+    @assert length(coeffs) == length(basis(A))
+end
+
+function AlgebraElement(coeffs, A::AbstractStarAlgebra)
+    _sanity_checks(coeffs, A)
+    return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
+end
+
+function AlgebraElement(
+    coeffs::SparseCoefficients{T},
+    A::AbstractStarAlgebra{O,T}
+) where {O,T}
+    return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
 end
 
 coeffs(a::AlgebraElement) = a.coeffs
+function coeffs(x::AlgebraElement, b::AbstractBasis)
+    return coeffs(coeffs(x), basis(parent(x)), b)
+end
 Base.parent(a::AlgebraElement) = a.parent
-Base.eltype(a::AlgebraElement) = eltype(coeffs(a))
+Base.eltype(a::AlgebraElement) = valtype(coeffs(a))
 
 ### constructing elements
 Base.zero(A::AbstractStarAlgebra) = zero(Int, A)
@@ -79,17 +85,13 @@ end
 
 Base.one(A::AbstractStarAlgebra) = one(Int, A)
 function Base.one(T::Type, A::AbstractStarAlgebra)
-    if hasbasis(A)
-        b = basis(A)
-        i = b[one(object(A))]
-        return AlgebraElement(sparsevec([i], [one(T)], length(b)), A)
-    end
-    throw(
-        "Algebra without basis; use the `AlgebraElement` constructor directly.",
-    )
+    b = basis(A)
+    i = b[one(object(A))]
+    sc = SparseCoefficients([i], [one(T)])
+    return AlgebraElement(sc, A)
 end
 
-Base.zero(a::AlgebraElement) = (b = similar(a); return zero!(b))
+Base.zero(a::AlgebraElement) = (b = similar(a); return MA.operate!(zero, b))
 Base.one(a::AlgebraElement) = one(parent(a))
 Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
 

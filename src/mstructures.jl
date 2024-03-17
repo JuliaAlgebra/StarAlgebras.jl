@@ -1,12 +1,10 @@
-abstract type MultiplicativeStructure{I} <: AbstractMatrix{I} end
-
-struct ProductNotDefined <: Exception
+struct ProductNotWellDefined <: Exception
     i::Any
     j::Any
     msg::Any
 end
 
-function Base.showerror(io::IO, ex::ProductNotDefined)
+function Base.showerror(io::IO, ex::ProductNotWellDefined)
     print(io, "Product of elements $(ex.i) and $(ex.j) is not defined on the basis")
     print(io, " or the multiplicative structure could not be completed")
     if isdefined(ex, :msg)
@@ -15,26 +13,84 @@ function Base.showerror(io::IO, ex::ProductNotDefined)
     print(io, ".")
 end
 
-struct TrivialMStructure{I,B<:AbstractBasis} <: MultiplicativeStructure{I}
-    basis::B
+"""
+    MultiplicativeStructure
+Structure representing multiplication w.r.t its basis.
+
+Implements
+* `basis(ms::MultiplicativeStructure{T}) → AbstractBasis{T}`
+* `Basis.getindex(ms::MultiplicativeStructure{T}, i::T, j::T) →
+        Union{AbstractCoefficients, AbstractVector}`
+   the product of `i` and `j` represented by coefficients in `basis(ms)`.
+
+When the product is not representable faithfully,
+   `ProductNotWellDefined` exception should be thrown.
+"""
+abstract type MultiplicativeStructure end
+
+"""
+    struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
+        structure::M
+    end
+
+The value of `(op::UnsafeAddMul)(a, b, c)` is `a + structure(b, c)`
+where `a` is not expected to be canonicalized before the operation `+`
+and should not be expected to be canonicalized after either.
+"""
+struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
+    structure::M
 end
 
-TrivialMStructure(basis::AbstractBasis{T,I}) where {T,I} =
-    TrivialMStructure{I,typeof(basis)}(basis)
+function MA.operate_to!(res, ms::MultiplicativeStructure, v, w)
+    if res === v || res === w
+        throw(ArgumentError("No alias allowed"))
+    end
+    MA.operate!(zero, res)
+    res = MA.operate!(UnsafeAddMul(ms), res, v, w)
+    return MA.operate!!(canonical, res)
+end
 
-basis(mstr::TrivialMStructure) = mstr.basis
-Base.size(mstr::TrivialMStructure) = (l = length(basis(mstr)); (l, l))
-_get(mstr::TrivialMStructure, i) = i ≥ 0 ? i : (b = basis(mstr); b[star(b[-i])])
-
-Base.@propagate_inbounds function Base.getindex(
-    mstr::TrivialMStructure,
-    i::Integer,
-    j::Integer,
+function MA.operate!(
+    ::UnsafeAddMul{typeof(*)},
+    mc::SparseCoefficients,
+    val,
+    c::AbstractCoefficients,
 )
-    b = basis(mstr)
-    i, j = _get(mstr, i), _get(mstr, j)
-    g, h = b[i], b[j]
-    gh = g * h
-    gh in b || throw(ProductNotDefined(i, j, "$g · $h = $gh"))
-    return basis(mstr)[gh]
+    append!(mc.basis_elements, keys(c))
+    for v in values(c)
+        push!(mc.values, val * v)
+    end
+    return mc
+end
+
+function MA.operate!(ms::UnsafeAddMul, res, v, w)
+    for (kv, a) in nonzero_pairs(v)
+        for (kw, b) in nonzero_pairs(w)
+            c = ms.structure(kv, kw)
+            MA.operate!(UnsafeAddMul(*), res, a * b, c)
+        end
+    end
+    return res
+end
+
+struct DiracMStructure{Op} <: MultiplicativeStructure
+    op::Op
+end
+
+DiracMStructure() = DiracMStructure(*)
+
+(mstr::DiracMStructure)(x::T, y::T) where {T} = Dirac(mstr.op(x, y))
+(mstr::DiracMStructure)(δx::Dirac, δy::Dirac) = mstr.op(δx, δy)
+
+struct AugmentedMStructure{M<:DiracMStructure} <: MultiplicativeStructure
+    op::M
+end
+
+function (mstr::AugmentedMStructure)(aδx::AugmentedDirac, aδy::AugmentedDirac)
+    δxy = mstr.op(aδx.dirac, aδy.dirac)# :: Dirac
+    c = ifelse(isone(δxy.element), zero(δxy.value), one(δxy.value))
+    aδxy = AugmentedDirac(δxy)
+
+    #(x-1)*(y-1) = 1 - x - y + xy = -1·(x-1) - 1·(y-1) + 1·(xy-1)
+    return SparseCoefficients((aδx, aδy, aδxy), (-one(c), -one(c), c))
 end
