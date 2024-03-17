@@ -7,7 +7,7 @@ Dirac(x) = Dirac(x, 1)
 Base.getindex(δ::Dirac{K,V}, i::K) where {K,V} =
     ifelse(i == δ.element, δ.value, zero(δ.value))
 
-__iscanonical(::Dirac) = true
+canonical(δ::Dirac) = δ
 Base.iszero(δ::Dirac) = iszero(δ.value)
 
 Base.keys(δ::Dirac) = (δ.element,)

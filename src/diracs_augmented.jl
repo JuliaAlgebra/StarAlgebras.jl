@@ -9,7 +9,7 @@ function Base.getindex(aδ::AugmentedDirac{K}, i::K) where {K}
     return ifelse(isone(i), -v, v)
 end
 
-__iscanonical(aδ::AugmentedDirac) = true
+canonical(aδ::AugmentedDirac) = aδ
 Base.iszero(aδ::AugmentedDirac) = all(iszero, values(aδ))
 
 Base.keys(aδ::AugmentedDirac) = (k = keys(aδ.dirac); (one(first(k)), first(k)))

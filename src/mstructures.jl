@@ -47,7 +47,7 @@ function MA.operate_to!(res, ms::MultiplicativeStructure, v, w)
     end
     MA.operate!(zero, res)
     res = MA.operate!(UnsafeAddMul(ms), res, v, w)
-    return __canonicalize!(res)
+    return MA.operate!!(canonical, res)
 end
 
 function MA.operate!(
@@ -73,8 +73,6 @@ function MA.operate!(ms::UnsafeAddMul, res, v, w)
     return res
 end
 
-__canonicalize!(sv::SparseVector) = dropzeros!(sv)
-__canonicalize!(v::AbstractVector) = v
 struct DiracMStructure{Op} <: MultiplicativeStructure
     op::Op
 end

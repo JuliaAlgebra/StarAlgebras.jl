@@ -24,18 +24,36 @@ function Base.similar(s::SparseCoefficients, ::Type{T}) where {T}
     return SparseCoefficients(similar(s.basis_elements), similar(s.values, T))
 end
 
-function __iscanonical(res::SparseCoefficients)
-    issorted(keys(res)) || return false
-    allunique(keys(res)) || return false
-    return true
+function MA.mutability(
+    ::Type{<:SparseCoefficients},
+    ::typeof(canonical),
+    arg::Vararg{Type},
+)
+    return MA.IsMutable()
 end
 
-function __canonicalize!(res::SparseCoefficients)
-    if !issorted(keys(res))
+function MA.operate!(::typeof(canonical), res::SparseCoefficients)
+    sorted = issorted(keys(res))
+    distinct = allunique(keys(res))
+    if sorted && distinct
+        return res
+    end
+
+    if !sorted
         p = sortperm(res.basis_elements)
         permute!(res.basis_elements, p)
         permute!(res.values, p)
     end
+
+    if distinct
+        k = findfirst(iszero, values(res))
+        if !isnothing(k)
+            deleteat!(res.basis_elements, k)
+            deleteat!(res.values, k)
+        end
+        return res
+    end
+
     todelete = BitSet()
     for i in firstindex(res.basis_elements):lastindex(res.basis_elements)-1
         if iszero(res.values[i])

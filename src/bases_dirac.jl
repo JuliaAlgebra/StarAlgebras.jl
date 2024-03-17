@@ -74,6 +74,5 @@ function coeffs!(
         x = source[k]
         MA.operate!(UnsafeAddMul(*), res, v, SparseCoefficients((target[AugmentedDirac(x)],), (1,)))
     end
-    __canonicalize!(res)
-    return res
+    return MA.operate!!(canonical, res)
 end

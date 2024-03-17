@@ -85,9 +85,8 @@ SA.star(g::PermutationGroups.AP.AbstractPermutation) = inv(g)
         @test aug(fs) == aug(s)
         @test aug(fr * fs) == aug(fr) * aug(fs)
 
-        rs_cfs = coeffs(r * s, basis(fRG))
-        @test rs_cfs isa AbstractVector
-        @test fr * fs == SA.AlgebraElement(rs_cfs, fRG)
+        @test coeffs(r * s, basis(fRG)) isa AbstractVector
+        @test fr * fs == SA.AlgebraElement(coeffs(r * s, basis(fRG)), fRG)
 
         a, b = let mt = SA.mstructure(basis(fRG)).table
             count(i -> isassigned(mt, i), eachindex(mt)), length(mt)

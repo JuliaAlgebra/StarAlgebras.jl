@@ -17,12 +17,33 @@ key_type(v::SparseArrays.SparseVector) = key_type(typeof(v))
 
 Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
 
+"""
+    canonical(ac::AbstractCoefficients)
+Compute the canonical form of `ac` (e.g. grouping coefficients together, etc).
+
+If `ac` can be brough to canonical form in-place one has to implement
+* `MA.mutability(::Type{typeof(ac)}, canonical, ::Vararg{Type}) = MA.IsMutable()`
+* `MA.operate!(canonical, ac)` that performs this canonicalization.
+
+otherwise `canonical(ac)` needs to be implemented.
+"""
+canonical(ac::AbstractCoefficients) = ac
+MA.operate(::typeof(canonical), x) = canonical(x) # fallback?
+
+# example implementation for vectors
+function MA.mutability(
+    ::Type{<:SparseVector},
+    ::typeof(canonical),
+    ::Vararg{Type},
+)
+    return MA.IsMutable()
+end
+MA.operate!(::typeof(canonical), sv::SparseVector) = dropzeros!(sv)
+canonical(v::AbstractVector) = v
+
 function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
-    for x in (ac1, ac2)
-        if !__iscanonical(x)
-            __canonicalize!(x)
-        end
-    end
+    ac1 = MA.operate!!(canonical, ac1)
+    ac2 = MA.operate!!(canonical, ac2)
     return keys(ac1) == keys(ac2) && values(ac1) == values(ac2)
 end
 
