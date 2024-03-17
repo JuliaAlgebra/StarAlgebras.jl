@@ -64,8 +64,8 @@ function MA.operate!(
 end
 
 function MA.operate!(ms::UnsafeAddMul, res, v, w)
-    for (kv, a) in pairs(v)
-        for (kw, b) in pairs(w)
+    for (kv, a) in nonzero_pairs(v)
+        for (kw, b) in nonzero_pairs(w)
             c = ms.structure(kv, kw)
             MA.operate!(UnsafeAddMul(*), res, a * b, c)
         end

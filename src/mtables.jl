@@ -27,7 +27,7 @@ function MTable(
     @assert length(elts) ≥ first(dims)
     @assert length(elts) ≥ last(dims)
 
-    relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
+    relts = Dict(b => I(idx) for (idx, b) in nonzero_pairs(elts))
     starof = [relts[star(x)] for x in elts]
     T = typeof(mstr(first(elts), first(elts)))
     table = Matrix{T}(undef, dims)
@@ -91,10 +91,10 @@ function MA.operate!(
     idcs = Vector{key_type(res)}()
     vals = Vector{eltype(res)}()
 
-    for (kv, a) in _nzpairs(v)
-        for (kw, b) in _nzpairs(w)
+    for (kv, a) in nonzero_pairs(v)
+        for (kw, b) in nonzero_pairs(w)
             c = ms.structure(kv, kw)
-            for (k, v) in pairs(c)
+            for (k, v) in nonzero_pairs(c)
                 push!(idcs, ms.structure[k])
                 push!(vals, v * a * b)
             end

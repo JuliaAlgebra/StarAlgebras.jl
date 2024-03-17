@@ -69,7 +69,7 @@ function coeffs!(
     if !iszero(s)
         throw("Conversion to $target not possible due to non-zero augmentation: $s")
     end
-    for (k, v) in pairs(cfs)
+    for (k, v) in nonzero_pairs(cfs)
         isone(k) && continue
         x = source[k]
         MA.operate!(UnsafeAddMul(*), res, v, SparseCoefficients((target[AugmentedDirac(x)],), (1,)))

@@ -26,6 +26,21 @@ function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
     return keys(ac1) == keys(ac2) && values(ac1) == values(ac2)
 end
 
+"""
+    nonzero_pairs(ac::AbstractCoefficients)
+Return an iterator over pairs `(k=>v)` of keys and values stored in `ac`.
+
+The iterator contains all pairs with `v` potentially non-zero.
+"""
+function nonzero_pairs(ac::AbstractCoefficients)
+    return (k => v for (k, v) in zip(keys(ac), values(ac)))
+end
+
+nonzero_pairs(v::AbstractVector) = pairs(v)
+function nonzero_pairs(v::AbstractSparseVector)
+    return zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
+end
+
 aug(ac::AbstractCoefficients) = sum(c * aug(x) for (x, c) in pairs(ac))
 aug(v::AbstractVector) = sum(v)
 aug(x::Any) = 1 # ???? dubious...

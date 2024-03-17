@@ -48,19 +48,19 @@ function MA.operate_to!(res::AlgebraElement, ::typeof(+), X::AlgebraElement, Y::
     @assert parent(res) === parent(X)
     @assert parent(X) === parent(Y)
     if res === X
-        for (idx, y) in _nzpairs(coeffs(Y))
+        for (idx, y) in nonzero_pairs(coeffs(Y))
             res[idx] += y
         end
     elseif res === Y
-        for (idx, x) in _nzpairs(coeffs(X))
+        for (idx, x) in nonzero_pairs(coeffs(X))
             res[idx] += x
         end
     else
         MA.operate!(zero, res)
-        for (idx, x) in _nzpairs(coeffs(X))
+        for (idx, x) in nonzero_pairs(coeffs(X))
             res[idx] += x
         end
-        for (idx, y) in _nzpairs(coeffs(Y))
+        for (idx, y) in nonzero_pairs(coeffs(Y))
             res[idx] += y
         end
     end
@@ -79,7 +79,7 @@ function MA.operate_to!(res::AlgebraElement, ::typeof(*), X::AlgebraElement, a::
     if res !== X
         MA.operate!(zero, res)
     end
-    for (idx, x) in _nzpairs(coeffs(X))
+    for (idx, x) in nonzero_pairs(coeffs(X))
         res.coeffs[idx] = a * x
     end
     return res
@@ -92,6 +92,4 @@ function MA.operate_to!(res::AlgebraElement, ::typeof(*), X::AlgebraElement, Y::
     return res
 end
 
-_nzpairs(v::AbstractVector) = pairs(v)
-_nzpairs(v::AbstractSparseVector) =
-    zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
+
