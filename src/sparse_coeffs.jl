@@ -9,6 +9,10 @@ end
 
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
 Base.values(sc::SparseCoefficients) = sc.values
+function Base.copy(sc::SparseCoefficients)
+    return SparseCoefficients(copy(keys(sc)), copy(values(sc)))
+end
+
 function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
     k = searchsortedfirst(sc.basis_elements, key)
     if k in eachindex(sc.basis_elements)
@@ -34,7 +38,7 @@ function Base.zero(sc::SparseCoefficients)
     return SparseCoefficients(empty(keys(sc)), empty(values(sc)))
 end
 
-function Base.similar(s::SparseCoefficients, ::Type{T}) where {T}
+function Base.similar(s::SparseCoefficients, ::Type{T} = valtype(s)) where {T}
     return SparseCoefficients(similar(s.basis_elements), similar(s.values, T))
 end
 

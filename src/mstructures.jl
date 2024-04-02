@@ -57,8 +57,11 @@ function MA.operate!(
     c::AbstractCoefficients,
 )
     append!(mc.basis_elements, keys(c))
-    for v in values(c)
-        push!(mc.values, val * v)
+    vals = values(c)
+    if vals isa AbstractVector
+        append!(mc.values, val .* vals)
+    else
+        append!(mc.values, val * collect(values(c)))
     end
     return mc
 end

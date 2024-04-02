@@ -35,6 +35,10 @@ function zero_coeffs(::Type{S}, eb::ExplicitBasis{T,I}) where {S,T,I}
     return spzeros(S, I, length(eb))
 end
 
+function Base.getindex(eb::ExplicitBasis, range::AbstractRange{<:Integer})
+    return [eb[i] for i in range]
+end
+
 """
     coeffs(cfs, source, target)
 Translate coefficients `cfs` in `source::AbstractBasis` to basis

@@ -49,6 +49,10 @@ function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
     return true
 end
 
+function Base.hash(ac::AbstractCoefficients, h::UInt)
+    return foldl((h, i) -> hash(i, h), nonzero_pairs(ac); init = h)
+end
+
 """
     nonzero_pairs(ac::AbstractCoefficients)
 Return an iterator over pairs `(k=>v)` of keys and values stored in `ac`.

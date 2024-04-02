@@ -39,7 +39,7 @@ Base.@propagate_inbounds function __absindex(mt::MTable, i::Integer)
     return ifelse(i > 0, i, oftype(i, mt.starof[abs(i)]))
 end
 
-Base.size(mt::MTable) = size(mt.table)
+Base.size(mt::MTable, i::Vararg) = size(mt.table, i...)
 Base.haskey(mt::MTable, x) = haskey(mt.relts, x)
 Base.getindex(mt::MTable{T}, x::T) where {T} = mt.relts[x]
 Base.@propagate_inbounds Base.getindex(mt::MTable, i::Integer) =
