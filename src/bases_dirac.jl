@@ -20,11 +20,10 @@ Base.iterate(db::DiracBasis) = iterate(object(db))
 Base.iterate(db::DiracBasis, st) = iterate(object(db), st)
 
 Base.in(g, db::DiracBasis) = g in object(db)
-Base.in(δ::Dirac, db::DiracBasis) = δ.element in object(db)
 
 function Base.getindex(db::DiracBasis{T}, x::T) where {T}
     @assert x in object(db)
-    return Dirac(x)
+    return x
 end
 
 mstructure(db::DiracBasis{T}) where {T} = db.moperation

@@ -1,9 +1,3 @@
-using PermutationGroups
-using Random
-
-SA.star(x::Number) = x'
-SA.star(g::PermutationGroups.AP.AbstractPermutation) = inv(g)
-
 @testset "POC: group algebra" begin
     G = PermGroup(perm"(1,2,3,4,5,6)", perm"(1,2)")
     g = Permutation(perm"(1,4,3,6)(2,5)", G)
@@ -11,10 +5,10 @@ SA.star(g::PermutationGroups.AP.AbstractPermutation) = inv(g)
 
     db = SA.DiracBasis{UInt32}(G)
     @test SA.mstructure(db) == SA.DiracMStructure(*)
-    @test SA.mstructure(db)(g, h) == SA.Dirac(g * h)
+    @test SA.mstructure(db)(g, h) == SA.SparseCoefficients((g * h,), (1,))
 
-    @test db[g] isa SA.Dirac
-    @test_throws MethodError db[db[g]]
+    @test db[g] == g
+    @test db[db[g]] == g
 
     xcfs = SA.SparseCoefficients([one(G), g], [1, -1])
     ycfs = SA.SparseCoefficients([one(G), inv(g)], [1, -1])
