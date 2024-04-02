@@ -33,18 +33,22 @@ include("test_example_words.jl")
     using PermutationGroups
     include("perm_grp_algebra.jl")
 
-    using GroupsCore
-    StarAlgebras.star(g::GroupsCore.GroupElement) = inv(g)
-
-    using SparseArrays
-    if VERSION < v"1.9"
-        Base.sum(v::SparseVector) = sum(nonzeros(v))
-    end
-
-    using PermutationGroups
+    # arithmetic for perm group algebra and the free monoid algebra
     include("arithmetic.jl")
 
+    # include("mtables.jl")
+    include("constructors.jl")
+
+    # using SparseArrays
+    # if VERSION < v"1.9"
+    #     Base.sum(v::SparseVector) = sum(nonzeros(v))
+    # end
+
+    # some applications:
     using Groups
+    function Base.isless(g::Groups.FPGroupElement, h::Groups.FPGroupElement)
+        return isless(Groups.word(g), Groups.word(h))
+    end
     include("sum_of_squares.jl")
 end
 
