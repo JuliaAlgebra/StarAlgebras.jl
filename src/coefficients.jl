@@ -65,3 +65,127 @@ end
 aug(ac::AbstractCoefficients) = sum(c * aug(x) for (x, c) in pairs(ac))
 aug(v::AbstractVector) = sum(v)
 aug(x::Any) = 1 # ???? dubious...
+# general mutable API
+# why here?
+MA.operate!(::typeof(zero), v::SparseVector) = (v .*= 0; v)
+
+Base.zero(X::AbstractCoefficients) = MA.operate!(zero, similar(X))
+Base.:-(X::AbstractCoefficients) = MA.operate_to!(__prealloc(X, -1, *), -, X)
+Base.:*(a::Number, X::AbstractCoefficients) = X * a
+Base.:/(X::AbstractCoefficients, a::Number) = X * inv(a)
+Base.://(X::AbstractCoefficients, a::Number) = X * 1 // a
+
+function Base.:*(X::AbstractCoefficients, a::Number)
+    return MA.operate_to!(__prealloc(X, a, *), *, X, a)
+end
+function Base.:div(X::AbstractCoefficients, a::Number)
+    return MA.operate_to!(__prealloc(X, a, div), div, X, a)
+end
+function Base.:+(X::AbstractCoefficients, Y::AbstractCoefficients)
+    return MA.operate_to!(__prealloc(X, Y, +), +, X, Y)
+end
+function Base.:-(X::AbstractCoefficients, Y::AbstractCoefficients)
+    return MA.operate_to!(__prealloc(X, Y, -), -, X, Y)
+end
+
+## fallbacks; require Base.setindex! implemented for AbstractCoefficients
+
+function MA.operate!(::typeof(zero), X::AbstractCoefficients)
+    for (idx, x) in nonzero_pairs(X)
+        X[idx] = zero(x)
+    end
+    return X
+end
+
+# unary -
+function MA.operate_to!(
+    res::AbstractCoefficients,
+    ::typeof(-),
+    X::AbstractCoefficients,
+)
+    if res !== X
+        MA.operate!(zero, res)
+    end
+    for (idx, x) in nonzero_pairs(X)
+        res[idx] = -x
+    end
+    return res
+end
+
+# scalar
+function MA.operate_to!(
+    res::AbstractCoefficients,
+    ::typeof(*),
+    X::AbstractCoefficients,
+    a::Number,
+)
+    if res !== X
+        MA.operate!(zero, res)
+    end
+    for (idx, x) in nonzero_pairs(X)
+        res[idx] = a * x
+    end
+    return res
+end
+
+function MA.operate_to!(
+    res::AbstractCoefficients,
+    ::typeof(div),
+    X::AbstractCoefficients,
+    a::Number,
+)
+    if res !== X
+        MA.operate!(zero, res)
+    end
+    for (idx, x) in nonzero_pairs(X)
+        res[idx] = div(x, a)
+    end
+    return res
+end
+
+# binary ops
+function MA.operate_to!(
+    res::AbstractCoefficients,
+    ::typeof(+),
+    X::AbstractCoefficients,
+    Y::AbstractCoefficients,
+)
+    if res === X
+        for (idx, y) in nonzero_pairs(Y)
+            res[idx] += y
+        end
+    elseif res === Y
+        for (idx, x) in nonzero_pairs(X)
+            res[idx] += x
+        end
+    else
+        MA.operate!(zero, res)
+        for (idx, x) in nonzero_pairs(X)
+            res[idx] += x
+        end
+        for (idx, y) in nonzero_pairs(Y)
+            res[idx] += y
+        end
+    end
+    return res
+end
+
+function MA.operate_to!(
+    res::AbstractCoefficients,
+    ::typeof(-),
+    X::AbstractCoefficients,
+    Y::AbstractCoefficients,
+)
+    if res === X
+        for (idx, y) in nonzero_pairs(Y)
+            X[idx] -= y
+        end
+    else
+        if res !== Y
+            MA.operate!(zero, res)
+        end
+        MA.operate_to!(res, -, Y)
+        MA.operate_to!(res, +, res, X)
+    end
+    return res
+end
