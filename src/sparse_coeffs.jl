@@ -7,12 +7,6 @@ function SparseCoefficients(elts::Ks, vals::Vs) where {Ks,Vs}
     return SparseCoefficients{eltype(elts),eltype(vals),Ks,Vs}(elts, vals)
 end
 
-function MA.operate!(::typeof(zero), s::SparseCoefficients)
-    empty!(s.basis_elements)
-    empty!(s.values)
-    return s
-end
-
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
 Base.values(sc::SparseCoefficients) = sc.values
 
@@ -25,11 +19,24 @@ function Base.similar(s::SparseCoefficients, ::Type{T}) where {T}
 end
 
 function MA.mutability(
-    ::Type{<:SparseCoefficients},
+    ::Type{<:SparseCoefficients{K,V,Vk,Vv}},
     ::typeof(canonical),
     arg::Vararg{Type},
-)
-    return MA.IsMutable()
+) where {K,V,Vk,Vv}
+    # return MA.IsMutable()
+    return MA.mutability(Vk)
+end
+
+### temporary convenience? how to handle this?
+function __prealloc(X::SparseCoefficients, a::Number, op)
+    T = Base._return_type(op, Tuple{valtype(X),typeof(a)})
+    return similar(X, T)
+end
+
+function __prealloc(X::SparseCoefficients, Y::SparseCoefficients, op)
+    # this is not even correct for op = *
+    T = Base._return_type(op, Tuple{valtype(X),valtype(Y)})
+    return similar(X, T)
 end
 
 function MA.operate!(::typeof(canonical), res::SparseCoefficients)
@@ -68,5 +75,60 @@ function MA.operate!(::typeof(canonical), res::SparseCoefficients)
     end
     deleteat!(res.basis_elements, todelete)
     deleteat!(res.values, todelete)
+    return res
+end
+
+# arithmetic on coefficients; performance overloads
+
+function MA.operate!(::typeof(zero), s::SparseCoefficients)
+    empty!(s.basis_elements)
+    empty!(s.values)
+    return s
+end
+
+function MA.operate_to!(
+    res::SparseCoefficients,
+    ::typeof(-),
+    X::SparseCoefficients,
+)
+    return MA.operate_to!(res, *, X, -1)
+end
+
+function MA.operate_to!(
+    res::SparseCoefficients,
+    ::typeof(*),
+    X::SparseCoefficients,
+    a::Number,
+)
+    if res === X
+        res.values .*= a
+    else
+        resize!(res.basis_elements, length(X.basis_elements))
+        resize!(res.values, length(res.basis_elements))
+        res.basis_elements .= X.basis_elements
+        res.values .= a .* X.values
+    end
+
+    return res
+end
+
+function MA.operate_to!(
+    res::SparseCoefficients,
+    ::typeof(+),
+    X::SparseCoefficients,
+    Y::SparseCoefficients,
+)
+    if res === X
+        append!(res.basis_elements, Y.basis_elements)
+        append!(res.values, Y.values)
+    elseif res === Y
+        append!(res.basis_elements, X.basis_elements)
+        append!(res.values, X.values)
+    else
+        MA.operate!(zero, res)
+        append!(res.basis_elements, X.basis_elements, Y.basis_elements)
+        append!(res.values, X.values, Y.values)
+    end
+    MA.operate!(canonical, res)
     return res
 end
