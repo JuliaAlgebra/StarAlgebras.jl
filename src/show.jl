@@ -22,13 +22,12 @@ function Base.show(io::IO, a::AlgebraElement)
         T = valtype(coeffs(a))
         _coeff_elt_print(io, zero(T), first(basis(A)))
     else
-        first = true
-        for (idx, value) in pairs(coeffs(a))
-            iszero(value) && continue
+        _first = true
+        for (idx, value) in nonzero_pairs(coeffs(a))
             c, elt = value, basis(A)[idx]
-            if first
+            if _first
                 _coeff_elt_print(io, c, elt)
-                first = false
+                _first = false
             else
                 if __prints_with_minus(c)
                     print(io, ' ')
