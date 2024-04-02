@@ -64,9 +64,18 @@ function nonzero_pairs(v::AbstractSparseVector)
     return zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
 end
 
-aug(ac::AbstractCoefficients) = sum(c * aug(x) for (x, c) in pairs(ac))
+function aug(ac::AbstractCoefficients)
+    isempty(keys(ac)) && return zero(valtype(ac))
+    return sum(c * aug(x) for (x, c) in nonzero_pairs(ac))
+end
 aug(v::AbstractVector) = sum(v)
 aug(x::Any) = 1 # ???? dubious...
+
+function LinearAlgebra.norm(sc::AbstractCoefficients, p::Real)
+    isempty(keys(sc)) && return (0^p)^1 / p
+    return sum(v^p for v in values(sc))^1 / p
+end
+
 # general mutable API
 # why here?
 MA.operate!(::typeof(zero), v::SparseVector) = (v .*= 0; v)

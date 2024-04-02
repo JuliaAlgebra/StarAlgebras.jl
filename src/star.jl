@@ -1,14 +1,14 @@
-star(x::Real) = x
-star(x::Complex) = conj(x)
-# star(x) = x' # ???
-star(::AbstractBasis, x) = star(x)
-star(basis::AbstractBasis, i::Integer) = basis[-i]
-
-function star(basis::AbstractBasis, d::Dirac)
-    return Dirac(star(basis, d.element), star(d.value))
+star(x::Any) = x'
+function star(X::AlgebraElement)
+    res = star(basis(parent(X)), coeffs(X))
+    return AlgebraElement(res, parent(X))
 end
-function star(basis::AbstractBasis, ad::AugmentedDirac)
-    return AugmentedDirac(star(basis, ad.dirac))
+
+star(::AbstractBasis, x) = star(x)
+star(basis::ImplicitBasis, i::Integer) = basis[-i]
+
+function star(basis::AbstractBasis, ad::Augmented)
+    return Augmented(star(basis, ad.elt))
 end
 
 function star(basis::AbstractBasis, d::SparseCoefficients)
@@ -22,6 +22,5 @@ function star(basis::FixedBasis, coeffs::SparseVector)
     nzvals = star.(SparseArrays.nonzeros(coeffs))
 
     v = SparseVector(length(coeffs), nzidcs, nzvals)
-    dropzeros!(v)
     return v
 end

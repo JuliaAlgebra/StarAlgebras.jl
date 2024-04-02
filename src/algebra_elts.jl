@@ -5,6 +5,15 @@ function Base.:(==)(X::AlgebraElement, Y::AlgebraElement)
     return coeffs(X) == coeffs(Y)
 end
 
+Base.copy(a::AlgebraElement) = AlgebraElement(copy(coeffs(a)), parent(a))
+
+function Base.deepcopy_internal(a::AlgebraElement, id::IdDict)
+    if !haskey(id, a)
+        id[a] = AlgebraElement(Base.deepcopy_internal(coeffs(a), id), parent(a))
+    end
+    return id[a]
+end
+
 Base.getindex(a::AlgebraElement, x) = coeffs(a)[x]
 Base.setindex!(a::AlgebraElement, v, idx) = a.coeffs[idx] = v
 # call overload:
@@ -12,28 +21,21 @@ Base.setindex!(a::AlgebraElement, v, idx) = a.coeffs[idx] = v
 
 # AlgebraElement specific functions
 
-supp(a::AlgebraElement) = (b = basis(parent(a)); [b[i] for i in keys(coeffs(a))])
-
-function star(X::AlgebraElement)
-    res = star(basis(parent(X)), coeffs(X))
-    return AlgebraElement(res, parent(X))
+function supp(a::AlgebraElement)
+    b = basis(parent(a))
+    return [b[i] for (i, _) in nonzero_pairs(coeffs(a))]
 end
+
+aug(a::AlgebraElement) = aug(coeffs(a))
 
 Base.adjoint(a::AlgebraElement) = star(a)
 
-LinearAlgebra.norm(a::AlgebraElement, p::Real) =
-    LinearAlgebra.norm(coeffs(a), p)
-aug(a::AlgebraElement) = aug(coeffs(a))
-
-LinearAlgebra.dot(a::AlgebraElement, v::AbstractVector) =
-    LinearAlgebra.dot(StarAlgebras.coeffs(a), v)
-LinearAlgebra.dot(v::AbstractVector, a::AlgebraElement) = LinearAlgebra.dot(a, v)
-
-Base.copy(a::AlgebraElement) = AlgebraElement(copy(coeffs(a)), parent(a))
-
-function Base.deepcopy_internal(a::AlgebraElement, IdDict::IdDict)
-    if !haskey(IdDict, a)
-        IdDict[a] = AlgebraElement(Base.deepcopy_internal(coeffs(a), IdDict), parent(a))
-    end
-    return IdDict[a]
+function LinearAlgebra.norm(a::AlgebraElement, p::Real)
+    return LinearAlgebra.norm(coeffs(a), p)
+end
+function LinearAlgebra.dot(a::AlgebraElement, v::AbstractVector)
+    return LinearAlgebra.dot(coeffs(a), v)
+end
+function LinearAlgebra.dot(v::AbstractVector, a::AlgebraElement)
+    return LinearAlgebra.dot(a, v)
 end
