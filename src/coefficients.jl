@@ -44,7 +44,9 @@ canonical(v::AbstractVector) = v
 function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
     ac1 = MA.operate!!(canonical, ac1)
     ac2 = MA.operate!!(canonical, ac2)
-    return keys(ac1) == keys(ac2) && values(ac1) == values(ac2)
+    all(x -> ==(x...), zip(keys(ac1), keys(ac2))) || return false
+    all(x -> ==(x...), zip(values(ac1), values(ac2))) || return false
+    return true
 end
 
 """
