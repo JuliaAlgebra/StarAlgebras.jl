@@ -14,10 +14,9 @@ function Base.deepcopy_internal(a::AlgebraElement, id::IdDict)
     return id[a]
 end
 
-Base.getindex(a::AlgebraElement, x) = coeffs(a)[x]
-Base.setindex!(a::AlgebraElement, v, idx) = a.coeffs[idx] = v
 # call overload:
-(a::AlgebraElement)(x) = a[x]
+(a::AlgebraElement)(x) = coeffs(a)[x]
+Base.setindex!(a::AlgebraElement, v, idx) = a.coeffs[idx] = v
 
 # AlgebraElement specific functions
 

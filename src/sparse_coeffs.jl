@@ -9,6 +9,26 @@ end
 
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
 Base.values(sc::SparseCoefficients) = sc.values
+function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
+    k = searchsortedfirst(sc.basis_elements, key)
+    if k in eachindex(sc.basis_elements)
+        v = sc.values[k]
+        return ifelse(sc.basis_elements[k] == key, v, zero(v))
+    else
+        return zero(valtype(sc))
+    end
+end
+
+function Base.setindex!(sc::SparseCoefficients{K}, val, key::K) where {K}
+    k = searchsortedfirst(sc.basis_elements, key)
+    if k in eachindex(sc.basis_elements) && sc.basis_elements[k] == key
+        sc.values[k] += val
+    else
+        insert!(sc.basis_elements, k, key)
+        insert!(sc.values, k, val)
+    end
+    return sc
+end
 
 function Base.zero(sc::SparseCoefficients)
     return SparseCoefficients(empty(keys(sc)), empty(values(sc)))
