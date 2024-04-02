@@ -221,7 +221,6 @@ end
         end
     end
     @testset "mutable arithmetic" begin
-
         a = let l = 12, R = 7
             support = [Word(alph, rand(1:length(alph), rand(0:R))) for _ in 1:l]
             vals = rand(-3:3, l)
@@ -292,9 +291,11 @@ end
 
         @test Y isa AlgebraElement
 
-        star(Y)
-        star(Y)
-        @test (@allocations star(Y)) ≤ 4
+        @static if VERSION ≥ v"1.9"
+            star(Y)
+            star(Y)
+            @test (@allocations star(Y)) ≤ 4
+        end
 
         @test supp(Y) == basis(fRG)[1:k]
 
@@ -303,26 +304,35 @@ end
 
         @test_throws SA.UndefRefError all(!iszero, SA.mstructure(fRG).table)
 
-        @test (@allocations Y * Y) > k^2 - 2 * k
-
-        @test Y * Y isa AlgebraElement
+        @static if VERSION ≥ v"1.9"
+            @test (@allocations Y * Y) > k^2 - 2 * k
+            @test Y * Y isa AlgebraElement
+            @test (@allocations Y * Y) < 50
+        else
+            k1 = @allocated Y * Y
+            @test Y * Y isa AlgebraElement
+            Y * Y
+            k2 = @allocated Y * Y
+            @test k2 / k1 < 0.2
+        end
 
         @test all(!iszero, SA.mstructure(fRG).table)
 
-        @test (@allocations Y * Y) < 50
+        @static if VERSION ≥ v"1.9"
+            YY = deepcopy(Y)
+            @test_broken @allocations(MA.operate_to!(YY, +, Y, YY)) == 0
+            @test_broken YY == Y + Y
 
-        YY = deepcopy(Y)
-        @test_broken @allocations(MA.operate_to!(YY, +, Y, YY)) == 0
-        @test_broken YY == Y + Y
+            YY = deepcopy(Y)
+            @test_broken @allocations(MA.operate_to!(YY, +, YY, Y)) == 0
+            @test_broken YY == Y + Y
 
-        YY = deepcopy(Y)
-        @test_broken @allocations(MA.operate_to!(YY, +, YY, Y)) == 0
-        @test_broken YY == Y + Y
+            @test_broken @allocations(MA.operate_to!(YY, +, Y, deepcopy(Y))) ==
+                         0
+            @test_broken YY == Y + Y
 
-        @test_broken @allocations(MA.operate_to!(YY, +, Y, deepcopy(Y))) == 0
-        @test_broken YY == Y + Y
-
-        @test @allocations(MA.operate_to!(YY, *, Y, Y)) ≤ 40
-        @test YY == Y * Y
+            @test @allocations(MA.operate_to!(YY, *, Y, Y)) ≤ 40
+            @test YY == Y * Y
+        end
     end
 end
