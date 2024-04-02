@@ -40,9 +40,9 @@ function __prealloc(X::SparseCoefficients, Y::SparseCoefficients, op)
 end
 
 function MA.operate!(::typeof(canonical), res::SparseCoefficients)
-    sorted = issorted(keys(res))
-    distinct = allunique(keys(res))
-    if sorted && distinct
+    sorted = issorted(res.basis_elements)
+    distinct = allunique(res.basis_elements)
+    if sorted && distinct && !any(iszero, res.values)
         return res
     end
 
@@ -50,15 +50,6 @@ function MA.operate!(::typeof(canonical), res::SparseCoefficients)
         p = sortperm(res.basis_elements)
         permute!(res.basis_elements, p)
         permute!(res.values, p)
-    end
-
-    if distinct
-        k = findfirst(iszero, values(res))
-        if !isnothing(k)
-            deleteat!(res.basis_elements, k)
-            deleteat!(res.values, k)
-        end
-        return res
     end
 
     todelete = BitSet()
