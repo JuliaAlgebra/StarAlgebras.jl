@@ -1,5 +1,16 @@
 abstract type AbstractStarAlgebra{O,T} end
 
+mstructure(A::AbstractStarAlgebra) = mstructure(basis(A))
+
+function _sanity_checks(coeffs, A::AbstractStarAlgebra)
+    @assert key_type(coeffs) == key_type(basis(A))
+end
+function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
+    @assert Base.haslength(basis(A))
+    @assert length(coeffs) == length(basis(A))
+end
+
+# concrete implementation
 struct StarAlgebra{O,T,B<:AbstractBasis{T}} <:
        AbstractStarAlgebra{O,T}
     object::O
@@ -12,15 +23,6 @@ struct StarAlgebra{O,T,B<:AbstractBasis{T}} <:
 
         return new{O,T,B}(obj, basis)
     end
-
-    # function StarAlgebra(obj, mstr::MultiplicativeStructure)
-    #     O = typeof(obj)
-    #     T = eltype(obj)
-    #     M = typeof(mstr)
-    #     B = FixedBasis{T,eltype(mstr)}
-
-    #     return new{O,T,M,B}(obj, mstr)
-    # end
 end
 
 # MTable:
@@ -43,13 +45,11 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     parent::A
 end
 
-function _sanity_checks(coeffs, A::AbstractStarAlgebra)
-    @assert key_type(coeffs) == key_type(basis(A))
-end
-function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
-    @assert key_type(coeffs) == key_type(basis(A))
-    @assert Base.haslength(basis(A))
-    @assert length(coeffs) == length(basis(A))
+Base.parent(a::AlgebraElement) = a.parent
+Base.eltype(a::AlgebraElement) = valtype(coeffs(a))
+coeffs(a::AlgebraElement) = a.coeffs
+function coeffs(x::AlgebraElement, b::AbstractBasis)
+    return coeffs(coeffs(x), basis(parent(x)), b)
 end
 
 function AlgebraElement(coeffs, A::AbstractStarAlgebra)
@@ -63,13 +63,6 @@ function AlgebraElement(
 ) where {O,T}
     return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
 end
-
-coeffs(a::AlgebraElement) = a.coeffs
-function coeffs(x::AlgebraElement, b::AbstractBasis)
-    return coeffs(coeffs(x), basis(parent(x)), b)
-end
-Base.parent(a::AlgebraElement) = a.parent
-Base.eltype(a::AlgebraElement) = valtype(coeffs(a))
 
 ### constructing elements
 Base.zero(A::AbstractStarAlgebra) = zero(Int, A)
