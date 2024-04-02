@@ -79,18 +79,22 @@ end
 
 DiracMStructure() = DiracMStructure(*)
 
-(mstr::DiracMStructure)(x::T, y::T) where {T} = Dirac(mstr.op(x, y))
-(mstr::DiracMStructure)(δx::Dirac, δy::Dirac) = mstr.op(δx, δy)
+function (mstr::DiracMStructure)(x::T, y::T) where {T}
+    xy = mstr.op(x, y)
+    return SparseCoefficients((xy,), (1,))
+end
 
 struct AugmentedMStructure{M<:DiracMStructure} <: MultiplicativeStructure
     op::M
 end
 
-function (mstr::AugmentedMStructure)(aδx::AugmentedDirac, aδy::AugmentedDirac)
-    δxy = mstr.op(aδx.dirac, aδy.dirac)# :: Dirac
-    c = ifelse(isone(δxy.element), zero(δxy.value), one(δxy.value))
-    aδxy = AugmentedDirac(δxy)
-
-    #(x-1)*(y-1) = 1 - x - y + xy = -1·(x-1) - 1·(y-1) + 1·(xy-1)
-    return SparseCoefficients((aδx, aδy, aδxy), (-one(c), -one(c), c))
+function (mstr::AugmentedMStructure)(aδx::Augmented, aδy::Augmented)
+    δxy = first(keys(mstr.op(aδx.elt, aδy.elt)))
+    if isone(δxy)
+        return SparseCoefficients((aδx, aδy), (-1, -1))
+    else
+        aδxy = Augmented(δxy)
+        #(x-1)*(y-1) = 1 - x - y + xy = -1·(x-1) - 1·(y-1) + 1·(xy-1)
+        return SparseCoefficients((aδx, aδy, aδxy), (-1, -1, 1))
+    end
 end

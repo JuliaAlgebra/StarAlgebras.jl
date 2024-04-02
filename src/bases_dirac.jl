@@ -10,6 +10,8 @@ mutable struct DiracBasis{T,I,S,M<:DiracMStructure} <: ImplicitBasis{T,I}
 end
 
 object(db::DiracBasis) = db.object
+mstructure(db::DiracBasis{T}) where {T} = db.moperation
+
 
 Base.IteratorSize(::Type{<:DiracBasis{T,I,S}}) where {T,I,S} = Base.IteratorSize(S)
 function Base.length(db::DiracBasis)
@@ -26,52 +28,61 @@ function Base.getindex(db::DiracBasis{T}, x::T) where {T}
     return x
 end
 
-mstructure(db::DiracBasis{T}) where {T} = db.moperation
-
-mutable struct AugmentedBasis{T,I,A<:AugmentedDirac{T},B<:AbstractBasis{T,I}} <: ImplicitBasis{A,I}
+mutable struct AugmentedBasis{T,I,A<:Augmented{T},B<:AbstractBasis{T,I}} <:
+               ImplicitBasis{A,I}
     basis::B
 end
 
 function AugmentedBasis(basis::DiracBasis{T,I}) where {T,I}
-    return AugmentedBasis{T,I,AugmentedDirac{T,Int},typeof(basis)}(basis)
+    return AugmentedBasis{T,I,Augmented{T},typeof(basis)}(basis)
 end
 
 object(ab::AugmentedBasis) = object(ab.basis)
 
 Base.IteratorSize(::Type{<:AugmentedBasis{T,A,I,B}}) where {T,A,I,B} = Base.IteratorSize(B)
+Base.haslength(ab::AugmentedBasis) = Base.haslength(ab.basis)
+
 function Base.length(ab::AugmentedBasis)
     @assert Base.haslength(ab.basis)
     return length(ab.basis) - 1
 end
 
-Base.iterate(ab::AugmentedBasis) = ((v, st) = iterate(object(ab)); (AugmentedDirac(v), st))
-Base.iterate(ab::AugmentedBasis, st) = ((v, st) = iterate(object(ab), st); (AugmentedDirac(v), st))
+function Base.iterate(ab::AugmentedBasis)
+    return ((v, st) = iterate(object(ab)); (Augmented(v), st))
+end
+function Base.iterate(ab::AugmentedBasis, st)
+    return ((v, st) = iterate(object(ab), st); (Augmented(v), st))
+end
 
 Base.in(g, ab::AugmentedBasis) = false
-Base.in(ad::AugmentedDirac, ab::AugmentedBasis) = ad.dirac in ab.basis
+Base.in(ad::Augmented, ab::AugmentedBasis) = ad.elt in ab.basis
 
 function Base.getindex(ab::AugmentedBasis{T,I,A}, x::A) where {T,I,A}
-    @assert x.dirac.element in object(ab)
+    @assert x.elt in object(ab)
     return x
 end
 
 mstructure(db::AugmentedBasis) = AugmentedMStructure(mstructure(db.basis))
 
-### translating between bases
 function coeffs!(
     res::AbstractCoefficients,
     cfs::AbstractCoefficients,
     source::DiracBasis,
     target::AugmentedBasis,
 )
-    s = sum(values(cfs))
+    s = aug(cfs)
     if !iszero(s)
         throw("Conversion to $target not possible due to non-zero augmentation: $s")
     end
     for (k, v) in nonzero_pairs(cfs)
         isone(k) && continue
         x = source[k]
-        MA.operate!(UnsafeAddMul(*), res, v, SparseCoefficients((target[AugmentedDirac(x)],), (1,)))
+        MA.operate!(
+            UnsafeAddMul(*),
+            res,
+            v,
+            SparseCoefficients((target[Augmented(x)],), (1,)),
+        )
     end
     return MA.operate!!(canonical, res)
 end

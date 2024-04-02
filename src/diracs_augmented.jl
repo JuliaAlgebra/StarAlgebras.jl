@@ -1,30 +1,35 @@
-struct AugmentedDirac{K,V} <: AbstractCoefficients{K,V}
-    dirac::Dirac{K,V}
+struct Augmented{K} <: AbstractCoefficients{K,Int}
+    elt::K
+end # corresponds to (elt - 1)
+
+function Base.getindex(aδ::Augmented{K}, i::K) where {K}
+    w = aug(aδ.elt)
+    isone(aδ.elt) && return zero(w)
+    i == aδ.elt && return w
+    isone(i) && return -w
+    return zero(w)
 end
-AugmentedDirac(x) = AugmentedDirac(Dirac(x, Int(!isone(x))))
 
-function Base.getindex(aδ::AugmentedDirac{K}, i::K) where {K}
-    v = aδ.dirac[i]
-    v = ifelse(isone(aδ.dirac.element), zero(v), v)
-    return ifelse(isone(i), -v, v)
-end
+canonical(aδ::Augmented) = aδ
+Base.iszero(aδ::Augmented) = all(iszero, values(aδ))
 
-canonical(aδ::AugmentedDirac) = aδ
-Base.iszero(aδ::AugmentedDirac) = all(iszero, values(aδ))
-
-Base.keys(aδ::AugmentedDirac) = (k = keys(aδ.dirac); (one(first(k)), first(k)))
-function Base.values(aδ::AugmentedDirac)
+Base.keys(aδ::Augmented) = (k = keys(aδ.elt); (one(first(k)), first(k)))
+function Base.values(aδ::Augmented)
     (e, x) = keys(aδ)
     return (aδ[e], aδ[x])
 end
 
-function Base.show(io::IO, aδ::AugmentedDirac)
+function Base.show(io::IO, aδ::Augmented)
     ioc = IOContext(io, :limit => true)
-    e, x = keys(aδ)
-    _, v = values(aδ)
-    print(ioc, '(', -v, '·', e, '+', v, '·', x, ')')
+    if iszero(aδ)
+        print(ioc, "(0)")
+    else
+        e, x = keys(aδ)
+        _, v = values(aδ)
+        print(ioc, '(', -v, '·', e, '+', v, '·', x, ')')
+    end
 end
 
-Base.isless(ad1::AugmentedDirac, ad2::AugmentedDirac) = isless(ad1.dirac, ad2.dirac)
+Base.isless(ad1::Augmented, ad2::Augmented) = isless(ad1.elt, ad2.elt)
 
-aug(::AugmentedDirac) = 0
+aug(::Augmented) = 0

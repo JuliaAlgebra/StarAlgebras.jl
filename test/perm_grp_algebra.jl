@@ -34,7 +34,7 @@
 
         ad = SA.AugmentedBasis(db)
         @test SA.mstructure(ad) == SA.AugmentedMStructure(SA.mstructure(db))
-        @test ad[SA.AugmentedDirac(h)] isa SA.AugmentedDirac
+        @test ad[SA.Augmented(h)] isa SA.Augmented
 
         IG = SA.StarAlgebra(G, ad)
 
