@@ -277,39 +277,51 @@ end
             @test d == 2a
         end
     end
-end
 
-@testset "Group Algebra caching" begin
-    A = [:a, :b, :c]
-    b = StarAlgebras.Basis{UInt8}(words(A, radius=4))
-    k = findfirst(w -> length(w) == 3, b) - 1
+    @testset "FixedBasis caching && allocations" begin
+        fB = SA.FixedBasis(words, SA.DiracMStructure(*), UInt32.((l, l)))
+        fRG = StarAlgebra(A★, fB)
 
-    RG = StarAlgebra(Word(A, Int[]), b, (k, k))
-    @test RG isa StarAlgebra
+        k = size(SA.mstructure(basis(fRG)), 1)
 
-    D = sum(RG(b[i]) for i in 1:k)
-    @test D isa AlgebraElement
-    g = one(RG)
-    @test isone(g)
+        y = spzeros(length(basis(fRG)))
+        y[1:k] .= 1
+        Y = AlgebraElement(y, fRG)
+        @test_broken Y = sum(fRG(basis(fRG)[i]) for i in 1:k)
 
-    @test one(RG) == g
-    @test iszero(zero(RG))
-    @test 0 * g == zero(RG)
-    @test iszero(0 * g)
+        @test Y isa AlgebraElement
 
-    h = RG(b[3])
+        star(Y)
+        star(Y)
+        @test (@allocations star(Y)) ≤ 4
 
-    @test D * one(RG) == D
-    @test one(RG) * D == D
+        @test supp(Y) == basis(fRG)[1:k]
 
-    @test supp(D) == b[1:k]
+        @test Y * one(fRG) == Y
+        @test one(fRG) * Y == Y
 
-    @test_throws StarAlgebras.ProductNotDefined all(!iszero, RG.mstructure.table)
+        @test_throws SA.UndefRefError all(!iszero, SA.mstructure(fRG).table)
 
-    @test D * D isa AlgebraElement
+        @test (@allocations Y * Y) > k^2 - 2 * k
 
-    @test all(!iszero, RG.mstructure.table)
+        @test Y * Y isa AlgebraElement
 
-    RG = StarAlgebra(Word(A, Int[]), b, (k, k), precompute=true)
-    @test all(!iszero, RG.mstructure.table)
+        @test all(!iszero, SA.mstructure(fRG).table)
+
+        @test (@allocations Y * Y) < 50
+
+        YY = deepcopy(Y)
+        @test_broken @allocations(MA.operate_to!(YY, +, Y, YY)) == 0
+        @test_broken YY == Y + Y
+
+        YY = deepcopy(Y)
+        @test_broken @allocations(MA.operate_to!(YY, +, YY, Y)) == 0
+        @test_broken YY == Y + Y
+
+        @test_broken @allocations(MA.operate_to!(YY, +, Y, deepcopy(Y))) == 0
+        @test_broken YY == Y + Y
+
+        @test @allocations(MA.operate_to!(YY, *, Y, Y)) ≤ 40
+        @test YY == Y * Y
+    end
 end
