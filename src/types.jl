@@ -120,6 +120,9 @@ Base.similar(X::AlgebraElement, T=eltype(X)) = AlgebraElement(similar(coeffs(X),
 function AlgebraElement{T}(X::AlgebraElement) where {T}
     v = coeffs(X)
     w = similar(v, T)
-    w .= v
+    MA.operate!(zero, w)
+    for (k, v) in nonzero_pairs(v)
+        w[k] = v
+    end
     return AlgebraElement(w, parent(X))
 end
