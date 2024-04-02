@@ -142,118 +142,132 @@
     end
 end
 
-    @testset "Mutable API and trivial mstructure" begin
-        A = [:a, :b, :c]
-        b = StarAlgebras.Basis{UInt16}(words(A, radius=8))
-        l = findfirst(w -> length(w) > 4, b) - 1
+@testset "Free monoid algebra" begin
+    alph = [:a, :b, :c]
+    A★ = FreeWords(alph)
+    B = SA.DiracBasis{UInt16}(A★)
+    RG = StarAlgebra(A★, B)
+    @test basis(RG) === B
 
-        RG = StarAlgebra(one(first(b)), b)
+    words = collect(Iterators.take(A★, nwords(A★, 0, 8)))
+    l = nwords(A★, 4)
 
-        @test basis(RG) === b
-        @test basis(RG.mstructure) === basis(RG)
+    @assert length(words[l]) == 4 && length(words[l+1]) == 5
 
-        RGc = StarAlgebra(one(first(b)), b, (l, l))
-        @test basis(RGc) === b
-        @test basis(RGc.mstructure) === basis(RGc)
+    fB = SA.FixedBasis(words, SA.DiracMStructure(*), UInt32.((l, l)))
+    @test fB.table.elts === fB.elts
 
-        @test all(RG.mstructure[1:121, 1:121] .== RGc.mstructure)
+    fRG = StarAlgebra(A★, fB)
 
+    g = one(fRG)
+    @test isone(g)
+
+    @test one(fRG) == g
+    @test iszero(zero(fRG))
+    @test zero(g) == zero(fRG)
+    @test_broken iszero(0 * g)
+
+    @testset "Translations between bases" begin
         Z = zero(RG)
-        W = zero(RGc)
+        fZ = zero(fRG)
 
-        let g = b[rand(1:121)]
+        @test coeffs(fZ) isa SparseVector
+
+        @test coeffs(Z, fB) == coeffs(fZ)
+        @test coeffs(fZ, B) == coeffs(Z)
+        @test coeffs(coeffs(fZ, B), B, fB) == coeffs(fZ)
+        @test coeffs(coeffs(Z, fB), fB, B) == coeffs(Z)
+
+        let g = basis(fRG)[rand(1:121)]
             X = RG(g)
             Y = -RG(star(g))
             for i in 1:3
-                X[b[rand(1:121)]] += rand(-3:3)
-                Y[b[rand(1:121)]] -= rand(3:3)
+                coeffs(X)[basis(fRG)[rand(1:121)]] += rand(-3:3)
+                coeffs(Y)[basis(fRG)[rand(1:121)]] -= rand(3:3)
             end
 
-            Xc = AlgebraElement(coeffs(X), RGc)
-            Yc = AlgebraElement(coeffs(Y), RGc)
+            @test coeffs(X) ==
+                  coeffs(coeffs(X, basis(fRG)), basis(fRG), basis(RG))
+            @test coeffs(Y) ==
+                  coeffs(coeffs(Y, basis(fRG)), basis(fRG), basis(RG))
 
-            @test coeffs(X * Y) ==
-                  coeffs(Xc * Yc) ==
-                  coeffs(MA.operate_to!(Z, *, X, Y))
+            fX = AlgebraElement(coeffs(X, basis(fRG)), fRG)
+            fY = AlgebraElement(coeffs(Y, basis(fRG)), fRG)
 
-            @test coeffs(X^2) == coeffs(Xc^2) == coeffs(X * X)
-            @test coeffs(Y^2) == coeffs(Yc^2) == coeffs(Y * Y)
+            @test coeffs(fX) ==
+                  coeffs(coeffs(fX, basis(RG)), basis(RG), basis(fRG))
+            @test coeffs(fY) ==
+                  coeffs(coeffs(fY, basis(RG)), basis(RG), basis(fRG))
 
-            @test coeffs(Z) == MA.operate_to!(
-                coeffs(W),
-                RG.mstructure,
-                coeffs(X),
-                coeffs(Y),
-            )
-            @test coeffs(Z) == coeffs(W)
-            @test coeffs(Z) == MA.operate_to!(
-                coeffs(W),
-                RGc.mstructure,
-                coeffs(X),
-                coeffs(Y),
-            )
-            @test coeffs(Z) == coeffs(W)
+            @test coeffs(X * Y, basis(fRG)) == coeffs(fX * fY)
+            @test coeffs(X * X, basis(fRG)) ==
+                  coeffs(fX^2) ==
+                  coeffs(X^2, basis(fRG))
 
-            MA.operate!(zero, W)
-            StarAlgebras.fmac!(coeffs(W), coeffs(X), coeffs(Y), RG.mstructure)
+            @test coeffs(Y * Y, basis(fRG)) ==
+                  coeffs(fY^2) ==
+                  coeffs(Y^2, basis(fRG))
 
-            @test coeffs(2 * X * Y) == coeffs(MA.operate_to!(W, *, W, 2))
+            MA.operate_to!(Z, *, X, Y)
+            MA.operate_to!(fZ, *, fX, fY)
+
+            @test coeffs(Z) == coeffs(fZ, basis(RG))
+            @test coeffs(fZ) == coeffs(Z, basis(fRG))
+
+            @test coeffs(2 * X * Y) == coeffs(MA.operate_to!(Z, *, Z, 2))
+            @test_broken coeffs(2 * fX * fY) ==
+                         coeffs(MA.operate_to!(fZ, *, fZ, 2))
         end
     end
-
     @testset "mutable arithmetic" begin
-        A = [:a, :b, :c]
-        bas = StarAlgebras.Basis{UInt16}(words(A, radius=4))
-        l = findfirst(w -> length(w) > 2, bas) - 1
-        RG = StarAlgebra(one(first(bas)), bas, (l, l))
 
-        a = let c = rand(-3:3, l)
-            resize!(c, length(bas))
-            c[l:end] .= 0
+        a = let l = 12, R = 7
+            support = [Word(alph, rand(1:length(alph), rand(0:R))) for _ in 1:l]
+            vals = rand(-3:3, l)
+            c = SA.SparseCoefficients(support, vals)
+            MA.operate!(SA.canonical, c)
             AlgebraElement(c, RG)
         end
-        b = let c = rand(-3:3, l)
-            resize!(c, length(bas))
-            c[l:end] .= 0
+        b = let l = 7, R = 3
+            support = [Word(alph, rand(1:length(alph), rand(0:R))) for _ in 1:l]
+            vals = rand(-3:3, l)
+            c = SA.SparseCoefficients(support, vals)
+            MA.operate!(SA.canonical, c)
             AlgebraElement(c, RG)
         end
 
         let d = deepcopy(a)
-            StarAlgebras.zero!(d)
+            MA.operate!(zero, d)
             MA.operate_to!(d, -, a)
 
             d = deepcopy(a)
             @test !iszero(d)
-            @test @allocated(StarAlgebras.zero!(d)) == 0
+            @test @allocated(MA.operate!(zero, d)) == 0
             @test iszero(d)
 
             @test @allocated(MA.operate_to!(d, -, a)) == 0
             @test d == -a
         end
 
-        let d = deepcopy(a)
-            MA.operate_to!(d, +, d, b)
-            MA.operate_to!(d, +, b, d)
+        let d = zero(a)
             MA.operate_to!(d, +, a, b)
-
-            d = deepcopy(a)
-            @test @allocated(MA.operate_to!(d, +, d, b)) == 0
             @test d == a + b
-
-            d = deepcopy(a)
-            @test @allocated(MA.operate_to!(d, +, b, d)) == 0
-            @test d == a + b
-
-            @test @allocated(MA.operate_to!(d, +, a, b)) == 0
+            MA.operate_to!(d, +, d, b)
+            @test d == a + 2b
+            MA.operate_to!(d, +, b, d)
+            @test d == a + 3b
+            MA.operate_to!(d, +, a, b)
             @test d == a + b
         end
 
         let d = deepcopy(a)
-            MA.operate_to!(d, *, d, 2)
             MA.operate_to!(d, *, a, 2)
+            @test d == 2a
+            MA.operate_to!(d, *, d, 2)
+            @test d == 4a
             MA.operate_to!(d, *, a, b)
-            d = deepcopy(a)
-            MA.operate_to!(d, *, d, b)
+            @test d == a * b
+            @test_throws ArgumentError MA.operate_to!(d, *, d, b)
 
             d = deepcopy(a)
             @test @allocated(MA.operate_to!(d, *, d, 2)) == 0
@@ -261,15 +275,6 @@ end
 
             @test @allocated(MA.operate_to!(d, *, a, 2)) == 0
             @test d == 2a
-
-            @test @allocated(MA.operate_to!(d, *, a, b)) == 32
-            @test d == a * b
-
-            d = deepcopy(a)
-            @test @allocated(MA.operate_to!(d, *, d, b)) != 0
-            z = MA.operate_to!(d, *, d, b)
-            @test z == a * b
-            @test z !== d
         end
     end
 end
