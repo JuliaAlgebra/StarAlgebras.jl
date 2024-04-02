@@ -1,13 +1,16 @@
-@testset "Arithmetic" begin
+@testset "Permutation group algebra" begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
-    b = StarAlgebras.Basis{UInt8}(collect(G))
-    l = length(b)
-    RG = StarAlgebra(G, b, (l, l))
+    b = SA.DiracBasis{UInt8}(G)
+    RG = StarAlgebra(G, b)
 
     @test contains(sprint(show, RG), "*-algebra of")
 
     @testset "Module structure" begin
-        a = AlgebraElement(ones(Int, order(G)), RG)
+        sc = SA.SparseCoefficients(
+            collect(SA.object(RG)),
+            ones(Int, length(basis(RG))),
+        )
+        a = AlgebraElement(sc, RG)
 
         @test -a isa AlgebraElement
         @test coeffs(-a) == -coeffs(a)
@@ -42,16 +45,21 @@
     end
 
     @testset "Additive structure" begin
-        a = AlgebraElement(ones(Int, order(G)), RG)
+        sc = SA.SparseCoefficients(
+            collect(SA.object(RG)),
+            ones(Int, length(basis(RG))),
+        )
+        a = AlgebraElement(sc, RG)
         b = sum(sign(g) * RG(g) for g in G)
 
-        @test a ==
-              AlgebraElement(ones(Int, order(G)), RG) ==
-              sum(RG(g) for g in G)
+        @test a == sum(RG(g) for g in G)
 
-        @test 1 / 2 * (coeffs(a + b)) == [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
+        @test 1 / 2 * (coeffs(a + b)) == SA.SparseCoefficients(
+            collect(SA.object(RG)),
+            [1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
+        )
 
-        g, h = gens(G)
+        g, h = PermutationGroups.gens(G)
         k = g * h
 
         a = RG(1) + RG(g) + RG(h)
@@ -92,7 +100,7 @@
               norm(a)^2 ≈
               LinearAlgebra.dot(coeffs(a), a)
 
-        @test a * b == MA.operate_to!(a, *, a, b)
+        @test a * b == MA.operate_to!(similar(a), *, a, b)
 
         @test aug(a) == 3
         @test aug(b) == -1
@@ -101,12 +109,12 @@
         z = sum((one(RG) - RG(g)) * star(one(RG) - RG(g)) for g in G)
         @test aug(z) == 0
 
-        @test supp(z) == StarAlgebras.basis(parent(z))
+        @test supp(z) == sort(collect(basis(parent(z))))
         @test supp(RG(1) + RG(g)) == [one(G), g]
-        @test supp(a) == [one(G), g, h]
+        @test supp(a) == [one(G), h, g]
 
         @testset "Projections in star algebras" begin
-            b = StarAlgebras.basis(RG)
+            b = basis(RG)
             l = length(b)
             P = sum(RG(g) for g in b) // l
             @test P * P == P
@@ -119,18 +127,20 @@
 
             @test P3 * PAlt == PAlt * P3
 
-            P2 = (RG(1) + RG(b[2])) // 2
+            h = Permutation(perm"(2,3)", G)
+            P2 = (RG(1) + RG(h)) // 2
             @test P2 * P2 == P2
 
             @test P2 * P3 == P3 * P2 == P
 
-            P2m = (RG(1) - RG(b[2])) // 2
+            P2m = (RG(1) - RG(h)) // 2
             @test P2m * P2m == P2m
 
             @test P2m * P3 == P3 * P2m == PAlt
             @test iszero(P2m * P2)
         end
     end
+end
 
     @testset "Mutable API and trivial mstructure" begin
         A = [:a, :b, :c]
