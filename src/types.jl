@@ -73,32 +73,35 @@ end
 
 Base.one(A::AbstractStarAlgebra) = one(Int, A)
 function Base.one(T::Type, A::AbstractStarAlgebra)
-    b = basis(A)
-    i = b[one(object(A))]
+    i = one(object(A))
     sc = SparseCoefficients([i], [one(T)])
-    return AlgebraElement(sc, A)
+    # TODO
+    # this is not correct, more thought is needed
+    if basis(A) isa DiracBasis
+        @assert i in basis(A)
+        return AlgebraElement(sc, A)
+    else
+        return AlgebraElement(
+            coeffs(sc, DiracBasis{UInt}(object(A)), basis(A)),
+            A,
+        )
+    end
 end
 
 Base.zero(a::AlgebraElement) = (b = similar(a); return MA.operate!(zero, b))
-Base.one(a::AlgebraElement) = one(parent(a))
+Base.one(a::AlgebraElement) = one(eltype(a), parent(a))
 Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
 
 function Base.isone(a::AlgebraElement)
-    b = basis(parent(a))
-    k = findfirst(!iszero, coeffs(a))
-    k === nothing && return false
-    isone(a[k]) || return false
-    isone(b[k]) || return false
-    return isnothing(findnext(!iszero, coeffs(a), k + 1))
-end
+    c = coeffs(a)
+    A = parent(a)
+    cfs1 = SparseCoefficients((one(object(A)),), (1,))
 
-function (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T}
-    if hasbasis(A)
-        b = basis(A)
-        i = b[elt]
-        return AlgebraElement(sparsevec([i], [1], length(b)), A)
+    if basis(A) isa DiracBasis
+        return c == cfs1
     else
-        throw("Algebra without basis: cannot coerce $elt")
+        dc = coeffs(c, basis(parent(a)), DiracBasis{UInt}(object(parent(a))))
+        return dc == cfs1
     end
 end
 
