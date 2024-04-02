@@ -20,6 +20,10 @@ Implicit bases are not stored in memory and can be potentially infinite.
 """
 abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
+function zero_coeffs(::Type{S}, ::ImplicitBasis{T}) where {S,T}
+    return SparseCoefficients(T[], S[])
+end
+
 """
     ExplicitBasis
 Explicit bases are stored in an `AbstractVector` and hence immutable
@@ -27,12 +31,31 @@ Explicit bases are stored in an `AbstractVector` and hence immutable
 """
 abstract type ExplicitBasis{T,I} <: AbstractBasis{T,I} end
 
+function zero_coeffs(::Type{S}, eb::ExplicitBasis{T,I}) where {S,T,I}
+    return spzeros(S, I, length(eb))
+end
+
+"""
+    coeffs(cfs, source, target)
+Translate coefficients `cfs` in `source::AbstractBasis` to basis
+`target::AbstractBasis`.
+"""
 function coeffs(
-    cfs::AbstractCoefficients,
+    cfs,
     source::AbstractBasis,
     target::AbstractBasis,
 )
     source === target && return cfs
-    res = SparseCoefficients(eltype(target)[], valtype(cfs)[])
+    source == target && return cfs
+    res = zero_coeffs(valtype(cfs), target)
     return coeffs!(res, cfs, source, target)
+end
+
+function coeffs!(res, cfs, source::AbstractBasis, target::AbstractBasis)
+    MA.operate!(zero, res)
+    for (k, v) in nonzero_pairs(cfs)
+        x = source[k]
+        res[target[x]] += v
+    end
+    return res
 end

@@ -74,13 +74,8 @@ Base.eltype(a::AlgebraElement) = valtype(coeffs(a))
 ### constructing elements
 Base.zero(A::AbstractStarAlgebra) = zero(Int, A)
 function Base.zero(T::Type, A::AbstractStarAlgebra)
-    if hasbasis(A)
-        I = SparseArrays.indtype(basis(A))
-        return AlgebraElement(sparsevec(I[], T[], length(basis(A))), A)
-    end
-    throw(
-        "Algebra without basis; use the `AlgebraElement` constructor directly.",
-    )
+    cfs = zero_coeffs(T, basis(A))
+    return AlgebraElement(cfs, A)
 end
 
 Base.one(A::AbstractStarAlgebra) = one(Int, A)
@@ -114,15 +109,15 @@ function (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T}
     end
 end
 
-function (A::AbstractStarAlgebra)(x::Number)
-    if hasbasis(A)
-        b = basis(A)
-        i = b[one(object(A))]
-        return AlgebraElement(sparsevec([i], [x], length(b)), A)
-    else
-        throw("Algebra without basis: cannot coerce $x")
-    end
+function (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T}
+    b = basis(A)
+    @assert elt in b
+    res = zero_coeffs(Int, b)
+    res[b[elt]] = 1
+    return AlgebraElement(res, A)
 end
+
+(A::AbstractStarAlgebra)(x::Number) = x * one(A)
 
 Base.similar(X::AlgebraElement, T=eltype(X)) = AlgebraElement(similar(coeffs(X), T), parent(X))
 

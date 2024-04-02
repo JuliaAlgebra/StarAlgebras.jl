@@ -40,14 +40,3 @@ Base.@propagate_inbounds Base.getindex(
     i::I,
 ) where {T,I<:Integer} = b.elts[i]
 
-function coeffs(
-    cfs::AbstractCoefficients,
-    source::AbstractBasis,
-    target::FixedBasis,
-)
-    source === target && return cfs
-    vals = collect(values(cfs))
-    idcs = collect(target[k] for k in keys(cfs))
-
-    return sparsevec(idcs, vals, length(target))
-end
