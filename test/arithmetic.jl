@@ -96,9 +96,6 @@
         b = RG(1) - RG(k) - RG(h)
 
         @test norm(a) == norm(b)
-        @test LinearAlgebra.dot(a, coeffs(a)) ≈
-              norm(a)^2 ≈
-              LinearAlgebra.dot(coeffs(a), a)
 
         @test a * b == MA.operate_to!(similar(a), *, a, b)
 
@@ -193,6 +190,10 @@ end
 
             fX = AlgebraElement(coeffs(X, basis(fRG)), fRG)
             fY = AlgebraElement(coeffs(Y, basis(fRG)), fRG)
+
+            @test LinearAlgebra.dot(fX, coeffs(fX)) ≈
+                  norm(fX)^2 ≈
+                  LinearAlgebra.dot(coeffs(fX), fX)
 
             @test coeffs(fX) ==
                   coeffs(coeffs(fX, basis(RG)), basis(RG), basis(fRG))

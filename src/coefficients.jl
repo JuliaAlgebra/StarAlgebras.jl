@@ -80,6 +80,12 @@ function LinearAlgebra.norm(sc::AbstractCoefficients, p::Real)
     return sum(v^p for v in values(sc))^1 / p
 end
 
+function LinearAlgebra.dot(ac::AbstractCoefficients, w::AbstractVector)
+    @assert key_type(ac) <: Integer
+    isempty(keys(ac)) && return zero(eltype(v))
+    return sum(v * w[i] for (i, v) in nonzero_pairs(ac))
+end
+
 # general mutable API
 # why here?
 MA.operate!(::typeof(zero), v::SparseVector) = (v .*= 0; v)
