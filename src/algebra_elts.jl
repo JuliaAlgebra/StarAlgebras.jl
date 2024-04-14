@@ -27,8 +27,6 @@ end
 
 aug(a::AlgebraElement) = aug(coeffs(a))
 
-Base.adjoint(a::AlgebraElement) = star(a)
-
 function LinearAlgebra.norm(a::AlgebraElement, p::Real)
     return LinearAlgebra.norm(coeffs(a), p)
 end

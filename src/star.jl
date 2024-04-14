@@ -1,4 +1,6 @@
+Base.adjoint(a::AlgebraElement) = star(a)
 star(x::Any) = x'
+
 function star(X::AlgebraElement)
     res = star(basis(parent(X)), coeffs(X))
     return AlgebraElement(res, parent(X))

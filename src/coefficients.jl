@@ -68,12 +68,11 @@ function nonzero_pairs(v::AbstractSparseVector)
     return zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
 end
 
+aug(cfs::Any) = sum(values(cfs))
 function aug(ac::AbstractCoefficients)
     isempty(keys(ac)) && return zero(valtype(ac))
     return sum(c * aug(x) for (x, c) in nonzero_pairs(ac))
 end
-aug(v::AbstractVector) = sum(v)
-aug(x::Any) = 1 # ???? dubious...
 
 function LinearAlgebra.norm(sc::AbstractCoefficients, p::Real)
     isempty(keys(sc)) && return (0^p)^1 / p

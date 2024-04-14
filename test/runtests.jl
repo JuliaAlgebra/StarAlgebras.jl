@@ -22,7 +22,6 @@ begin
 
     # generalities for meaningful *-algebras
     SA.star(g::GroupElement) = inv(g)
-    SA.aug(::GroupElement) = 1
 end
 
 # implementations of the free monoid over an alphabet
