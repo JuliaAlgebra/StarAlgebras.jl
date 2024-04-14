@@ -8,15 +8,11 @@ import StarAlgebras as SA
 import MutableArithmetics as MA
 
 begin
-    # turning GroupsCore.GroupElement into SparseCoefficients
+    # turning GroupsCore.GroupElement into "read-only" SparseCoefficients
     import GroupsCore: GroupElement
-    Base.iszero(::GroupElement) = false
     Base.keys(g::GroupElement) = (g,)
     Base.values(::GroupElement) = (1,)
     SA.canonical(g::GroupElement) = g
-    function Base.getindex(g::GroupElement, h::GroupElement)
-        return ifelse(g == h, SA.aug(g), 0 * SA.aug(g))
-    end
     # missing above: Base.isless for the SA.canonical
     # TODO: implement sort by hashing for non-comparable elements?
 

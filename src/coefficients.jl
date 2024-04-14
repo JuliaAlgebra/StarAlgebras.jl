@@ -1,6 +1,15 @@
 """
     abstract type AbstractCoefficients{V,K} end
-Implements `Base.keys`, `Base.values`.
+Everything that implements a fixed set of methods can be used as
+`SparseCoefficients` without subtyping it.
+
+# "Read-only" coefficients
+E.g. returned by calls to a `MultiplicativeStructure` need to implement
+
+* `Base.keys`
+* `Base.values`
+* `StarAlgebras.canonical`
+* `StarAlgebras.star`
 """
 abstract type AbstractCoefficients{K,V} end
 
