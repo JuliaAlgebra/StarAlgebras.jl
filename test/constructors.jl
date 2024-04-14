@@ -44,7 +44,7 @@
     @test sprint(show, zero(RG)) == "0·(id)"
     @test sprint(show, one(RG)) == "1·(id)"
     @test isone(one(a))
-    @test !isone(X)
+    @test !isone(a)
     @test iszero(zero(a))
     @test sprint(show, a) == "1·b·c"
     @test sprint(show, -a) == "-1·b·c"
