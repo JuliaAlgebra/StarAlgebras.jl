@@ -146,12 +146,8 @@ end
     RG = StarAlgebra(A★, B)
     @test basis(RG) === B
 
-    words = collect(Iterators.take(A★, nwords(A★, 0, 8)))
-    l = nwords(A★, 4)
-
-    @assert length(words[l]) == 4 && length(words[l+1]) == 5
-
-    fB = SA.FixedBasis(words, SA.DiracMStructure(*), UInt32.((l, l)))
+    # no caching
+    fB = SA.FixedBasis(basis(RG); n = nwords(A★, 0, 8), mt = 0)
     @test fB.table.elts === fB.elts
 
     fRG = StarAlgebra(A★, fB)
@@ -279,7 +275,7 @@ end
     end
 
     @testset "FixedBasis caching && allocations" begin
-        fB = SA.FixedBasis(words, SA.DiracMStructure(*), UInt32.((l, l)))
+        fB = SA.FixedBasis(B; n = nwords(A★, 8), mt = UInt32(nwords(A★, 4)))
         fRG = StarAlgebra(A★, fB)
 
         k = size(SA.mstructure(basis(fRG)), 1)

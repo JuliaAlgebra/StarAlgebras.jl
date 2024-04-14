@@ -49,15 +49,18 @@ Base.@propagate_inbounds __iscomputed(mt::MTable, i, j) =
     isassigned(mt.table, i, j) && !iszero(mt.table[i, j])
 
 Base.@propagate_inbounds function (mt::MTable)(i::Integer, j::Integer)
-    @boundscheck checkbounds(mt.table, abs(i), abs(j))
-    @inbounds begin
-        i = __absindex(mt, i)
-        j = __absindex(mt, j)
-
-        if !__iscomputed(mt, i, j)
-            complete!(mt, i, j)
+    i = __absindex(mt, i)
+    j = __absindex(mt, j)
+    if checkbounds(Bool, mt.table, i, j)
+        @inbounds begin
+            if !__iscomputed(mt, i, j)
+                complete!(mt, i, j)
+            end
+            return mt.table[i, j]
         end
-        return mt.table[i, j]
+    else
+        g, h = mt[i], mt[j]
+        return mt.mstr(g, h)
     end
 end
 Base.@propagate_inbounds function (mt::MTable{T})(x::T, y::T) where {T}
