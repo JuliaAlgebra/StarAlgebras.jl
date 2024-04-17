@@ -41,14 +41,14 @@ MA.operate(::typeof(canonical), x) = canonical(x) # fallback?
 
 # example implementation for vectors
 function MA.mutability(
-    ::Type{<:SparseVector},
+    ::Type{<:Union{<:SparseVector,<:Vector}},
     ::typeof(canonical),
     ::Vararg{Type},
 )
     return MA.IsMutable()
 end
 MA.operate!(::typeof(canonical), sv::SparseVector) = dropzeros!(sv)
-canonical(v::AbstractVector) = v
+MA.operate!(::typeof(canonical), v::Vector) = v
 
 function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
     ac1 = MA.operate!!(canonical, ac1)
