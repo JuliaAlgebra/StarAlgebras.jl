@@ -1,11 +1,27 @@
 """
     AbstractBasis{T,I}
-Implements a bijection between basis elements and integers.
+Implements
 
  * `in(x, basis)` for basis elements
- * `Base.getindex(A, i::I) → T`
- * `Base.getindex(A, t::T) → I` # the bijection part
+ * `Base.getindex(b::AbstractBasis{T,I}, idx::I)::T`
+ * iteration protocol
 
+`AbstractBasis` from the outside may look like a vector with arbitrary indices,
+however it may be possibly infinite (and therefore does not define its length).
+
+When `I<:Integer` one may store coefficients w.r.t. the basis in an ordinary
+vector, however it's length has no relation to the size of the basis (which may
+still be infinite).
+
+* [`ImplicitBasis`](@ref) is best suited for bases which can be enumerated but
+  are in princle infinite in size (e.g. monomial basis for the polynomial ring).
+  An example implementation of [`DiracBasis`](@ref) wrapping an iterator can be
+  used for this purpose.
+* [`ExplicitBasis`](@ref) can be used for fixed, finite size bases, in particular
+  [`FixedBasis`](@ref) implements `AbstractVector`-type storage for elements.
+  This can be used e.g. for representing polynomials as (sparse) vectors of
+  coefficients w.r.t. a given `FixedBasis`.
+expressed in it.
 """
 abstract type AbstractBasis{T,I} end
 
@@ -25,9 +41,9 @@ function zero_coeffs(::Type{S}, ::ImplicitBasis{T}) where {S,T}
 end
 
 """
-    ExplicitBasis
-Explicit bases are stored in an `AbstractVector` and hence immutable
-(e.g. fixed in length).
+    ExplicitBasis{T,I}
+Explicit bases are stored e.g. in an `AbstractVector` and hence immutable
+(in particular of well defined and fixed length).
 """
 abstract type ExplicitBasis{T,I} <: AbstractBasis{T,I} end
 

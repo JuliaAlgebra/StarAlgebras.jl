@@ -30,7 +30,7 @@ Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
     canonical(ac::AbstractCoefficients)
 Compute the canonical form of `ac` (e.g. grouping coefficients together, etc).
 
-If `ac` can be brough to canonical form in-place one has to implement
+If `ac` can be brought to canonical form in-place one has to implement
 * `MA.mutability(::Type{typeof(ac)}, canonical, ::Vararg{Type}) = MA.IsMutable()`
 * `MA.operate!(canonical, ac)` that performs this canonicalization.
 
