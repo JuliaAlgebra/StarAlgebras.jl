@@ -31,6 +31,7 @@ function MTable(
     starof = [relts[star(x)] for x in elts]
     T = typeof(mstr(first(elts), first(elts)))
     table = Matrix{T}(undef, dims)
+    @assert !isbitstype(T) || dims == (0, 0)
 
     return MTable(elts, relts, starof, table, mstr)
 end
