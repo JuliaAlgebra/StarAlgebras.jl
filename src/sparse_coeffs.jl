@@ -14,7 +14,7 @@ function Base.copy(sc::SparseCoefficients)
 end
 
 function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
-    k = searchsortedfirst(sc.basis_elements, key)
+    k = searchsortedfirst(sc.basis_elements, key; lt = comparable(K))
     if k in eachindex(sc.basis_elements)
         v = sc.values[k]
         return ifelse(sc.basis_elements[k] == key, v, zero(v))
@@ -24,7 +24,7 @@ function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
 end
 
 function Base.setindex!(sc::SparseCoefficients{K}, val, key::K) where {K}
-    k = searchsortedfirst(sc.basis_elements, key)
+    k = searchsortedfirst(sc.basis_elements, key; lt = comparable(K))
     if k in eachindex(sc.basis_elements) && sc.basis_elements[k] == key
         sc.values[k] += val
     else
@@ -63,15 +63,29 @@ function __prealloc(X::SparseCoefficients, Y::SparseCoefficients, op)
     return similar(X, T)
 end
 
+struct Comparable{F}
+    lt::F
+end
+@inline (cmp::Comparable)(a, b) = cmp.lt(a, b)
+
+comparable(::Type) = Comparable(<)
 function MA.operate!(::typeof(canonical), res::SparseCoefficients)
-    sorted = issorted(res.basis_elements)
+    return MA.operate!(canonical, res, comparable(key_type(res)))
+end
+
+function MA.operate!(
+    ::typeof(canonical),
+    res::SparseCoefficients,
+    cmp::Comparable,
+)
+    sorted = issorted(res.basis_elements; lt = cmp)
     distinct = allunique(res.basis_elements)
     if sorted && distinct && !any(iszero, res.values)
         return res
     end
 
     if !sorted
-        p = sortperm(res.basis_elements)
+        p = sortperm(res.basis_elements; lt = cmp)
         permute!(res.basis_elements, p)
         permute!(res.values, p)
     end
