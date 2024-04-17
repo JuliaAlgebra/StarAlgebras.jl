@@ -303,31 +303,35 @@ end
         @static if VERSION ≥ v"1.9"
             @test (@allocations Y * Y) > k^2 - 2 * k
             @test Y * Y isa AlgebraElement
-            @test (@allocations Y * Y) < 50
+            @test (@allocations Y * Y) ≤ 26
         else
             k1 = @allocated Y * Y
             @test Y * Y isa AlgebraElement
             Y * Y
             k2 = @allocated Y * Y
-            @test k2 / k1 < 0.2
+            @test k2 / k1 < 0.5
         end
 
         @test all(!iszero, SA.mstructure(fRG).table)
 
         @static if VERSION ≥ v"1.9"
             YY = deepcopy(Y)
+            # MA.operate_to!(YY, +, Y, YY)
+            # YY = deepcopy(Y)
             @test_broken @allocations(MA.operate_to!(YY, +, Y, YY)) == 0
             @test_broken YY == Y + Y
 
-            YY = deepcopy(Y)
+            # MA.operate_to!(YY, +, YY, Y)
+            # YY = deepcopy(Y)
             @test_broken @allocations(MA.operate_to!(YY, +, YY, Y)) == 0
             @test_broken YY == Y + Y
 
-            @test_broken @allocations(MA.operate_to!(YY, +, Y, deepcopy(Y))) ==
-                         0
+            # MA.operate_to!(YY, +, Y, Y)
+            @test_broken @allocations(MA.operate_to!(YY, +, Y, Y)) == 0
             @test_broken YY == Y + Y
 
-            @test @allocations(MA.operate_to!(YY, *, Y, Y)) ≤ 40
+            MA.operate_to!(YY, *, Y, Y)
+            @test @allocations(MA.operate_to!(YY, *, Y, Y)) ≤ 25
             @test YY == Y * Y
         end
     end

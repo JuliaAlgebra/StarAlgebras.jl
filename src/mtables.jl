@@ -91,8 +91,13 @@ function MA.operate!(
     v::AbstractVector,
     w::AbstractVector,
 )
+    l1 = issparse(v) ? nnz(v) : 2^8
+    l2 = issparse(w) ? nnz(w) : 2^8
+    l = l1 * l2
     idcs = Vector{key_type(res)}()
     vals = Vector{eltype(res)}()
+    sizehint!(idcs, l)
+    sizehint!(vals, l)
 
     for (kv, a) in nonzero_pairs(v)
         for (kw, b) in nonzero_pairs(w)
