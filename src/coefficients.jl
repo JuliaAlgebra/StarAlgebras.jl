@@ -59,6 +59,7 @@ function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
 end
 
 function Base.hash(ac::AbstractCoefficients, h::UInt)
+    ac = MA.operate!!(canonical, ac)
     return foldl((h, i) -> hash(i, h), nonzero_pairs(ac); init = h)
 end
 
