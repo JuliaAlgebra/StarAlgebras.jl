@@ -158,7 +158,7 @@ end
     @test one(fRG) == g
     @test iszero(zero(fRG))
     @test zero(g) == zero(fRG)
-    @test_broken iszero(0 * g)
+    @test iszero(0 * g)
 
     @testset "Translations between bases" begin
         Z = zero(RG)
@@ -212,7 +212,7 @@ end
             @test coeffs(fZ) == coeffs(Z, basis(fRG))
 
             @test coeffs(2 * X * Y) == coeffs(MA.operate_to!(Z, *, Z, 2))
-            @test_broken coeffs(2 * fX * fY) ==
+            @test coeffs(2 * fX * fY) ==
                          coeffs(MA.operate_to!(fZ, *, fZ, 2))
         end
     end
