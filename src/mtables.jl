@@ -107,3 +107,20 @@ function MA.operate!(
     res .+= sparsevec(idcs, vals, length(res))
     return res
 end
+
+function MA.operate!(
+    ms::UnsafeAddMul{<:MTable},
+    res::AbstractVector,
+    v::AbstractVector,
+    w::AbstractVector,
+)
+    for (kv, a) in nonzero_pairs(v)
+        for (kw, b) in nonzero_pairs(w)
+            c = ms.structure(kv, kw)
+            for (k, v) in nonzero_pairs(c)
+                res[ms.structure[k]] += v * a * b
+            end
+        end
+    end
+    return res
+end
