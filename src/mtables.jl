@@ -91,7 +91,6 @@ function MA.operate!(
     v::AbstractVector,
     w::AbstractVector,
 )
-    k = nnz(v) * nnz(w)
     idcs = Vector{key_type(res)}()
     vals = Vector{eltype(res)}()
 

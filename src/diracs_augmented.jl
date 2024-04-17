@@ -11,7 +11,6 @@ function Base.getindex(aδ::Augmented{K}, i::K) where {K}
 end
 
 canonical(aδ::Augmented) = aδ
-Base.iszero(aδ::Augmented) = all(iszero, values(aδ))
 
 Base.keys(aδ::Augmented) = (k = keys(aδ.elt); (one(first(k)), first(k)))
 function Base.values(aδ::Augmented)
@@ -32,4 +31,5 @@ end
 
 Base.isless(ad1::Augmented, ad2::Augmented) = isless(ad1.elt, ad2.elt)
 
+# optimization
 aug(::Augmented) = 0

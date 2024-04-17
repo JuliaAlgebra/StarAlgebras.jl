@@ -25,18 +25,6 @@ struct StarAlgebra{O,T,B<:AbstractBasis{T}} <:
     end
 end
 
-# MTable:
-function StarAlgebra(
-    obj,
-    basis::AbstractBasis,
-    cache_size::Tuple{<:Integer,Integer};
-    precompute=false
-)
-    mstr = MTable(basis, size=cache_size)
-    precompute && complete!(mstr)
-    return StarAlgebra(obj, basis, mstr)
-end
-
 basis(A::StarAlgebra) = A.basis
 object(A::StarAlgebra) = A.object
 
