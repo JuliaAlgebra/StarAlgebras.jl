@@ -69,12 +69,12 @@ Return an iterator over pairs `(k=>v)` of keys and values stored in `ac`.
 
 The iterator contains all pairs with `v` potentially non-zero.
 """
-function nonzero_pairs(ac::AbstractCoefficients)
+@inline function nonzero_pairs(ac)
     return (k => v for (k, v) in zip(keys(ac), values(ac)))
 end
 
-nonzero_pairs(v::AbstractVector) = pairs(v)
-function nonzero_pairs(v::AbstractSparseVector)
+@inline nonzero_pairs(v::AbstractVector) = pairs(v)
+@inline function nonzero_pairs(v::AbstractSparseVector)
     return zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
 end
 
