@@ -47,6 +47,7 @@
 
         @test coeffs(ax * ay) == SA.coeffs(x * y, basis(IG))
         @test coeffs(ax * az) == SA.coeffs(x * z, basis(IG))
+        @test SA.aug(ax) == 0
     end
 
     @testset "Random elements" begin
