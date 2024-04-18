@@ -158,7 +158,7 @@ end
     @test one(fRG) == g
     @test iszero(zero(fRG))
     @test zero(g) == zero(fRG)
-    @test_broken iszero(0 * g)
+    @test iszero(0 * g)
 
     @testset "Translations between bases" begin
         Z = zero(RG)
@@ -212,7 +212,7 @@ end
             @test coeffs(fZ) == coeffs(Z, basis(fRG))
 
             @test coeffs(2 * X * Y) == coeffs(MA.operate_to!(Z, *, Z, 2))
-            @test_broken coeffs(2 * fX * fY) ==
+            @test coeffs(2 * fX * fY) ==
                          coeffs(MA.operate_to!(fZ, *, fZ, 2))
         end
     end
@@ -283,7 +283,7 @@ end
         y = spzeros(length(basis(fRG)))
         y[1:k] .= 1
         Y = AlgebraElement(y, fRG)
-        @test_broken Y = sum(fRG(basis(fRG)[i]) for i in 1:k)
+        @test Y == sum(fRG(basis(fRG)[i]) for i in 1:k)
 
         @test Y isa AlgebraElement
 
@@ -317,15 +317,15 @@ end
         @static if VERSION ≥ v"1.9"
             YY = deepcopy(Y)
             @test_broken @allocations(MA.operate_to!(YY, +, Y, YY)) == 0
-            @test_broken YY == Y + Y
+            @test YY == Y + Y
 
             YY = deepcopy(Y)
             @test_broken @allocations(MA.operate_to!(YY, +, YY, Y)) == 0
-            @test_broken YY == Y + Y
+            @test YY == Y + Y
 
             @test_broken @allocations(MA.operate_to!(YY, +, Y, deepcopy(Y))) ==
                          0
-            @test_broken YY == Y + Y
+            @test YY == Y + Y
 
             @test @allocations(MA.operate_to!(YY, *, Y, Y)) ≤ 40
             @test YY == Y * Y
