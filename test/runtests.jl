@@ -28,16 +28,13 @@ include("test_example_words.jl")
     using PermutationGroups
     include("perm_grp_algebra.jl")
 
-    # arithmetic for perm group algebra and the free monoid algebra
-    include("arithmetic.jl")
-
-    # include("mtables.jl")
     include("constructors.jl")
+    include("group_algebra.jl")
 
-    # using SparseArrays
-    # if VERSION < v"1.9"
-    #     Base.sum(v::SparseVector) = sum(nonzeros(v))
-    # end
+    # free monoid algebra
+    include("monoid_algebra.jl")
+
+    include("caching_allocations.jl")
 
     # some applications:
     using Groups
