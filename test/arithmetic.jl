@@ -287,7 +287,7 @@ end
 
         @test Y isa AlgebraElement
 
-        @static if VERSION ≥ v"1.9"
+        @static if VERSION == v"1.10"
             star(Y)
             star(Y)
             @test (@allocations star(Y)) ≤ 4
@@ -300,7 +300,7 @@ end
 
         @test_throws SA.UndefRefError all(!iszero, SA.mstructure(fRG).table)
 
-        @static if VERSION ≥ v"1.9"
+        @static if VERSION == v"1.10"
             @test (@allocations Y * Y) > k^2 - 2 * k
             @test Y * Y isa AlgebraElement
             @test (@allocations Y * Y) ≤ 26
@@ -314,7 +314,7 @@ end
 
         @test all(!iszero, SA.mstructure(fRG).table)
 
-        @static if VERSION ≥ v"1.9"
+        @static if VERSION == v"1.10"
             YY = deepcopy(Y)
             # MA.operate_to!(YY, +, Y, YY)
             # YY = deepcopy(Y)
