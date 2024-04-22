@@ -16,6 +16,7 @@ struct MTable{T,I,V<:AbstractVector,M<:AbstractMatrix,Ms} <:
     starof::Vector{I}
     table::M
     mstr::Ms
+    lock::Base.Threads.SpinLock
 end
 
 function MTable(
@@ -33,7 +34,7 @@ function MTable(
     table = Matrix{T}(undef, dims)
     @assert !isbitstype(T) || dims == (0, 0)
 
-    return MTable(elts, relts, starof, table, mstr)
+    return MTable(elts, relts, starof, table, mstr, Base.Threads.SpinLock())
 end
 
 Base.@propagate_inbounds function __absindex(mt::MTable, i::Integer)
@@ -55,7 +56,9 @@ Base.@propagate_inbounds function (mt::MTable)(i::Integer, j::Integer)
     if checkbounds(Bool, mt.table, i, j)
         @inbounds begin
             if !__iscomputed(mt, i, j)
-                complete!(mt, i, j)
+                lock(mt.lock) do
+                    return complete!(mt, i, j)
+                end
             end
             return mt.table[i, j]
         end
