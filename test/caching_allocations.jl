@@ -1,3 +1,13 @@
+# `@allocations` is not defined on Julia v1.6
+@static if v"1.10" ≤ VERSION
+    function _alloc_test(output, op, a, b, allocs)
+        MA.operate_to!(output, op, a, b)
+        expected = op(a, b)
+        @test @allocations(MA.operate_to!(output, op, a, b)) <= allocs
+        @test output == expected
+    end
+end
+
 @testset "FixedBasis caching && allocations" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
@@ -11,7 +21,7 @@
     y = spzeros(length(basis(fRG)))
     y[1:k] .= 1
     Y = AlgebraElement(y, fRG)
-    @test_broken Y = sum(fRG(basis(fRG)[i]) for i in 1:k)
+    @test Y == sum(fRG(basis(fRG)[i]) for i in 1:k)
 
     @test Y isa AlgebraElement
 
@@ -42,25 +52,12 @@
 
     @test all(!iszero, SA.mstructure(fRG).table)
 
-    @static if v"1.10" ≤ VERSION < v"1.11"
+    @static if v"1.10" ≤ VERSION
         YY = deepcopy(Y)
-
-        MA.operate_to!(YY, *, Y, Y)
-        @test @allocations(MA.operate_to!(YY, *, Y, Y)) ≤ 25
-        @test YY == Y * Y
-
-        # MA.operate_to!(YY, +, Y, YY)
-        # YY = deepcopy(Y)
-        @test_broken @allocations(MA.operate_to!(YY, +, Y, YY)) == 0
-        @test_broken YY == Y + Y
-
-        # MA.operate_to!(YY, +, YY, Y)
-        # YY = deepcopy(Y)
-        @test_broken @allocations(MA.operate_to!(YY, +, YY, Y)) == 0
-        @test_broken YY == Y + Y
-
-        # MA.operate_to!(YY, +, Y, Y)
-        @test_broken @allocations(MA.operate_to!(YY, +, Y, Y)) == 0
-        @test_broken YY == Y + Y
+        _alloc_test(YY, *, Y, Y, 25)
+        _alloc_test(YY, +, Y, Y, 0)
+        # SparseArrays calls `Base.unalias` which allocates
+        _alloc_test(YY, +, YY, Y, 2)
+        _alloc_test(YY, +, Y, YY, 2)
     end
 end
