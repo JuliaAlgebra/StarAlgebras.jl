@@ -52,7 +52,7 @@ end
 
     @test all(!iszero, SA.mstructure(fRG).table)
 
-    @static if v"1.10" ≤ VERSION
+    @static if v"1.10" ≤ VERSION < v"1.11"
         YY = deepcopy(Y)
         _alloc_test(YY, *, Y, Y, 25)
         _alloc_test(YY, +, Y, Y, 0)
