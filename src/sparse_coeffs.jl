@@ -63,12 +63,7 @@ function __prealloc(X::SparseCoefficients, Y::SparseCoefficients, op)
     return similar(X, T)
 end
 
-struct Comparable{F}
-    lt::F
-end
-@inline (cmp::Comparable)(a, b) = cmp.lt(a, b)
-
-comparable(::Type) = Comparable(<)
+comparable(::Type) = isless
 function MA.operate!(::typeof(canonical), res::SparseCoefficients)
     return MA.operate!(canonical, res, comparable(key_type(res)))
 end
@@ -76,7 +71,7 @@ end
 function MA.operate!(
     ::typeof(canonical),
     res::SparseCoefficients,
-    cmp::Comparable,
+    cmp,
 )
     sorted = issorted(res.basis_elements; lt = cmp)
     distinct = allunique(res.basis_elements)
