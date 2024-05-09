@@ -6,7 +6,7 @@ import LinearAlgebra
 import MutableArithmetics as MA
 
 export StarAlgebra, AlgebraElement
-export basis, coeffs, star, supp
+export basis, coeffs, star
 
 # AbstractCoefficients
 ## abstract definitions

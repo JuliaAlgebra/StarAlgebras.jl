@@ -31,7 +31,7 @@ end
         @test (@allocations star(Y)) ≤ 4
     end
 
-    @test supp(Y) == basis(fRG)[1:k]
+    @test SA.supp(Y) == basis(fRG)[1:k]
 
     @test Y * one(fRG) == Y
     @test one(fRG) * Y == Y
