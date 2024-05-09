@@ -86,7 +86,7 @@
             @test star(RG(g)) == RG(inv(g))
             @test (one(RG) - RG(g)) * star(one(RG) - RG(g)) ==
                   2 * one(RG) - RG(g) - RG(inv(g))
-            @test aug(one(RG) - RG(g)) == 0
+            @test SA.aug(one(RG) - RG(g)) == 0
         end
 
         g, h = PermutationGroups.gens(G)
@@ -99,16 +99,16 @@
 
         @test a * b == MA.operate_to!(similar(a), *, a, b)
 
-        @test aug(a) == 3
-        @test aug(b) == -1
-        @test aug(a) * aug(b) == aug(a * b) == aug(b * a)
+        @test SA.aug(a) == 3
+        @test SA.aug(b) == -1
+        @test SA.aug(a) * SA.aug(b) == SA.aug(a * b) == SA.aug(b * a)
 
         z = sum((one(RG) - RG(g)) * star(one(RG) - RG(g)) for g in G)
-        @test aug(z) == 0
+        @test SA.aug(z) == 0
 
-        @test supp(z) == sort(collect(basis(parent(z))))
-        @test supp(RG(1) + RG(g)) == [one(G), g]
-        @test supp(a) == [one(G), h, g]
+        @test SA.supp(z) == sort(collect(basis(parent(z))))
+        @test SA.supp(RG(1) + RG(g)) == [one(G), g]
+        @test SA.supp(a) == [one(G), h, g]
 
         @testset "Projections in star algebras" begin
             b = basis(RG)

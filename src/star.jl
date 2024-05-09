@@ -9,10 +9,6 @@ end
 star(::AbstractBasis, x) = star(x)
 star(basis::ImplicitBasis, i::Integer) = basis[-i]
 
-function star(basis::AbstractBasis, ad::Augmented)
-    return Augmented(star(basis, ad.elt))
-end
-
 function star(basis::AbstractBasis, d::SparseCoefficients)
     k = star.(Ref(basis), keys(d))
     v = star.(values(d))

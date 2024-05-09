@@ -25,8 +25,6 @@ function supp(a::AlgebraElement)
     return [b[i] for (i, _) in nonzero_pairs(coeffs(a))]
 end
 
-aug(a::AlgebraElement) = aug(coeffs(a))
-
 function LinearAlgebra.norm(a::AlgebraElement, p::Real)
     return LinearAlgebra.norm(coeffs(a), p)
 end

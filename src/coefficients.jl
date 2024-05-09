@@ -78,12 +78,6 @@ end
     return zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
 end
 
-aug(cfs::Any) = sum(values(cfs))
-function aug(ac::AbstractCoefficients)
-    isempty(keys(ac)) && return zero(valtype(ac))
-    return sum(c * aug(x) for (x, c) in nonzero_pairs(ac))
-end
-
 function LinearAlgebra.norm(sc::AbstractCoefficients, p::Real)
     isempty(keys(sc)) && return (0^p)^1 / p
     return sum(v^p for v in values(sc))^1 / p

@@ -6,13 +6,12 @@ import LinearAlgebra
 import MutableArithmetics as MA
 
 export StarAlgebra, AlgebraElement
-export aug, basis, coeffs, star, supp
+export basis, coeffs, star, supp
 
 # AbstractCoefficients
 ## abstract definitions
 include("coefficients.jl")
-## concrete implementations
-include("diracs_augmented.jl")
+## concrete implementation
 include("sparse_coeffs.jl")
 
 # MultiplicativeStructures
@@ -33,5 +32,8 @@ include("star.jl")
 
 include("arithmetic.jl")
 include("show.jl")
+
+# augmented basis implementation
+include("diracs_augmented.jl")
 
 end
