@@ -44,35 +44,39 @@ end
 Base.size(mt::MTable, i::Vararg) = size(mt.table, i...)
 Base.haskey(mt::MTable, x) = haskey(mt.relts, x)
 Base.getindex(mt::MTable{T}, x::T) where {T} = mt.relts[x]
-Base.@propagate_inbounds Base.getindex(mt::MTable, i::Integer) =
-    mt.elts[__absindex(mt, i)]
+Base.getindex(mt::MTable, i::Integer) = mt.elts[__absindex(mt, i)]
 
-Base.@propagate_inbounds __iscomputed(mt::MTable, i, j) =
-    isassigned(mt.table, i, j) && !iszero(mt.table[i, j])
+function __iscomputed(mt::MTable, i, j)
+    return isassigned(mt.table, i, j)
+end
 
-Base.@propagate_inbounds function (mt::MTable)(i::Integer, j::Integer)
-    i = __absindex(mt, i)
-    j = __absindex(mt, j)
-    if checkbounds(Bool, mt.table, i, j)
-        @inbounds begin
-            if !__iscomputed(mt, i, j)
-                lock(mt.lock) do
-                    return complete!(mt, i, j)
-                end
-            end
-            return mt.table[i, j]
-        end
-    else
-        g, h = mt[i], mt[j]
-        return mt.mstr(g, h)
+function (mt::MTable{T})(x::T, y::T) where {T}
+    i = __absindex(mt, mt[x])
+    j = __absindex(mt, mt[y])
+    return checkbounds(Bool, mt.table, i, j) ? mt(i, j) : mt.mstr(x, y)
+end
+
+function (mt::MTable)(i::Integer, j::Integer)
+    if !checkbounds(Bool, mt.table, i, j)
+        x, y = mt[i], mt[j]
+        return mt.mstr(x, y)
     end
-end
-Base.@propagate_inbounds function (mt::MTable{T})(x::T, y::T) where {T}
-    i, j = mt[x], mt[y]
-    return @inbounds mt(i, j)
+    if !__iscomputed(mt, i, j)
+        lock(mt.lock) do
+            return thread_unsafe_complete!(mt, i, j)
+        end
+    end
+
+    res = mt.table[i, j] # load
+    while res != mt.table[i, j] # compare
+        res = mt.table[i, j] # and load again
+        yield()
+    end
+
+    return mt.table[i, j] # and load again
 end
 
-Base.@propagate_inbounds function complete!(mt::MTable, i::Integer, j::Integer)
+function thread_unsafe_complete!(mt::MTable, i::Integer, j::Integer)
     g, h = mt[i], mt[j]
     gh_cfs = mt.mstr(g, h)
     mt.table[i, j] = gh_cfs
@@ -82,7 +86,7 @@ end
 function complete!(mt::MTable)
     Threads.@threads for j in axes(mt.table, 2)
         for i in axes(mt.table, 1)
-            @inbounds complete!(mt, i, j)
+            @inbounds thread_unsafe_complete!(mt, i, j)
         end
     end
     return mt
