@@ -30,7 +30,7 @@ Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
     canonical(ac::AbstractCoefficients)
 Compute the canonical form of `ac` (e.g. grouping coefficients together, etc).
 
-If `ac` can be brough to canonical form in-place one has to implement
+If `ac` can be brought to canonical form in-place one has to implement
 * `MA.mutability(::Type{typeof(ac)}, canonical, ::Vararg{Type}) = MA.IsMutable()`
 * `MA.operate!(canonical, ac)` that performs this canonicalization.
 
@@ -41,14 +41,14 @@ MA.operate(::typeof(canonical), x) = canonical(x) # fallback?
 
 # example implementation for vectors
 function MA.mutability(
-    ::Type{<:SparseVector},
+    ::Type{<:Union{<:SparseVector,<:Vector}},
     ::typeof(canonical),
     ::Vararg{Type},
 )
     return MA.IsMutable()
 end
 MA.operate!(::typeof(canonical), sv::SparseVector) = dropzeros!(sv)
-canonical(v::AbstractVector) = v
+MA.operate!(::typeof(canonical), v::Vector) = v
 
 function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
     ac1 = MA.operate!!(canonical, ac1)
@@ -59,6 +59,7 @@ function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
 end
 
 function Base.hash(ac::AbstractCoefficients, h::UInt)
+    ac = MA.operate!!(canonical, ac)
     return foldl((h, i) -> hash(i, h), nonzero_pairs(ac); init = h)
 end
 
@@ -68,19 +69,13 @@ Return an iterator over pairs `(k=>v)` of keys and values stored in `ac`.
 
 The iterator contains all pairs with `v` potentially non-zero.
 """
-function nonzero_pairs(ac::AbstractCoefficients)
+@inline function nonzero_pairs(ac)
     return (k => v for (k, v) in zip(keys(ac), values(ac)))
 end
 
-nonzero_pairs(v::AbstractVector) = pairs(v)
-function nonzero_pairs(v::AbstractSparseVector)
+@inline nonzero_pairs(v::AbstractVector) = pairs(v)
+@inline function nonzero_pairs(v::AbstractSparseVector)
     return zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
-end
-
-aug(cfs::Any) = sum(values(cfs))
-function aug(ac::AbstractCoefficients)
-    isempty(keys(ac)) && return zero(valtype(ac))
-    return sum(c * aug(x) for (x, c) in nonzero_pairs(ac))
 end
 
 function LinearAlgebra.norm(sc::AbstractCoefficients, p::Real)
@@ -96,7 +91,7 @@ end
 
 # general mutable API
 # why here?
-MA.operate!(::typeof(zero), v::SparseVector) = (v .*= 0; v)
+MA.operate!(::typeof(zero), v::SparseVector) = (v .= 0; v)
 
 Base.zero(X::AbstractCoefficients) = MA.operate!(zero, similar(X))
 Base.:-(X::AbstractCoefficients) = MA.operate_to!(__prealloc(X, -1, *), -, X)

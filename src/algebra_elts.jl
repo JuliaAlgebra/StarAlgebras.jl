@@ -15,8 +15,8 @@ function Base.deepcopy_internal(a::AlgebraElement, id::IdDict)
 end
 
 # call overload:
-(a::AlgebraElement)(x) = coeffs(a)[x]
-Base.setindex!(a::AlgebraElement, v, idx) = a.coeffs[idx] = v
+(a::AlgebraElement)(x) = coeffs(a)[basis(parent(a))[x]]
+Base.setindex!(a::AlgebraElement, v, idx) = a.coeffs[basis(parent(a))[idx]] = v
 
 # AlgebraElement specific functions
 
@@ -24,8 +24,6 @@ function supp(a::AlgebraElement)
     b = basis(parent(a))
     return [b[i] for (i, _) in nonzero_pairs(coeffs(a))]
 end
-
-aug(a::AlgebraElement) = aug(coeffs(a))
 
 function LinearAlgebra.norm(a::AlgebraElement, p::Real)
     return LinearAlgebra.norm(coeffs(a), p)

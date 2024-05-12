@@ -4,7 +4,7 @@ mutable struct FixedBasis{T,I,V<:AbstractVector{T},M<:MTable{T,I}} <:
     table::M
 end
 
-function FixedBasis(basis::AbstractBasis; n::Integer, mt::Integer = 0)
+function FixedBasis(basis::AbstractBasis; n::Integer, mt::Integer = UInt32(0))
     @assert 0 ≤ mt ≤ n
     elts = Iterators.take(basis, n)
     return FixedBasis(collect(elts), mstructure(basis), (mt, mt))
@@ -13,7 +13,7 @@ end
 function FixedBasis(
     elts::AbstractVector,
     mstr::MultiplicativeStructure,
-    dims::NTuple{2,I},
+    dims::NTuple{2,I} = (UInt32(0), UInt32(0)),
 ) where {I<:Integer}
     @assert 0 ≤ dims[1] ≤ length(elts)
     @assert 0 ≤ dims[2] ≤ length(elts)

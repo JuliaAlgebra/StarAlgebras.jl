@@ -67,12 +67,12 @@
     # @test hash(a) == hash(dense_a)
 
     # @test SA.supp_ind(a) == [b[s], b[p]] == SA.supp_ind(dense_a)
-    # @test supp(a) == [s, p] == SA.supp(dense_a)
+    # @test SA.supp(a) == [s, p] == SA.supp(dense_a)
 
     aa = a - RG(p)
     # dense_aa = dense_a - RG(p)
     # @test SA.supp_ind(aa) == [b[s]] == SA.supp_ind(dense_aa)
-    @test supp(aa) == [s]
+    @test SA.supp(aa) == [s]
 
     @test sprint(show, a) == "2·(id) +1·b·c"
     @test sprint(show, -a) == "-2·(id) -1·b·c"

@@ -47,6 +47,7 @@
 
         @test coeffs(ax * ay) == SA.coeffs(x * y, basis(IG))
         @test coeffs(ax * az) == SA.coeffs(x * z, basis(IG))
+        @test SA.aug(ax) == 0
     end
 
     @testset "Random elements" begin
@@ -55,7 +56,7 @@
         scfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
         s = SA.AlgebraElement(scfs, RG)
 
-        @test aug(r * s) == aug(r) * aug(s)
+        @test SA.aug(r * s) == SA.aug(r) * SA.aug(s)
     end
     @testset "Fixed Basis" begin
         m = PermutationGroups.order(UInt16, G)
@@ -75,9 +76,9 @@
         fr = SA.AlgebraElement(coeffs(r, basis(fRG)), fRG)
         fs = SA.AlgebraElement(coeffs(s, basis(fRG)), fRG)
 
-        @test aug(fr) == aug(r)
-        @test aug(fs) == aug(s)
-        @test aug(fr * fs) == aug(fr) * aug(fs)
+        @test SA.aug(fr) == SA.aug(r)
+        @test SA.aug(fs) == SA.aug(s)
+        @test SA.aug(fr * fs) == SA.aug(fr) * SA.aug(fs)
 
         @test coeffs(r * s, basis(fRG)) isa AbstractVector
         @test fr * fs == SA.AlgebraElement(coeffs(r * s, basis(fRG)), fRG)
@@ -87,5 +88,4 @@
         end
         @test a ≤ b
     end
-
 end
