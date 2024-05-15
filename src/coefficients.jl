@@ -9,7 +9,17 @@ E.g. returned by calls to a `MultiplicativeStructure` need to implement
 * `Base.keys`
 * `Base.values`
 * `StarAlgebras.canonical`
-* `StarAlgebras.star`
+* `StarAlgebras.star(b::AbstractBasis, ac)`
+
+For general types either all necessary arithmetic operations need to be
+implemented, or fallbacks using the framework of `MutableArithmetics` are
+provided based on random indexing. Additionally one needs to provide:
+
+* `Base.similar(ac, T::)` with the same semantics as the one for vectors
+* `Base.getindex(ac, idx)`
+* `Base.setindex!(ac, val, idx)`
+* `MutableArithmetics.operate!(ms::UnsafeAddMul, ac, v::C, w::C) where C<:SA.AbstractCoefficients`
+
 """
 abstract type AbstractCoefficients{K,V} end
 
