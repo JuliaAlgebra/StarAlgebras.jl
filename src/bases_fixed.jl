@@ -39,4 +39,3 @@ Base.@propagate_inbounds Base.getindex(
     b::FixedBasis{T,I},
     i::I,
 ) where {T,I<:Integer} = b.elts[i]
-

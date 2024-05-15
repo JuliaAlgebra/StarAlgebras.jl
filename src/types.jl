@@ -11,8 +11,7 @@ function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
 end
 
 # concrete implementation
-struct StarAlgebra{O,T,B<:AbstractBasis{T}} <:
-       AbstractStarAlgebra{O,T}
+struct StarAlgebra{O,T,B<:AbstractBasis{T}} <: AbstractStarAlgebra{O,T}
     object::O
     basis::B
 
@@ -47,7 +46,7 @@ end
 
 function AlgebraElement(
     coeffs::SparseCoefficients{T},
-    A::AbstractStarAlgebra{O,T}
+    A::AbstractStarAlgebra{O,T},
 ) where {O,T}
     return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
 end
@@ -103,7 +102,9 @@ end
 
 (A::AbstractStarAlgebra)(x::Number) = x * one(A)
 
-Base.similar(X::AlgebraElement, T=eltype(X)) = AlgebraElement(similar(coeffs(X), T), parent(X))
+function Base.similar(X::AlgebraElement, T = eltype(X))
+    return AlgebraElement(similar(coeffs(X), T), parent(X))
+end
 
 function AlgebraElement{T}(X::AlgebraElement) where {T}
     v = coeffs(X)

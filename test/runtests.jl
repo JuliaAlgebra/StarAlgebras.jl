@@ -43,4 +43,3 @@ include("test_example_words.jl")
     end
     include("sum_of_squares.jl")
 end
-

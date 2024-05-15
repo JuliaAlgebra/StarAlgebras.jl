@@ -68,11 +68,7 @@ function MA.operate!(::typeof(canonical), res::SparseCoefficients)
     return MA.operate!(canonical, res, comparable(key_type(res)))
 end
 
-function MA.operate!(
-    ::typeof(canonical),
-    res::SparseCoefficients,
-    cmp,
-)
+function MA.operate!(::typeof(canonical), res::SparseCoefficients, cmp)
     sorted = issorted(res.basis_elements; lt = cmp)
     distinct = allunique(res.basis_elements)
     if sorted && distinct && !any(iszero, res.values)

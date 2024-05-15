@@ -17,7 +17,9 @@ function Base.show(io::IO, w::Word)
     end
 end
 
-Base.:(==)(w::Word, v::Word) = w.alphabet == v.alphabet && w.letters == v.letters
+function Base.:(==)(w::Word, v::Word)
+    return w.alphabet == v.alphabet && w.letters == v.letters
+end
 Base.hash(w::Word, h::UInt) = hash(w.alphabet, hash(w.letters, hash(Word, h)))
 
 Base.one(w::Word) = Word(w.alphabet, Int[])

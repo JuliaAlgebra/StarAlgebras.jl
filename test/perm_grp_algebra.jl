@@ -31,7 +31,6 @@
     @test x * z == xz
 
     @testset "Augmented basis" begin
-
         ad = SA.AugmentedBasis(db)
         @test SA.mstructure(ad) == SA.AugmentedMStructure(SA.mstructure(db))
         @test ad[SA.Augmented(h)] isa SA.Augmented

@@ -2,7 +2,7 @@ mutable struct DiracBasis{T,I,S,M<:DiracMStructure} <: ImplicitBasis{T,I}
     object::S # any iterable
     moperation::M
 
-    function DiracBasis{I}(itr, operation=*) where {I}
+    function DiracBasis{I}(itr, operation = *) where {I}
         @assert !isempty(itr)
         mstr = DiracMStructure(operation)
         return new{eltype(itr),I,typeof(itr),typeof(mstr)}(itr, mstr)
@@ -12,8 +12,9 @@ end
 object(db::DiracBasis) = db.object
 mstructure(db::DiracBasis{T}) where {T} = db.moperation
 
-
-Base.IteratorSize(::Type{<:DiracBasis{T,I,S}}) where {T,I,S} = Base.IteratorSize(S)
+function Base.IteratorSize(::Type{<:DiracBasis{T,I,S}}) where {T,I,S}
+    return Base.IteratorSize(S)
+end
 function Base.length(db::DiracBasis)
     @assert Base.haslength(object(db))
     return length(object(db))

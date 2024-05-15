@@ -5,7 +5,7 @@ end
 
 function _preallocate_output(X::AlgebraElement, Y::AlgebraElement, op)
     T = Base._return_type(op, Tuple{eltype(X),eltype(Y)})
-    if coeffs(Y) isa DenseArray
+    if coeffs(Y) isa DenseArray # what a hack :)
         return similar(Y, T)
     end
     return similar(X, T)
@@ -108,5 +108,3 @@ function MA.operate_to!(
     MA.operate_to!(coeffs(res), mstr, coeffs(X), coeffs(Y))
     return res
 end
-
-

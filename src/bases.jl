@@ -62,11 +62,7 @@ end
 Translate coefficients `cfs` in `source::AbstractBasis` to basis
 `target::AbstractBasis`.
 """
-function coeffs(
-    cfs,
-    source::AbstractBasis,
-    target::AbstractBasis,
-)
+function coeffs(cfs, source::AbstractBasis, target::AbstractBasis)
     source === target && return cfs
     source == target && return cfs
     res = zero_coeffs(valtype(cfs), target)

@@ -5,12 +5,15 @@ struct ProductNotWellDefined <: Exception
 end
 
 function Base.showerror(io::IO, ex::ProductNotWellDefined)
-    print(io, "Product of elements $(ex.i) and $(ex.j) is not defined on the basis")
+    print(
+        io,
+        "Product of elements $(ex.i) and $(ex.j) is not defined on the basis",
+    )
     print(io, " or the multiplicative structure could not be completed")
     if isdefined(ex, :msg)
         print(io, ": $(ex.msg)")
     end
-    print(io, ".")
+    return print(io, ".")
 end
 
 """
@@ -86,4 +89,3 @@ function (mstr::DiracMStructure)(x::T, y::T) where {T}
     xy = mstr.op(x, y)
     return SparseCoefficients((xy,), (1,))
 end
-
