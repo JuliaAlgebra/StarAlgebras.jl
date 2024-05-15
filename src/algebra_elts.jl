@@ -28,9 +28,14 @@ end
 function LinearAlgebra.norm(a::AlgebraElement, p::Real)
     return LinearAlgebra.norm(coeffs(a), p)
 end
-function LinearAlgebra.dot(a::AlgebraElement, v::AbstractVector)
-    return LinearAlgebra.dot(coeffs(a), v)
+
+function LinearAlgebra.dot(a::AlgebraElement, b::AlgebraElement)
+    return LinearAlgebra.dot(coeffs(a), coeffs(b))
 end
-function LinearAlgebra.dot(v::AbstractVector, a::AlgebraElement)
-    return LinearAlgebra.dot(a, v)
+
+function LinearAlgebra.dot(w::AbstractVector, b::AlgebraElement)
+    return LinearAlgebra.dot(w, coeffs(b))
+end
+function LinearAlgebra.dot(a::AlgebraElement, w::AbstractVector)
+    return LinearAlgebra.dot(coeffs(a), w)
 end

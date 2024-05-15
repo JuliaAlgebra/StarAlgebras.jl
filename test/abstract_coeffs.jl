@@ -100,4 +100,8 @@ end
 
     @test fP2m * fP3 == fP3 * fP2m == fPAlt
     @test iszero(fP2m * fP2)
+
+    @test norm(fP2m) == norm(P2m) == norm(fP2m)
+    v = coeffs(P2m, basis(fRG)) # an honest vector
+    @test dot(fP2m, fP2m) == dot(coeffs(fP2m), v) == dot(v, coeffs(fP2m))
 end

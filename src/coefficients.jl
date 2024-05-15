@@ -92,14 +92,34 @@ end
 end
 
 function LinearAlgebra.norm(sc::AbstractCoefficients, p::Real)
-    isempty(keys(sc)) && return (0^p)^1 / p
-    return sum(v^p for v in values(sc))^1 / p
+    isempty(values(sc)) && return (0^p)^(1 / p)
+    return sum(abs(v)^p for v in values(sc))^(1 / p)
+end
+
+function LinearAlgebra.dot(ac::AbstractCoefficients, bc::AbstractCoefficients)
+    if isempty(values(ac)) || isempty(values(bc))
+        return zero(Base._return_type(*, Tuple{valtype(ac),valtype(bc)}))
+    else
+        return sum(c * star(bc[i]) for (i, c) in nonzero_pairs(ac))
+    end
+end
+
+function LinearAlgebra.dot(w::AbstractVector, ac::AbstractCoefficients)
+    @assert key_type(ac) <: Integer
+    if isempty(values(ac))
+        return zero(Base._return_type(*, eltype(w), valtype(ac)))
+    else
+        return sum(w[i] * star(v) for (i, v) in nonzero_pairs(ac))
+    end
 end
 
 function LinearAlgebra.dot(ac::AbstractCoefficients, w::AbstractVector)
     @assert key_type(ac) <: Integer
-    isempty(keys(ac)) && return zero(eltype(v))
-    return sum(v * w[i] for (i, v) in nonzero_pairs(ac))
+    if isempty(values(ac))
+        return zero(Base._return_type(*, eltype(w), valtype(ac)))
+    else
+        return sum(v * star(w[i]) for (i, v) in nonzero_pairs(ac))
+    end
 end
 
 # general mutable API

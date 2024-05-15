@@ -46,9 +46,11 @@
             fX = AlgebraElement(coeffs(X, basis(fRG)), fRG)
             fY = AlgebraElement(coeffs(Y, basis(fRG)), fRG)
 
-            @test LinearAlgebra.dot(fX, coeffs(fX)) ≈
-                  norm(fX)^2 ≈
-                  LinearAlgebra.dot(coeffs(fX), fX)
+            @test dot(X, Y) == dot(fX, fY) == dot(coeffs(X), coeffs(Y))
+            @test dot(fX, coeffs(fY)) == dot(coeffs(fX), fY)
+
+            @test dot(X, X) ≈ norm(X)^2 ≈ dot(coeffs(X), coeffs(X))
+            @test dot(fX, fX) ≈ norm(fX)^2 ≈ dot(coeffs(fX), coeffs(fX))
 
             @test coeffs(fX) ==
                   coeffs(coeffs(fX, basis(RG)), basis(RG), basis(fRG))
