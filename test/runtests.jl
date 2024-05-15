@@ -1,5 +1,4 @@
 using Test
-using Random
 using LinearAlgebra
 using SparseArrays
 
@@ -30,6 +29,7 @@ include("test_example_words.jl")
 
     include("constructors.jl")
     include("group_algebra.jl")
+    include("abstract_coeffs.jl")
 
     # free monoid algebra
     include("monoid_algebra.jl")
