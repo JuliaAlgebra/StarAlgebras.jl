@@ -144,6 +144,70 @@
 
             @test P2m * P3 == P3 * P2m == PAlt
             @test iszero(P2m * P2)
+
+            @testset "Dense projections and Fixed basis" begin
+                n = length(basis(RG))
+                fb = SA.FixedBasis(basis(RG); n = n)
+                fRG = StarAlgebra(SA.object(RG), fb)
+                @testset "compatibility: sparse/dense" begin
+                    fP = AlgebraElement(coeffs(P, basis(fRG)), fRG)
+                    @test fP * fP == fP
+                    dfP = AlgebraElement(fill(1 // n, n), fRG)
+                    @test dfP == fP
+                    @test dfP * dfP == dfP
+                    @test fP * dfP == dfP
+                    @test coeffs(fP * dfP) isa DenseArray
+
+                    @test 2dfP // 2 == dfP
+
+                    #= broken by
+                       [12] operate_to!(output::Vector{Rational{Int64}}, op::typeof(-), args::Vector{Rational{Int64}})
+                    @ MutableArithmetics ~/.julia/dev/MutableArithmetics/src/interface.jl:391
+                    =#
+                    @test_broken (dfP + fP) - dfP == dfP
+                end
+
+                @testset "Projections" begin
+                    RG = fRG
+                    b = basis(RG)
+                    l = length(b)
+                    P = sum(RG(g) for g in b) // l
+                    @test P * P == P
+
+                    P3 = 2 * sum(RG(g) for g in b if sign(g) > 0) // l
+                    @test P3 * P3 == P3
+
+                    PAlt = sum(sign(g) * RG(g) for g in b) // l
+                    @test PAlt * PAlt == PAlt
+
+                    @test P3 * PAlt == PAlt * P3
+
+                    h = Permutation(perm"(2,3)", G)
+                    P2 = (RG(1) + RG(h)) // 2
+                    @test P2 * P2 == P2
+
+                    @test P2 * P3 == P3 * P2 == P
+
+                    #=
+
+                    Stacktrace:
+                    [1] operate_to_fallback!(::MutableArithmetics.IsNotMutable, output::SparseVector{Int64, UInt32}, op::Function, args::SparseVector{Int64, UInt32})
+                    @ MutableArithmetics ~/.julia/dev/MutableArithmetics/src/interface.jl:350
+                    [2] operate_to!(output::SparseVector{Int64, UInt32}, op::typeof(-), args::SparseVector{Int64, UInt32})
+                    @ MutableArithmetics ~/.julia/dev/MutableArithmetics/src/interface.jl:391
+                    =#
+                    @test_broken -RG(h)
+                    @test_broken RG(1) - RG(h)
+                    @test_broken !iszero(RG(1) - RG(h))
+
+                    # uncomment this after the above are unbroken
+                    # P2m = (RG(1) - RG(h)) // 2
+                    # @test P2m * P2m == P2m
+
+                    @test_broken P2m * P3 == P3 * P2m == PAlt
+                    @test_broken iszero(P2m * P2)
+                end
+            end
         end
     end
 end
