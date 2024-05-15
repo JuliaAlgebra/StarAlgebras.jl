@@ -14,6 +14,7 @@
 
         @test -a isa AlgebraElement
         @test coeffs(-a) == -coeffs(a)
+        @test zero(coeffs(a)) == coeffs(zero(a))
 
         @test 2 * a isa AlgebraElement
         @test eltype(2 * a) == typeof(2)
@@ -68,10 +69,18 @@
         @test a - b == RG(g) + RG(k) + 2RG(h)
 
         @test a + b - 2a == b - a
+        @test (2a) // 2 == a
+        @test a + 2a == 3.0a
+        @test 2a - a // 1 == a
+        @test div(3a, 2) == a
 
-        @test 1 // 2 * 2a == a
-        @test a + 2a == (3 // 1) * a
-        @test 2a - (1 // 1) * a == a
+        @test coeffs(a + b - 2a) == coeffs(a) + coeffs(b) - 2coeffs(a)
+        @test coeffs(2a // 2) == 2coeffs(a) // 2 == coeffs(a)
+        @test coeffs(3a) == 3.0coeffs(a)
+        @test coeffs(2a) - coeffs(a // 1) ==
+              2coeffs(a) - coeffs(a) // 1 ==
+              coeffs(a)
+        @test div(3coeffs(a), 2) == coeffs(a)
     end
 
     @testset "Multiplicative structure" begin
