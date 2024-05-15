@@ -73,7 +73,8 @@ The iterator contains all pairs with `v` potentially non-zero.
     return (k => v for (k, v) in zip(keys(ac), values(ac)))
 end
 
-@inline nonzero_pairs(v::AbstractVector) = pairs(v)
+@inline nonzero_pairs(v::AbstractVector) =
+    (p for p in pairs(v) if !iszero(last(p)))
 @inline function nonzero_pairs(v::AbstractSparseVector)
     return zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
 end

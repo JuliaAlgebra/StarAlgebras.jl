@@ -28,7 +28,7 @@ function MTable(
     @assert length(elts) ≥ first(dims)
     @assert length(elts) ≥ last(dims)
 
-    relts = Dict(b => I(idx) for (idx, b) in nonzero_pairs(elts))
+    relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
     starof = [relts[star(x)] for x in elts]
     T = typeof(mstr(first(elts), first(elts)))
     table = Matrix{T}(undef, dims)
