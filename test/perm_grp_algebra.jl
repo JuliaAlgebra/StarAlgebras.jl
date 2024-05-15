@@ -34,6 +34,10 @@
         ad = SA.AugmentedBasis(db)
         @test SA.mstructure(ad) == SA.AugmentedMStructure(SA.mstructure(db))
         @test ad[SA.Augmented(h)] isa SA.Augmented
+        @test sprint(show, ad[SA.Augmented(h)]) == "(-1·()+1·(1,2,4,5))"
+
+        @test !(h in ad)
+        @test SA.Augmented(h) in ad
 
         IG = SA.StarAlgebra(G, ad)
 
@@ -47,6 +51,10 @@
         @test coeffs(ax * ay) == SA.coeffs(x * y, basis(IG))
         @test coeffs(ax * az) == SA.coeffs(x * z, basis(IG))
         @test SA.aug(ax) == 0
+        @test star(ax) * star(ay) == star(ay) * star(ax)
+
+        @test length(ad) == length(db) - 1
+        @test Set(ad) == Set(SA.Augmented(g) for g in db if !isone(g))
     end
 
     @testset "Random elements" begin

@@ -51,6 +51,7 @@ struct AugmentedBasis{T,I,A<:Augmented{T},B<:AbstractBasis{T,I}} <:
 end
 
 function AugmentedBasis(basis::DiracBasis{T,I}) where {T,I}
+    @assert one(object(basis)) in basis
     return AugmentedBasis{T,I,Augmented{T},typeof(basis)}(basis)
 end
 
@@ -67,10 +68,18 @@ function Base.length(ab::AugmentedBasis)
 end
 
 function Base.iterate(ab::AugmentedBasis)
-    return ((v, st) = iterate(object(ab)); (Augmented(v), st))
+    (v, st) = iterate(object(ab))
+    isone(v) && return iterate(ab, st)
+    return Augmented(v), st
 end
+
 function Base.iterate(ab::AugmentedBasis, st)
-    return ((v, st) = iterate(object(ab), st); (Augmented(v), st))
+    (v, st) = let k = iterate(object(ab), st)
+        isnothing(k) && return nothing
+        k
+    end
+    isone(v) && return iterate(ab, st)
+    return Augmented(v), st
 end
 
 Base.in(g, ab::AugmentedBasis) = false
