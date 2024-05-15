@@ -7,7 +7,6 @@ function star(X::AlgebraElement)
 end
 
 star(::AbstractBasis, x) = star(x)
-star(basis::ImplicitBasis, i::Integer) = basis[-i]
 
 function star(basis::AbstractBasis, d::SparseCoefficients)
     k = star.(Ref(basis), keys(d))

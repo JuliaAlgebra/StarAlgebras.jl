@@ -75,6 +75,9 @@ end
     fP2 = (α + β) // 2
     @test coeffs(fP2) isa ACoeffs{<:Rational}
 
+    @test SA.key_type(coeffs(fP2)) == UInt32
+    @test zero(coeffs(fP2)) == ACoeffs(coeffs(zero(P), basis(fRG)))
+
     P3 = 2 * sum(RG(g) for g in basis(RG) if sign(g) > 0) // l
     fP3 = AlgebraElement(ACoeffs(coeffs(P3, basis(fRG))), fRG)
     @test AlgebraElement(coeffs(fP3, basis(RG)), RG) == P3

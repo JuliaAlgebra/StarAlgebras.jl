@@ -15,7 +15,7 @@ For general types either all necessary arithmetic operations need to be
 implemented, or fallbacks using the framework of `MutableArithmetics` are
 provided based on random indexing. Additionally one needs to provide:
 
-* `Base.similar(ac, T::)` with the same semantics as the one for vectors
+* `Base.similar(ac, T::Type)` with the same semantics as the one for vectors
 * `Base.getindex(ac, idx)`
 * `Base.setindex!(ac, val, idx)`
 * `MutableArithmetics.operate!(ms::UnsafeAddMul, ac, v::C, w::C) where C<:SA.AbstractCoefficients`
@@ -35,6 +35,8 @@ key_type(::Type{SparseArrays.SparseVector{V,K}}) where {V,K} = K
 key_type(v::SparseArrays.SparseVector) = key_type(typeof(v))
 
 Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
+
+Base.similar(ac::AbstractCoefficients) = similar(ac, valtype(ac))
 
 """
     canonical(ac::AbstractCoefficients)

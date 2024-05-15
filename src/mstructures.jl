@@ -83,8 +83,6 @@ struct DiracMStructure{Op} <: MultiplicativeStructure
     op::Op
 end
 
-DiracMStructure() = DiracMStructure(*)
-
 function (mstr::DiracMStructure)(x::T, y::T) where {T}
     xy = mstr.op(x, y)
     return SparseCoefficients((xy,), (1,))

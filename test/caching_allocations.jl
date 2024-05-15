@@ -37,6 +37,10 @@ end
     @test one(fRG) * Y == Y
 
     @test_throws SA.UndefRefError all(!iszero, SA.mstructure(fRG).table)
+    mstr = deepcopy(SA.mstructure(fRG))
+    SA.complete!(mstr)
+    @test all(!iszero(mstr.table))
+    @test_throws SA.UndefRefError all(!iszero, SA.mstructure(fRG).table)
 
     @static if v"1.10" ≤ VERSION < v"1.11"
         @test (@allocations Y * Y) > k^2 - 2 * k
@@ -51,6 +55,7 @@ end
     end
 
     @test all(!iszero, SA.mstructure(fRG).table)
+
 
     @static if v"1.10" ≤ VERSION < v"1.11"
         YY = deepcopy(Y)
