@@ -22,6 +22,9 @@ end
 # implementations of the free monoid over an alphabet
 include("test_example_words.jl")
 
+# example implementation of abstract coefficients
+include("test_example_acoeffs.jl")
+
 @testset "StarAlgebras" begin
     # proof of concept
     using PermutationGroups

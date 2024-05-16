@@ -94,6 +94,23 @@ end
 
 function MA.operate!(
     ms::UnsafeAddMul{<:MTable},
+    res::AbstractCoefficients,
+    v::AbstractCoefficients,
+    w::AbstractCoefficients,
+)
+    for (kv, a) in nonzero_pairs(v)
+        for (kw, b) in nonzero_pairs(w)
+            c = ms.structure(kv, kw)
+            for (k, v) in nonzero_pairs(c)
+                res[ms.structure[k]] += v * a * b
+            end
+        end
+    end
+    return res
+end
+
+function MA.operate!(
+    ms::UnsafeAddMul{<:MTable},
     res::AbstractSparseVector,
     v::AbstractVector,
     w::AbstractVector,
