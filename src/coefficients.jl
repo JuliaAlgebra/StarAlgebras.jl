@@ -48,30 +48,25 @@ If `ac` can be brought to canonical form in-place one has to implement
 
 otherwise `canonical(ac)` needs to be implemented.
 """
-canonical(ac::AbstractCoefficients) = ac
-MA.operate(::typeof(canonical), x) = canonical(x) # fallback?
+function canonical end
+function MA.promote_operation(::typeof(canonical), ::Type{C}) where {C}
+    return C
+end
 
 # example implementation for vectors
-function MA.mutability(
-    ::Type{<:Union{<:SparseVector,<:Vector}},
-    ::typeof(canonical),
-    ::Vararg{Type},
-)
-    return MA.IsMutable()
-end
 MA.operate!(::typeof(canonical), sv::SparseVector) = dropzeros!(sv)
 MA.operate!(::typeof(canonical), v::Vector) = v
 
 function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
-    ac1 = MA.operate!!(canonical, ac1)
-    ac2 = MA.operate!!(canonical, ac2)
+    MA.operate!(canonical, ac1)
+    MA.operate!(canonical, ac2)
     all(x -> ==(x...), zip(keys(ac1), keys(ac2))) || return false
     all(x -> ==(x...), zip(values(ac1), values(ac2))) || return false
     return true
 end
 
 function Base.hash(ac::AbstractCoefficients, h::UInt)
-    ac = MA.operate!!(canonical, ac)
+    MA.operate!(canonical, ac)
     return foldl((h, i) -> hash(i, h), nonzero_pairs(ac); init = h)
 end
 

@@ -49,8 +49,9 @@ function MA.operate_to!(res, ms::MultiplicativeStructure, v, w)
         throw(ArgumentError("No alias allowed"))
     end
     MA.operate!(zero, res)
-    res = MA.operate!(UnsafeAddMul(ms), res, v, w)
-    return MA.operate!!(canonical, res)
+    MA.operate!(UnsafeAddMul(ms), res, v, w)
+    MA.operate!(canonical, res)
+    return res
 end
 
 function MA.operate!(

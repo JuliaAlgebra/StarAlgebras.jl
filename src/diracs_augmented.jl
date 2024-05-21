@@ -18,7 +18,7 @@ function Base.getindex(aδ::Augmented{K}, i::K) where {K}
     return zero(w)
 end
 
-canonical(aδ::Augmented) = aδ
+MA.operate!(::typeof(canonical), aδ::Augmented) = aδ
 
 Base.keys(aδ::Augmented) = (k = keys(aδ.elt); (one(first(k)), first(k)))
 function Base.values(aδ::Augmented)
@@ -129,5 +129,6 @@ function coeffs!(
             SparseCoefficients((target[Augmented(x)],), (1,)),
         )
     end
-    return MA.operate!!(canonical, res)
+    MA.operate!(canonical, res)
+    return res
 end
