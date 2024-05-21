@@ -184,15 +184,7 @@
 
                     @test P2 * P3 == P3 * P2 == P
 
-                    #=
-
-                    Stacktrace:
-                    [1] operate_to_fallback!(::MutableArithmetics.IsNotMutable, output::SparseVector{Int64, UInt32}, op::Function, args::SparseVector{Int64, UInt32})
-                    @ MutableArithmetics ~/.julia/dev/MutableArithmetics/src/interface.jl:350
-                    [2] operate_to!(output::SparseVector{Int64, UInt32}, op::typeof(-), args::SparseVector{Int64, UInt32})
-                    @ MutableArithmetics ~/.julia/dev/MutableArithmetics/src/interface.jl:391
-                    =#
-                    @test_broken -RG(h)
+                    @test_broken -RG(h) == (-1) * RG(h)
                     @test !iszero(RG(1) - RG(h))
 
                     P2m = (RG(1) - RG(h)) // 2
