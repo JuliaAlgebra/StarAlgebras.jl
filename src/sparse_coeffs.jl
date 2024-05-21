@@ -53,13 +53,13 @@ end
 
 ### temporary convenience? how to handle this?
 function __prealloc(X::SparseCoefficients, a::Number, op)
-    T = Base._return_type(op, Tuple{valtype(X),typeof(a)})
+    T = MA.promote_operation(op, valtype(X), typeof(a))
     return similar(X, T)
 end
 
 function __prealloc(X::SparseCoefficients, Y::SparseCoefficients, op)
     # this is not even correct for op = *
-    T = Base._return_type(op, Tuple{valtype(X),valtype(Y)})
+    T = MA.promote_operation(op, valtype(X), valtype(Y))
     return similar(X, T)
 end
 

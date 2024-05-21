@@ -1,10 +1,10 @@
 function _preallocate_output(X::AlgebraElement, a::Number, op)
-    T = Base._return_type(op, Tuple{eltype(X),typeof(a)})
+    T = MA.promote_operation(op, eltype(X), typeof(a))
     return similar(X, T)
 end
 
 function _preallocate_output(X::AlgebraElement, Y::AlgebraElement, op)
-    T = Base._return_type(op, Tuple{eltype(X),eltype(Y)})
+    T = MA.promote_operation(op, eltype(X), eltype(Y))
     if coeffs(Y) isa DenseArray # what a hack :)
         return similar(Y, T)
     end
