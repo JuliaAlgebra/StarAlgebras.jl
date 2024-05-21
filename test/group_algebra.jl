@@ -160,11 +160,7 @@
 
                     @test 2dfP // 2 == dfP
 
-                    #= broken by
-                       [12] operate_to!(output::Vector{Rational{Int64}}, op::typeof(-), args::Vector{Rational{Int64}})
-                    @ MutableArithmetics ~/.julia/dev/MutableArithmetics/src/interface.jl:391
-                    =#
-                    @test_broken (dfP + fP) - dfP == dfP
+                    @test (dfP + fP) - dfP == dfP
                 end
 
                 @testset "Projections" begin
@@ -197,15 +193,13 @@
                     @ MutableArithmetics ~/.julia/dev/MutableArithmetics/src/interface.jl:391
                     =#
                     @test_broken -RG(h)
-                    @test_broken RG(1) - RG(h)
-                    @test_broken !iszero(RG(1) - RG(h))
+                    @test !iszero(RG(1) - RG(h))
 
-                    # uncomment this after the above are unbroken
-                    # P2m = (RG(1) - RG(h)) // 2
-                    # @test P2m * P2m == P2m
+                    P2m = (RG(1) - RG(h)) // 2
+                    @test P2m * P2m == P2m
 
-                    @test_broken P2m * P3 == P3 * P2m == PAlt
-                    @test_broken iszero(P2m * P2)
+                    @test P2m * P3 == P3 * P2m == PAlt
+                    @test iszero(P2m * P2)
                 end
             end
         end

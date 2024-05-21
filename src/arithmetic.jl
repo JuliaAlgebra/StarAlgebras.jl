@@ -92,8 +92,7 @@ function MA.operate_to!(
     Y::AlgebraElement,
 )
     @assert parent(res) === parent(X) === parent(Y)
-    MA.operate_to!(coeffs(res), -, coeffs(Y))
-    MA.operate_to!(coeffs(res), +, coeffs(res), coeffs(X))
+    MA.operate_to!(coeffs(res), -, coeffs(X), coeffs(Y))
     return res
 end
 

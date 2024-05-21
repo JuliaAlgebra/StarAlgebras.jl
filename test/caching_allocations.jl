@@ -61,10 +61,7 @@ end
         YY = deepcopy(Y)
         _alloc_test(YY, *, Y, Y, 25)
         _alloc_test(YY, +, Y, Y, 0)
-        @test_broken 1 == 2 # it's actually the one below:
-        # [2] operate_to!(output::SparseVector{Float64, Int64}, op::typeof(-), args::SparseVector{Float64, Int64})
-        #   @ MutableArithmetics ~/.julia/packages/MutableArithmetics/iovKe/src/interface.jl:391
-        # _alloc_test(YY, -, Y, Y, 0)
+        _alloc_test(YY, -, Y, Y, 0)
 
         # SparseArrays calls `Base.unalias` which allocates:
         _alloc_test(YY, +, YY, Y, 2)
