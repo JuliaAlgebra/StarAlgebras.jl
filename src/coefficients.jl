@@ -98,7 +98,7 @@ end
 
 function LinearAlgebra.dot(ac::AbstractCoefficients, bc::AbstractCoefficients)
     if isempty(values(ac)) || isempty(values(bc))
-        return zero(Base._return_type(*, Tuple{valtype(ac),valtype(bc)}))
+        return zero(MA.promote_sum_mul(valtype(ac), valtype(bc)))
     else
         return sum(c * star(bc[i]) for (i, c) in nonzero_pairs(ac))
     end
@@ -107,7 +107,7 @@ end
 function LinearAlgebra.dot(w::AbstractVector, ac::AbstractCoefficients)
     @assert key_type(ac) <: Integer
     if isempty(values(ac))
-        return zero(Base._return_type(*, eltype(w), valtype(ac)))
+        return zero(MA.promote_sum_mul(eltype(w), valtype(ac)))
     else
         return sum(w[i] * star(v) for (i, v) in nonzero_pairs(ac))
     end
@@ -116,7 +116,7 @@ end
 function LinearAlgebra.dot(ac::AbstractCoefficients, w::AbstractVector)
     @assert key_type(ac) <: Integer
     if isempty(values(ac))
-        return zero(Base._return_type(*, eltype(w), valtype(ac)))
+        return zero(MA.promote_sum_mul(eltype(w), valtype(ac)))
     else
         return sum(v * star(w[i]) for (i, v) in nonzero_pairs(ac))
     end
