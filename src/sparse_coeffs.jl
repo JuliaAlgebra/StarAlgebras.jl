@@ -68,7 +68,10 @@ function MA.operate!(::typeof(canonical), res::SparseCoefficients)
     return MA.operate!(canonical, res, comparable(key_type(res)))
 end
 
-function MA.operate!(::typeof(canonical), res::SparseCoefficients, cmp)
+# `::C` is needed to force Julia specialize on the function type
+# Otherwise, we get one allocation when we call `issorted`
+# See https://docs.julialang.org/en/v1/manual/performance-tips/#Be-aware-of-when-Julia-avoids-specializing
+function MA.operate!(::typeof(canonical), res::SparseCoefficients, cmp::C) where {C}
     sorted = issorted(res.basis_elements; lt = cmp)
     distinct = allunique(res.basis_elements)
     if sorted && distinct && !any(iszero, res.values)

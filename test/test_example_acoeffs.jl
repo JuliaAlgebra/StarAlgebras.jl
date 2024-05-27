@@ -10,7 +10,7 @@ ACoeffs(v::AbstractVector) = ACoeffs{valtype(v)}(v)
 ## Basic API
 Base.keys(ac::ACoeffs) = (k for (k, v) in pairs(ac.vals) if !iszero(v))
 Base.values(ac::ACoeffs) = (v for v in ac.vals if !iszero(v))
-SA.canonical(ac::ACoeffs) = ac
+MA.operate!(::typeof(SA.canonical), ac::ACoeffs) = ac
 function SA.star(b::SA.AbstractBasis, ac::ACoeffs)
     return ACoeffs([ac.vals[star(b, k)] for k in keys(ac)])
 end
