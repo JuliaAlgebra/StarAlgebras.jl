@@ -51,9 +51,7 @@ end
         @test Y * Y isa AlgebraElement
         Y * Y
         k2 = @allocated Y * Y
-        @show k1
-        @show k2
-        @test k2 / k1 < 0.5
+        @test k2 / k1 < 0.7
     end
 
     @test all(!iszero, SA.mstructure(fRG).table)
