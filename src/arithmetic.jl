@@ -91,7 +91,7 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    @assert parent(res) === parent(X) === parent(Y)
+    @assert parent(res) == parent(X) == parent(Y)
     MA.operate_to!(coeffs(res), -, coeffs(Y))
     MA.operate_to!(coeffs(res), +, coeffs(res), coeffs(X))
     return res
@@ -103,7 +103,7 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    @assert parent(res) === parent(X) === parent(Y)
+    @assert parent(res) == parent(X) == parent(Y)
     mstr = mstructure(basis(parent(res)))
     MA.operate_to!(coeffs(res), mstr, coeffs(X), coeffs(Y))
     return res
