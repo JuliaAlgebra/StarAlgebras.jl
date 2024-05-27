@@ -18,6 +18,12 @@ end
 (a::AlgebraElement)(x) = coeffs(a)[basis(a)[x]]
 Base.setindex!(a::AlgebraElement, v, idx) = a.coeffs[basis(a)[idx]] = v
 
+function nonzero_pairs(a::AlgebraElement)
+    return Base.Generator(nonzero_pairs(coeffs(a))) do (k, v)
+        return basis(a)[k], v
+    end
+end
+
 # AlgebraElement specific functions
 
 function supp(a::AlgebraElement)
