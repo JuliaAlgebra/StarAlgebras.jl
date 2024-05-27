@@ -32,6 +32,7 @@ Base.length(b::FixedBasis) = length(b.elts)
 
 Base.iterate(b::FixedBasis) = iterate(b.elts)
 Base.iterate(b::FixedBasis, state) = iterate(b.elts, state)
+Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V} = Base.IndexStyle(V)
 
 # To break ambiguity
 Base.@propagate_inbounds Base.getindex(
