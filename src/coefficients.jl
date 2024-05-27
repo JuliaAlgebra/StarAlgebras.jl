@@ -119,7 +119,11 @@ end
 
 # general mutable API
 # why here?
-MA.operate!(::typeof(zero), v::SparseVector) = (v .= 0; v)
+function MA.operate!(::typeof(zero), v::SparseVector)
+    empty!(SparseArrays.nonzeroinds(v))
+    empty!(SparseArrays.nonzeros(v))
+    return v
+end
 
 Base.zero(X::AbstractCoefficients) = MA.operate!(zero, similar(X))
 Base.:-(X::AbstractCoefficients) = MA.operate_to!(__prealloc(X, -1, *), -, X)
