@@ -1,148 +1,154 @@
-abstract type AbstractMTable{I} <: MultiplicativeStructure{I} end
+"""
+    MTable{T, I} <: MultiplicativeStructure{T}
+Multiplicative table, stored explicitly as an AbstractMatrix{I}.
 
-function _check(product_matrix::AbstractMatrix, basis::AbstractVector)
-    idx = findfirst(iszero, product_matrix)
-    if idx !== nothing
-        i, j = Tuple(idx)
-        x, y = basis[i], basis[j]
-        throw(
-            ProductNotDefined(
-                i,
-                j,
-                "$x · $y = $(x * y)",
-            ),
-        )
-    end
-    return true
-end
-Base.size(mt::AbstractMTable) = size(mt.table)
-
-function _star_of(basis::AbstractBasis, len::Integer)
-    return [basis[star(basis[i])] for i in 1:len]
-end
-
-## MTables
-struct MTable{I,M<:AbstractMatrix{I}} <: AbstractMTable{I}
+!!! note
+    Accessing `mt[i,j]` with negative indices returns the product of
+    `star`ed basis elements, i.e.
+    ```julia
+    mt[-i, j] == b[star(b[i])*b[j]]
+    ```
+"""
+struct MTable{T,I,V<:AbstractVector,M<:AbstractMatrix,Ms} <:
+       MultiplicativeStructure
+    elts::V
+    relts::Dict{T,I}
+    starof::Vector{I}
     table::M
-    star_of::Vector{I}
+    mstr::Ms
+    lock::Base.Threads.SpinLock
 end
 
-function MTable(basis::AbstractBasis; table_size)
-    @assert length(table_size) == 2
+function MTable(
+    elts::AbstractVector,
+    mstr::MultiplicativeStructure,
+    dims::NTuple{2,I},
+) where {I<:Integer}
+    Base.require_one_based_indexing(elts)
+    @assert length(elts) ≥ first(dims)
+    @assert length(elts) ≥ last(dims)
 
-    @assert 1 <= first(table_size) <= length(basis)
-    @assert 1 <= last(table_size) <= length(basis)
+    relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
+    starof = [relts[star(x)] for x in elts]
+    T = typeof(mstr(first(elts), first(elts)))
+    table = Matrix{T}(undef, dims)
+    @assert !isbitstype(T) || dims == (0, 0)
 
-    table = zeros(SparseArrays.indtype(basis), table_size)
-
-    complete!(table, basis)
-    _check(table, basis)
-
-    return MTable(table, _star_of(basis, max(table_size...)))
+    return MTable(elts, relts, starof, table, mstr, Base.Threads.SpinLock())
 end
 
-function complete!(table::AbstractMatrix, basis::AbstractBasis, lck=Threads.SpinLock())
-    Threads.@threads for j in axes(table, 2)
-        y = basis[j]
-        for i in axes(table, 1)
-            xy = basis[i] * y
-            lock(lck) do
-                table[i, j] = basis[xy]
-            end
+Base.@propagate_inbounds function __absindex(mt::MTable, i::Integer)
+    return ifelse(i > 0, i, oftype(i, mt.starof[abs(i)]))
+end
+
+Base.size(mt::MTable, i::Vararg) = size(mt.table, i...)
+Base.haskey(mt::MTable, x) = haskey(mt.relts, x)
+Base.getindex(mt::MTable{T}, x::T) where {T} = mt.relts[x]
+Base.getindex(mt::MTable, i::Integer) = mt.elts[__absindex(mt, i)]
+
+function __iscomputed(mt::MTable, i, j)
+    return isassigned(mt.table, i, j)
+end
+
+function (mt::MTable{T})(x::T, y::T) where {T}
+    i = __absindex(mt, mt[x])
+    j = __absindex(mt, mt[y])
+    return checkbounds(Bool, mt.table, i, j) ? mt(i, j) : mt.mstr(x, y)
+end
+
+function (mt::MTable)(i::Integer, j::Integer)
+    if !checkbounds(Bool, mt.table, i, j)
+        x, y = mt[i], mt[j]
+        return mt.mstr(x, y)
+    end
+    if !__iscomputed(mt, i, j)
+        lock(mt.lock) do
+            return thread_unsafe_complete!(mt, i, j)
         end
     end
-    return table
+
+    res = mt.table[i, j] # load
+    while res != mt.table[i, j] # compare
+        res = mt.table[i, j] # and load again
+        yield()
+    end
+
+    return mt.table[i, j] # and load again
 end
 
-function complete!(table::Matrix, basis::AbstractBasis, lck=Threads.SpinLock())
-    Threads.@threads for j in axes(table, 2)
-        y = basis[j]
-        for i in axes(table, 1)
-            x = basis[i]
-            table[i, j] = basis[x*y]
+function thread_unsafe_complete!(mt::MTable, i::Integer, j::Integer)
+    g, h = mt[i], mt[j]
+    gh_cfs = mt.mstr(g, h)
+    mt.table[i, j] = gh_cfs
+    return mt
+end
+
+function complete!(mt::MTable)
+    Threads.@threads for j in axes(mt.table, 2)
+        for i in axes(mt.table, 1)
+            @inbounds thread_unsafe_complete!(mt, i, j)
         end
     end
-    return table
+    return mt
 end
 
-basis(mt::MTable) = throw("No basis is defined for a simple $(typeof(mt))")
-Base.@propagate_inbounds _iscached(mt::MTable, i, j) = !iszero(mt.table[i, j])
-Base.@propagate_inbounds _get(cmt::MTable, i::Integer) = ifelse(i ≥ 0, i, cmt.star_of[abs(i)])
-
-Base.@propagate_inbounds function Base.getindex(m::MTable, i::Integer, j::Integer)
-    @boundscheck checkbounds(Bool, m, abs(i), abs(j)) ||
-                 throw(ProductNotDefined(i, j, "out of Mtable bounds"))
-    @boundscheck !_iscached(m, abs(i), abs(j)) && throw(ProductNotDefined(i, j, "product not stored"))
-    @inbounds begin
-        i = _get(m, i)
-        j = _get(m, j)
-
-        return m.table[i, j]
-    end
-end
-
-## CachedMTables
-
-struct CachedMTable{I,T,B<:AbstractBasis{T,I},M<:MTable} <: AbstractMTable{I}
-    basis::B
-    table::M
-    lock::Threads.SpinLock
-end
-
-function CachedMTable(basis::AbstractBasis{T,I}; table_size) where {T,I}
-    return CachedMTable(basis, zeros(I, table_size))
-end
-
-function CachedMTable(
-    basis::AbstractBasis{T,I},
-    mt::AbstractMatrix{<:Integer},
-) where {T,I}
-    star_of = _star_of(basis, max(size(mt)...))
-    mtable = MTable(mt, star_of)
-    return CachedMTable(basis, mtable, Threads.SpinLock())
-end
-
-basis(m::CachedMTable) = m.basis
-Base.@propagate_inbounds _iscached(cmt::CachedMTable, i, j) = _iscached(cmt.table, i, j)
-Base.@propagate_inbounds _get(cmt::CachedMTable, i::Integer) = _get(cmt.table, i)
-
-Base.@propagate_inbounds function Base.getindex(cmt::CachedMTable, i::Integer, j::Integer)
-    @boundscheck checkbounds(Bool, cmt, abs(i), abs(j)) ||
-                 throw(ProductNotDefined(i, j, "out of Mtable bounds"))
-    @inbounds begin
-        i = _get(cmt, i)
-        j = _get(cmt, j)
-        if !_iscached(cmt, i, j)
-            cache!(cmt, i, j)
-        end
-        return cmt.table[i, j]
-    end
-end
-
-Base.@propagate_inbounds function cache!(cmt::CachedMTable, i::Integer, j::Integer)
-    b = basis(cmt)
-    g, h = b[i], b[j]
-    gh = g * h
-    gh in b || throw(ProductNotDefined(i, j, "$g · $h = $gh"))
-    lock(cmt.lock) do
-        cmt.table.table[i, j] = b[gh]
-    end
-    return cmt
-end
-
-function cache!(
-    cmt::CachedMTable,
-    suppX::AbstractVector{<:Integer},
-    suppY::AbstractVector{<:Integer},
+function MA.operate!(
+    ms::UnsafeAddMul{<:MTable},
+    res::AbstractCoefficients,
+    v::AbstractCoefficients,
+    w::AbstractCoefficients,
 )
-    Threads.@threads for j in suppY
-        for i in suppX
-            if !_iscached(cmt, i, j)
-                cache!(cmt, i, j)
+    for (kv, a) in nonzero_pairs(v)
+        for (kw, b) in nonzero_pairs(w)
+            c = ms.structure(kv, kw)
+            for (k, v) in nonzero_pairs(c)
+                res[ms.structure[k]] += v * a * b
             end
         end
     end
-    return cmt
+    return res
 end
 
-complete!(cmt::CachedMTable) = cache!(cmt, 1:size(cmt, 1), 1:size(cmt, 2))
+function MA.operate!(
+    ms::UnsafeAddMul{<:MTable},
+    res::AbstractSparseVector,
+    v::AbstractVector,
+    w::AbstractVector,
+)
+    l1 = issparse(v) ? nnz(v) : 2^8
+    l2 = issparse(w) ? nnz(w) : 2^8
+    l = l1 * l2
+    idcs = Vector{key_type(res)}()
+    vals = Vector{eltype(res)}()
+    sizehint!(idcs, l)
+    sizehint!(vals, l)
+
+    for (kv, a) in nonzero_pairs(v)
+        for (kw, b) in nonzero_pairs(w)
+            c = ms.structure(kv, kw)
+            for (k, v) in nonzero_pairs(c)
+                push!(idcs, ms.structure[k])
+                push!(vals, v * a * b)
+            end
+        end
+    end
+    res .+= sparsevec(idcs, vals, length(res))
+    return res
+end
+
+function MA.operate!(
+    ms::UnsafeAddMul{<:MTable},
+    res::AbstractVector,
+    v::AbstractVector,
+    w::AbstractVector,
+)
+    for (kv, a) in nonzero_pairs(v)
+        for (kw, b) in nonzero_pairs(w)
+            c = ms.structure(kv, kw)
+            for (k, v) in nonzero_pairs(c)
+                res[ms.structure[k]] += v * a * b
+            end
+        end
+    end
+    return res
+end

@@ -17,7 +17,9 @@ function Base.show(io::IO, w::Word)
     end
 end
 
-Base.:(==)(w::Word, v::Word) = w.alphabet == v.alphabet && w.letters == v.letters
+function Base.:(==)(w::Word, v::Word)
+    return w.alphabet == v.alphabet && w.letters == v.letters
+end
 Base.hash(w::Word, h::UInt) = hash(w.alphabet, hash(w.letters, hash(Word, h)))
 
 Base.one(w::Word) = Word(w.alphabet, Int[])
@@ -39,19 +41,37 @@ function StarAlgebras.star(w::Word)
     return Word(w.alphabet, newletters)
 end
 
-function words(alphabet; radius)
+Base.isless(w::Word, v::Word) = w.letters < v.letters
 
-    words = [Word(alphabet, Int[])] # word identity
+struct FreeWords{T}
+    alphabet::Vector{T}
+end
 
-    for r in 1:radius
-        append!(
-            words,
-            [
-                Word(alphabet, collect(w)) for
-                w in Iterators.product(fill(1:length(alphabet), r)...)
-            ],
-        )
+Base.one(fw::FreeWords) = Word(fw.alphabet, Int[])
+
+Base.eltype(::Type{FreeWords{T}}) where {T} = Word{T}
+Base.IteratorSize(::Type{<:FreeWords}) = Base.IsInfinite()
+function Base.iterate(aw::FreeWords)
+    w = Word(aw.alphabet, Int[])
+    stack = [w]
+    return w, (stack, 1)
+end
+
+function Base.iterate(aw::FreeWords, state)
+    stack, l = state
+    if l > length(aw.alphabet)
+        popfirst!(stack)
+        l = 1
     end
+    w = first(stack)
+    nw = Word(aw.alphabet, [w.letters; l])
+    push!(stack, nw)
+    return nw, (stack, l + 1)
+end
 
-    return words
+nwords(M::FreeWords, maxl::Integer) = nwords(M, 0, maxl)
+function nwords(M::FreeWords, minl::Integer, maxl::Integer)
+    maxl < minl && return zero(maxl)
+    k = oftype(maxl, length(M.alphabet))
+    return sum(k^i for i in minl:maxl)
 end

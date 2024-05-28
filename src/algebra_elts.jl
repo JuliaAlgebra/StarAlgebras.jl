@@ -5,66 +5,37 @@ function Base.:(==)(X::AlgebraElement, Y::AlgebraElement)
     return coeffs(X) == coeffs(Y)
 end
 
-Base.getindex(a::AlgebraElement, i::Integer) = coeffs(a)[i]
-Base.getindex(a::AlgebraElement{<:StarAlgebra{O,T}}, x::T) where {O,T} =
-    (b = basis(parent(a)); a[b[x]])
+Base.copy(a::AlgebraElement) = AlgebraElement(copy(coeffs(a)), parent(a))
+
+function Base.deepcopy_internal(a::AlgebraElement, id::IdDict)
+    if !haskey(id, a)
+        id[a] = AlgebraElement(Base.deepcopy_internal(coeffs(a), id), parent(a))
+    end
+    return id[a]
+end
 
 # call overload:
-(a::AlgebraElement)(x) = a[x]
-
-Base.setindex!(a::AlgebraElement, v, i::Integer) = a.coeffs[i] = v
-
-function Base.setindex!(
-    a::AlgebraElement{<:StarAlgebra{O,T}},
-    v,
-    t::T,
-) where {O,T}
-    b = basis(parent(a))
-    return a[b[t]] = v
-end
+(a::AlgebraElement)(x) = coeffs(a)[basis(parent(a))[x]]
+Base.setindex!(a::AlgebraElement, v, idx) = a.coeffs[basis(parent(a))[idx]] = v
 
 # AlgebraElement specific functions
 
-supp_ind(a::AlgebraElement) = findall(!iszero, coeffs(a))
-supp_ind(a::AlgebraElement{A,T,<:SparseVector}) where {A,T} =
-    (dropzeros!(coeffs(a)); SparseArrays.nonzeroinds(coeffs(a)))
-supp(a::AlgebraElement) = (b = basis(parent(a)); [b[i] for i in supp_ind(a)])
-
-function star(A::StarAlgebra, i::Integer)
-    @assert i > 0
-    if i < max(size(A.mstructure)...)
-        return _get(A.mstructure, -signed(i))
-    else
-        b = basis(A)
-        return b[star(b[i])]
-    end
+function supp(a::AlgebraElement)
+    b = basis(parent(a))
+    return [b[i] for (i, _) in nonzero_pairs(coeffs(a))]
 end
 
-function star(X::AlgebraElement)
-    A = parent(X)
-    b = basis(A)
-    supp_X = supp_ind(X)
-    idcs = similar(supp_X)
-    vals = similar(idcs, eltype(X))
-    for (i, idx) in enumerate(supp_X)
-        idcs[i] = star(parent(X), idx)
-        vals[i] = X[idx]
-    end
-    return AlgebraElement(sparsevec(idcs, vals, length(b)), A)
+function LinearAlgebra.norm(a::AlgebraElement, p::Real)
+    return LinearAlgebra.norm(coeffs(a), p)
 end
 
-Base.adjoint(a::AlgebraElement) = star(a)
+function LinearAlgebra.dot(a::AlgebraElement, b::AlgebraElement)
+    return LinearAlgebra.dot(coeffs(a), coeffs(b))
+end
 
-LinearAlgebra.norm(a::AlgebraElement, p::Real) =
-    LinearAlgebra.norm(coeffs(a), p)
-aug(a::AlgebraElement) = sum(coeffs(a))
-
-LinearAlgebra.dot(a::AlgebraElement, v::AbstractVector) =
-    LinearAlgebra.dot(StarAlgebras.coeffs(a), v)
-LinearAlgebra.dot(v::AbstractVector, a::AlgebraElement) = LinearAlgebra.dot(a, v)
-
-Base.copy(a::AlgebraElement) = AlgebraElement(copy(coeffs(a)), parent(a))
-function Base.deepcopy_internal(a::AlgebraElement, stackdict::IdDict)
-    haskey(stackdict, a) && return stackdict[a]
-    return AlgebraElement(Base.deepcopy_internal(coeffs(a), stackdict), parent(a))
+function LinearAlgebra.dot(w::AbstractVector, b::AlgebraElement)
+    return LinearAlgebra.dot(w, coeffs(b))
+end
+function LinearAlgebra.dot(a::AlgebraElement, w::AbstractVector)
+    return LinearAlgebra.dot(coeffs(a), w)
 end

@@ -9,7 +9,7 @@ __needs_parens(::Any) = false
 __needs_parens(a::AlgebraElement) = true
 
 function _coeff_elt_print(io, c, elt)
-    print(io, c, "·")
+    print(io, c, '·')
     __needs_parens(elt) && print(io, '(')
     print(io, elt)
     __needs_parens(elt) && print(io, ')')
@@ -19,18 +19,15 @@ end
 function Base.show(io::IO, a::AlgebraElement)
     A = parent(a)
     if iszero(a)
-        T = eltype(a)
-        if hasbasis(A)
-            _coeff_elt_print(io, zero(T), first(basis(A)))
-        else
-            print(io, zero(T))
-        end
-    elseif hasbasis(A)
-        nzeros = findall(!iszero, coeffs(a))
-        for (counter, idx) in enumerate(nzeros)
-            c, elt = coeffs(a)[idx], basis(A)[idx]
-            if counter == 1
+        T = valtype(coeffs(a))
+        _coeff_elt_print(io, zero(T), first(basis(A)))
+    else
+        _first = true
+        for (idx, value) in nonzero_pairs(coeffs(a))
+            c, elt = value, basis(A)[idx]
+            if _first
                 _coeff_elt_print(io, c, elt)
+                _first = false
             else
                 if __prints_with_minus(c)
                     print(io, ' ')
@@ -40,14 +37,5 @@ function Base.show(io::IO, a::AlgebraElement)
                 _coeff_elt_print(io, c, elt)
             end
         end
-    else
-        println(io, "algebra element without defined basis")
-        show(io, MIME("text/plain"), a.coeffs)
     end
-end
-
-function Base.show(io::IO, ::MIME"text/plain", mstr::TrivialMStructure)
-    l = length(basis(mstr))
-    print(io, "TrivialMStructure over basis with $l elements")
-    return
 end
