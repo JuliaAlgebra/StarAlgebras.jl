@@ -26,9 +26,6 @@ end
 
 basis(A::StarAlgebra) = A.basis
 object(A::StarAlgebra) = A.object
-function Base.:(==)(a::StarAlgebra, b::StarAlgebra)
-    return a.basis == b.basis
-end
 
 struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     coeffs::V
