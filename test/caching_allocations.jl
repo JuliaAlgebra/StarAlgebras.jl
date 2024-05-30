@@ -52,6 +52,7 @@ end
         Y * Y
         k2 = @allocated Y * Y
         @test k2 / k1 < 0.7
+        @test_broken k2 / k1 < 0.12
     end
 
     @test all(!iszero, SA.mstructure(fRG).table)
