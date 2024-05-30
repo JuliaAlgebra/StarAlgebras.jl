@@ -101,6 +101,13 @@ function MA.operate!(::typeof(canonical), res::SparseCoefficients, cmp::C) where
     return res
 end
 
+function MA.operate!(
+    ::typeof(canonical),
+    res::SparseCoefficients{T,I,Tuple{T},Tuple{I}},
+) where {T,I}
+    return res
+end
+
 # arithmetic on coefficients; performance overloads
 
 function MA.operate!(::typeof(zero), s::SparseCoefficients)
