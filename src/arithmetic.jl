@@ -107,3 +107,14 @@ function MA.operate_to!(
     MA.operate_to!(coeffs(res), mstr, coeffs(X), coeffs(Y))
     return res
 end
+
+# TODO just push to internal vectors once canonical is implemented for SparseVector
+function unsafe_push!(a::SparseArrays.SparseVector, k, v)
+    a[k] = MA.add!!(a[k], v)
+    return v
+end
+
+function unsafe_push!(a::AlgebraElement, k, v)
+    unsafe_push!(coeffs(a), basis(a)[k], v)
+    return a
+end

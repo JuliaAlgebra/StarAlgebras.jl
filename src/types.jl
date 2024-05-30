@@ -27,6 +27,8 @@ end
 basis(A::StarAlgebra) = A.basis
 object(A::StarAlgebra) = A.object
 
+function algebra end
+
 struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     coeffs::V
     parent::A
