@@ -36,8 +36,9 @@ Base.parent(a::AlgebraElement) = a.parent
 Base.eltype(a::AlgebraElement) = valtype(coeffs(a))
 coeffs(a::AlgebraElement) = a.coeffs
 function coeffs(x::AlgebraElement, b::AbstractBasis)
-    return coeffs(coeffs(x), basis(parent(x)), b)
+    return coeffs(coeffs(x), basis(x), b)
 end
+basis(a::AlgebraElement) = basis(parent(a))
 
 function AlgebraElement(coeffs, A::AbstractStarAlgebra)
     _sanity_checks(coeffs, A)
