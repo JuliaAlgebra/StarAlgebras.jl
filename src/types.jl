@@ -90,7 +90,7 @@ function Base.isone(a::AlgebraElement)
     if basis(A) isa DiracBasis
         return c == cfs1
     else
-        dc = coeffs(c, basis(parent(a)), DiracBasis{UInt}(object(parent(a))))
+        dc = coeffs(c, basis(a), DiracBasis{UInt}(object(parent(a))))
         return dc == cfs1
     end
 end

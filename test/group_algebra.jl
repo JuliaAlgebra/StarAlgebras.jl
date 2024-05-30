@@ -115,7 +115,7 @@
         z = sum((one(RG) - RG(g)) * star(one(RG) - RG(g)) for g in G)
         @test SA.aug(z) == 0
 
-        @test SA.supp(z) == sort(collect(basis(parent(z))))
+        @test SA.supp(z) == sort(collect(basis(z)))
         @test SA.supp(RG(1) + RG(g)) == [one(G), g]
         @test SA.supp(a) == [one(G), h, g]
 
