@@ -3,8 +3,6 @@ function Base.show(io::IO, A::AbstractStarAlgebra)
     return print(ioc, "*-algebra of ", object(A))
 end
 
-__prints_with_minus(::Any) = false
-__prints_with_minus(x::Real) = x < 0
 __needs_parens(::Any) = false
 __needs_parens(a::AlgebraElement) = true
 
@@ -13,9 +11,9 @@ __needs_parens(a::AlgebraElement) = true
 # `Int`, `Float64` don't support MIME"text/latex".
 # We could add a check with `showable` if a `Real` subtype supports it and
 # the feature is requested.
-print_coefficient(io::IO, mime, coeff::Real) = print(io, coeff)
+print_coefficient(io::IO, ::MIME, coeff::Real) = print(io, coeff)
 # Scientific notation does not display well in LaTeX so we rewrite it
-function print_coefficient(io::IO, mime::MIME"text/latex", coeff::AbstractFloat)
+function print_coefficient(io::IO, ::MIME"text/latex", coeff::AbstractFloat)
     s = string(coeff)
     if occursin('e', s)
         s = replace(s, 'e' => " \\cdot 10^{") * '}'
@@ -62,8 +60,11 @@ function print_coefficient(io::IO, mime, coeff)
     return print(io, ")")
 end
 
+isnegative(x::Real) = x < 0
+isnegative(x) = false
+
 _print_dot(io, ::MIME"text/latex") = print(io, " \\cdot ")
-_print_dot(io, ::MIME) = print(io, '⋅')
+_print_dot(io, ::MIME) = print(io, '·')
 
 function _coeff_elt_print(io, mime, c, elt)
     print_coefficient(io, mime, c)
@@ -106,12 +107,9 @@ function _show(io::IO, mime, a::AlgebraElement)
                 _coeff_elt_print(io, mime, c, elt)
                 _first = false
             else
-                if __prints_with_minus(c)
-                    print(io, ' ')
-                else
-                    print(io, ' ', '+', ' ')
-                end
-                _coeff_elt_print(io, mime, c, elt)
+                neg = isnegative(c)
+                print(io, ' ', neg ? '-' : '+', ' ')
+                _coeff_elt_print(io, mime, neg ? abs(c) : c, elt)
             end
         end
     end

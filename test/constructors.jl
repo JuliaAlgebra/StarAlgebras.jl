@@ -74,12 +74,13 @@
     # @test SA.supp_ind(aa) == [b[s]] == SA.supp_ind(dense_aa)
     @test SA.supp(aa) == [s]
 
-    @test sprint(show, a) == "2·(id) +1·b·c"
-    @test sprint(show, -a) == "-2·(id) -1·b·c"
+    @test sprint(show, a) == "2·(id) + 1·b·c"
+    @test sprint(show, -a) == "-2·(id) - 1·b·c"
     Z = AlgebraElement{Float64}(a)
     @test Z == a
-    @test sprint(show, Z) == "2.0·(id) +1.0·b·c"
-    @test sprint(show, 2one(RG) - RG(p)) == "2·(id) -1·b·c"
+    @test sprint(show, Z) == "2.0·(id) + 1.0·b·c"
+    @test sprint(show, 2one(RG) - RG(p)) == "2·(id) - 1·b·c"
+    @test sprint(show, (2 + im) * one(RG) - (3im) * RG(p)) == "(2 + 1im)·(id) + (0 - 3im)·b·c"
 
     @test LinearAlgebra.norm(a, 1) == 3
 
