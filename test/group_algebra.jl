@@ -184,7 +184,7 @@
 
                     @test P2 * P3 == P3 * P2 == P
 
-                    @test_broken -RG(h) == (-1) * RG(h)
+                    @test -RG(h) == (-1) * RG(h)
                     @test !iszero(RG(1) - RG(h))
 
                     P2m = (RG(1) - RG(h)) // 2
