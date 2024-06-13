@@ -110,6 +110,7 @@ end
 
     latex = CustomLaTeXPrint(" \$\$ \\[\\(α_β∀ \\) \\]\t  \$\$")
     a = SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG)
+    # Tests that `getindex` works even if `zero(typeof(latex))` is not defined
     @test SA.coeffs(a)[p] == latex
     @test sprint((io, x) -> show(io, "text/latex", x), a) ==
           "\$\$ (α_β∀) \\cdot b·c \$\$"
