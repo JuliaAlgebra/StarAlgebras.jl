@@ -21,7 +21,7 @@ function print_coefficient(io::IO, ::MIME"text/latex", coeff::AbstractFloat)
     return print(io, s)
 end
 
-trim_LaTeX(::MIME, s::AbstractString) = s
+trim_LaTeX(_, s::AbstractString) = s
 
 function trim_LaTeX(::MIME"text/latex", s::AbstractString)
     i = firstindex(s)
@@ -52,12 +52,17 @@ end
 # Since they add `$$` around it, we need to trim it with `trim_LaTeX`
 function print_coefficient(io::IO, mime, coeff)
     print(io, "(")
-    if showable(mime, coeff)
-        print(io, trim_LaTeX(mime, sprint(show, mime, coeff)))
+    print_mime(io, mime, coeff)
+    print(io, ")")
+    return
+end
+
+function print_mime(io::IO, mime, x)
+    if showable(mime, x)
+        print(io, trim_LaTeX(mime, sprint(show, mime, x)))
     else
-        show(io, coeff)
+        show(io, x)
     end
-    return print(io, ")")
 end
 
 isnegative(x::Real) = x < 0
@@ -70,7 +75,7 @@ function _coeff_elt_print(io, mime, c, elt)
     print_coefficient(io, mime, c)
     _print_dot(io, mime)
     __needs_parens(elt) && print(io, '(')
-    print(io, trim_LaTeX(mime, sprint(show, mime, elt)))
+    print_mime(io, mime, elt)
     __needs_parens(elt) && print(io, ')')
     return
 end
