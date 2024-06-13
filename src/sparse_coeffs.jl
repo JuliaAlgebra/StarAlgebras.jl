@@ -17,7 +17,11 @@ function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
     k = searchsortedfirst(sc.basis_elements, key; lt = comparable(K))
     if k in eachindex(sc.basis_elements)
         v = sc.values[k]
-        return ifelse(sc.basis_elements[k] == key, v, zero(v))
+        if sc.basis_elements[k] == key
+            return v
+        else
+            return zero(v)
+        end
     else
         return zero(valtype(sc))
     end
