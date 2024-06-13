@@ -109,12 +109,14 @@ end
     @test parent(deepcopy(a)) === parent(a)
 
     latex = CustomLaTeXPrint(" \$\$ \\[\\(α_β∀ \\) \\]\t  \$\$")
-    @test sprint((io, x) -> show(io, "text/latex", x),
-        SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG)) ==
+    a = SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG)
+    @test SA.coeffs(a)[p] == latex
+    @test sprint((io, x) -> show(io, "text/latex", x), a) ==
           "\$\$ (α_β∀) \\cdot b·c \$\$"
     # Test that the check for `\\)` handles unicode well
     latex = CustomLaTeXPrint("\\(β∀")
     @test sprint((io, x) -> show(io, "text/latex", x),
         SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG)) ==
           "\$\$ (\\(β∀) \\cdot b·c \$\$"
+    
 end
