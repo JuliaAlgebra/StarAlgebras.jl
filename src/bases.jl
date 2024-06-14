@@ -36,8 +36,8 @@ Implicit bases are not stored in memory and can be potentially infinite.
 """
 abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
-function zero_coeffs(::Type{S}, ::ImplicitBasis{T}) where {S,T}
-    return SparseCoefficients(T[], S[])
+function zero_coeffs(::Type{S}, ::ImplicitBasis{T,I}) where {S,T,I}
+    return SparseCoefficients(I[], S[])
 end
 
 """
