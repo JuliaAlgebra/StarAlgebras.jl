@@ -54,17 +54,24 @@ function MA.operate_to!(res, ms::MultiplicativeStructure, args::Vararg{Any,N}) w
     return res
 end
 
-function operate!(::UnsafeAddMul, res, c)
+function MA.operate!(::UnsafeAddMul, res, c)
     for (k, v) in nonzero_pairs(c)
         unsafe_push!(res, k, v)
     end
     return res
 end
 
-function operate!(op::UnsafeAddMul, res, b, c, args::Vararg{Any, N}) where {N}
+function MA.operate!(op::UnsafeAddMul, res, b, c, args::Vararg{Any, N}) where {N}
     for (kb, vb) in nonzero_pairs(b)
         for (kc, vc) in nonzero_pairs(c)
-            operate!(op, res, SparseCoefficients((op.structure(kb, kc),), (vb * vc,)), args...)
+            for (k, v) in nonzero_pairs(op.structure(kb, kc))
+                MA.operate!(
+                    op,
+                    res,
+                    SparseCoefficients((_key(op.structure, k),), (vb * vc * v,)),
+                    args...,
+                )
+            end
         end
     end
     return res

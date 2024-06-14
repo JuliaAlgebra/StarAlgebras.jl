@@ -18,6 +18,7 @@
     @test iszero(zero(fRG))
     @test zero(g) == zero(fRG)
     @test iszero(0 * g)
+    @test isone(*(g, g, g))
 
     @testset "Translations between bases" begin
         Z = zero(RG)
