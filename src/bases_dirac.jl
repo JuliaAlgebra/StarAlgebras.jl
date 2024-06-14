@@ -2,7 +2,7 @@ mutable struct DiracBasis{T,S,M<:DiracMStructure} <: ImplicitBasis{T,T}
     object::S # any iterable
     moperation::M
 
-    function DiracBasis(itr, operation = *) where {I}
+    function DiracBasis(itr, operation = *)
         @assert !isempty(itr)
         mstr = DiracMStructure(operation)
         return new{eltype(itr),typeof(itr),typeof(mstr)}(itr, mstr)
