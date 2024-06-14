@@ -25,7 +25,10 @@ struct StarAlgebra{O,T,B<:AbstractBasis{T}} <: AbstractStarAlgebra{O,T}
 end
 
 basis(A::StarAlgebra) = A.basis
+MA.promote_operation(::typeof(basis), ::Type{StarAlgebra{O,T,B}}) where {O,T,B} = B
 object(A::StarAlgebra) = A.object
+
+function algebra end
 
 struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     coeffs::V
@@ -33,7 +36,8 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
 end
 
 Base.parent(a::AlgebraElement) = a.parent
-Base.eltype(a::AlgebraElement) = valtype(coeffs(a))
+Base.eltype(a::AlgebraElement) = eltype(typeof(a))
+Base.eltype(::Type{<:AlgebraElement{A,T}}) where {A,T} = T
 coeffs(a::AlgebraElement) = a.coeffs
 function coeffs(x::AlgebraElement, b::AbstractBasis)
     return coeffs(coeffs(x), basis(x), b)
@@ -42,6 +46,7 @@ function adjoint_coeffs(a::AlgebraElement, target::AbstractBasis)
     return adjoint_coeffs(coeffs(a), target, basis(a))
 end
 basis(a::AlgebraElement) = basis(parent(a))
+MA.promote_operation(::typeof(basis), ::Type{<:AlgebraElement{A}}) where {A} = MA.promote_operation(basis, A)
 
 function AlgebraElement(coeffs, A::AbstractStarAlgebra)
     _sanity_checks(coeffs, A)

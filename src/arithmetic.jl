@@ -9,6 +9,10 @@ function _preallocate_output(op, args::Vararg{Any,N}) where {N}
     return similar(args[1], T)
 end
 
+function MA.promote_operation(::typeof(similar), ::Type{<:Vector}, ::Type{T}) where {T}
+    return Vector{T}
+end
+
 # module structure:
 
 Base.:*(X::AlgebraElement, a::Number) = a * X
@@ -25,12 +29,21 @@ function Base.:div(X::AlgebraElement, a::Number)
     return MA.operate_to!(_preallocate_output(div, X, a), div, X, a)
 end
 
+function MA.promote_operation(
+    op::Union{typeof(+),typeof(-)},
+    ::Type{AlgebraElement{A,T,VT}},
+    ::Type{AlgebraElement{A,S,VS}},
+) where {A,T,VT,S,VS}
+    U = MA.promote_operation(op, T, S)
+    return AlgebraElement{A,U,MA.promote_operation(similar, VT, U)}
+end
 function Base.:+(X::AlgebraElement, Y::AlgebraElement)
     return MA.operate_to!(_preallocate_output(+, X, Y), +, X, Y)
 end
 function Base.:-(X::AlgebraElement, Y::AlgebraElement)
     return MA.operate_to!(_preallocate_output(-, X, Y), -, X, Y)
 end
+
 function Base.:*(X::AlgebraElement, Y::AlgebraElement)
     return MA.operate_to!(_preallocate_output(*, X, Y), *, X, Y)
 end
@@ -92,7 +105,7 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    @assert parent(res) === parent(X) === parent(Y)
+    @assert parent(res) == parent(X) == parent(Y)
     MA.operate_to!(coeffs(res), -, coeffs(X), coeffs(Y))
     return res
 end
@@ -136,5 +149,10 @@ end
 
 function unsafe_push!(a::Vector, k, v)
     a[k] = MA.add!!(a[k], v)
+    return a
+end
+
+function unsafe_push!(a::AlgebraElement, k, v)
+    unsafe_push!(coeffs(a), basis(a)[k], v)
     return a
 end

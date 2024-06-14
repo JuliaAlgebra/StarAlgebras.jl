@@ -42,6 +42,14 @@ function Base.zero(sc::SparseCoefficients)
     return SparseCoefficients(empty(keys(sc)), empty(values(sc)))
 end
 
+function MA.promote_operation(
+    ::typeof(similar),
+    ::Type{SparseCoefficients{K,V,Vk,Vv}},
+    ::Type{T},
+) where {K,V,Vk,Vv,T}
+    return SparseCoefficients{K,T,Vk,MA.promote_operation(similar, Vv, T)}
+end
+
 function Base.similar(s::SparseCoefficients, ::Type{T} = valtype(s)) where {T}
     return SparseCoefficients(similar(s.basis_elements), similar(s.values, T))
 end
