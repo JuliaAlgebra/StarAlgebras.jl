@@ -13,6 +13,10 @@
         y = AlgebraElement(ACoeffs(coeffs(b, basis(fRG))), fRG)
         x, y
     end
+    @test coeffs(α - β, SA.FixedBasis(basis(RG); n = 2)) == [1, -1]
+    @test_throws KeyError coeffs(α - β, SA.FixedBasis(basis(RG); n = 1))
+    @test SA.adjoint_coeffs(α - β, SA.FixedBasis(basis(RG); n = 2)) == [1, -1]
+    @test SA.adjoint_coeffs(α - β, SA.FixedBasis(basis(RG); n = 1)) == [1]
     @test coeffs(2α) isa ACoeffs{Int}
     @test coeffs(α - β) isa ACoeffs
     @test coeffs(α - β // 3) isa ACoeffs{<:Rational}

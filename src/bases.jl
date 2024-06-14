@@ -102,3 +102,7 @@ function adjoint_coeffs!(res, cfs, source::AbstractBasis, target::AbstractBasis)
     end
     return res
 end
+
+function adjoint_coeffs(a::AlgebraElement, target::AbstractBasis)
+    return adjoint_coeffs(coeffs(a), target, basis(a))
+end
