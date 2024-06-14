@@ -44,37 +44,34 @@ struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
 end
 
-function MA.operate_to!(res, ms::MultiplicativeStructure, v, w)
-    if res === v || res === w
+function MA.operate_to!(res, ms::MultiplicativeStructure, args::Vararg{Any,N}) where {N}
+    if any(Base.Fix1(===, res), args)
         throw(ArgumentError("No alias allowed"))
     end
     MA.operate!(zero, res)
-    MA.operate!(UnsafeAddMul(ms), res, v, w)
+    MA.operate!(UnsafeAddMul(ms), res, args...)
     MA.operate!(canonical, res)
     return res
 end
 
-function MA.operate!(
-    ::UnsafeAddMul{typeof(*)},
-    mc::SparseCoefficients,
-    val,
-    c::AbstractCoefficients,
-)
-    append!(mc.basis_elements, keys(c))
-    vals = values(c)
-    if vals isa AbstractVector
-        append!(mc.values, val .* vals)
-    else
-        append!(mc.values, val * collect(values(c)))
+function MA.operate!(::UnsafeAddMul, res, c)
+    for (k, v) in nonzero_pairs(c)
+        unsafe_push!(res, k, v)
     end
-    return mc
+    return res
 end
 
-function MA.operate!(ms::UnsafeAddMul, res, v, w)
-    for (kv, a) in nonzero_pairs(v)
-        for (kw, b) in nonzero_pairs(w)
-            c = ms.structure(kv, kw)
-            MA.operate!(UnsafeAddMul(*), res, a * b, c)
+function MA.operate!(op::UnsafeAddMul, res, b, c, args::Vararg{Any, N}) where {N}
+    for (kb, vb) in nonzero_pairs(b)
+        for (kc, vc) in nonzero_pairs(c)
+            for (k, v) in nonzero_pairs(op.structure(kb, kc))
+                MA.operate!(
+                    op,
+                    res,
+                    SparseCoefficients((_key(op.structure, k),), (vb * vc * v,)),
+                    args...,
+                )
+            end
         end
     end
     return res

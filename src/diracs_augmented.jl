@@ -125,8 +125,7 @@ function coeffs!(
         MA.operate!(
             UnsafeAddMul(*),
             res,
-            v,
-            SparseCoefficients((target[Augmented(x)],), (1,)),
+            SparseCoefficients((target[Augmented(x)],), (v,)),
         )
     end
     MA.operate!(canonical, res)

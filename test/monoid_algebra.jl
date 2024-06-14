@@ -18,6 +18,7 @@
     @test iszero(zero(fRG))
     @test zero(g) == zero(fRG)
     @test iszero(0 * g)
+    @test isone(*(g, g, g))
 
     @testset "Translations between bases" begin
         Z = zero(RG)
@@ -131,6 +132,12 @@
 
             @test @allocated(MA.operate_to!(d, *, a, 2)) == 0
             @test d == 2a
+
+            MA.operate!(zero, d)
+            MA.operate!(SA.UnsafeAddMul(*), d, a, b, b)
+            MA.operate!(SA.canonical, SA.coeffs(d))
+            @test a * b^2 == *(a, b, b)
+            @test d == *(a, b, b)
         end
     end
 end

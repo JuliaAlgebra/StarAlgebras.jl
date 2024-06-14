@@ -72,6 +72,12 @@ function MA.operate!(::typeof(canonical), res::SparseCoefficients)
     return MA.operate!(canonical, res, comparable(key_type(res)))
 end
 
+function unsafe_push!(res::SparseCoefficients, key, value)
+    push!(res.basis_elements, key)
+    push!(res.values, value)
+    return res
+end
+
 # `::C` is needed to force Julia specialize on the function type
 # Otherwise, we get one allocation when we call `issorted`
 # See https://docs.julialang.org/en/v1/manual/performance-tips/#Be-aware-of-when-Julia-avoids-specializing
