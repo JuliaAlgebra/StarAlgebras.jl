@@ -11,7 +11,7 @@ end
 @testset "FixedBasis caching && allocations" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
-    B = SA.DiracBasis{UInt16}(A★)
+    B = SA.DiracBasis(A★)
 
     fB = SA.FixedBasis(B; n = nwords(A★, 8), mt = UInt32(nwords(A★, 4)))
     fRG = StarAlgebra(A★, fB)

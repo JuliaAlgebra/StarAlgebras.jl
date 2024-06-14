@@ -1,6 +1,6 @@
 @testset "Abstract coefficients" begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
-    RG = StarAlgebra(G, SA.DiracBasis{UInt8}(G))
+    RG = StarAlgebra(G, SA.DiracBasis(G))
     fRG = let RG = RG, n = length(basis(RG))
         fb = SA.FixedBasis(basis(RG); n = n)
         StarAlgebra(SA.object(RG), fb)
