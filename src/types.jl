@@ -70,7 +70,7 @@ function Base.one(T::Type, A::AbstractStarAlgebra)
         return AlgebraElement(sc, A)
     else
         return AlgebraElement(
-            coeffs(sc, DiracBasis{UInt}(object(A)), basis(A)),
+            coeffs(sc, DiracBasis(object(A)), basis(A)),
             A,
         )
     end
@@ -88,7 +88,7 @@ function Base.isone(a::AlgebraElement)
     if basis(A) isa DiracBasis
         return c == cfs1
     else
-        dc = coeffs(c, basis(a), DiracBasis{UInt}(object(parent(a))))
+        dc = coeffs(c, basis(a), DiracBasis(object(parent(a))))
         return dc == cfs1
     end
 end

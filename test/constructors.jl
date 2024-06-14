@@ -11,7 +11,7 @@ end
 @testset "Algebra and Elements" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
-    B = SA.DiracBasis{UInt16}(A★)
+    B = SA.DiracBasis(A★)
     RG = StarAlgebra(A★, B)
 
     @test typeof(zero(RG)) == typeof(RG(0))

@@ -1,6 +1,6 @@
 @testset "Permutation group algebra: arithmetic " begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
-    b = SA.DiracBasis{UInt8}(G)
+    b = SA.DiracBasis(G)
     RG = StarAlgebra(G, b)
 
     @test contains(sprint(show, RG), "*-algebra of")

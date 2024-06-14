@@ -50,14 +50,14 @@ struct AugmentedBasis{T,I,A<:Augmented{T},B<:AbstractBasis{T,I}} <:
     basis::B
 end
 
-function AugmentedBasis(basis::DiracBasis{T,I}) where {T,I}
+function AugmentedBasis(basis::DiracBasis{T}) where {T}
     @assert one(object(basis)) in basis
-    return AugmentedBasis{T,I,Augmented{T},typeof(basis)}(basis)
+    return AugmentedBasis{T,T,Augmented{T},typeof(basis)}(basis)
 end
 
 object(ab::AugmentedBasis) = object(ab.basis)
 
-function Base.IteratorSize(::Type{<:AugmentedBasis{T,A,I,B}}) where {T,A,I,B}
+function Base.IteratorSize(::Type{<:AugmentedBasis{T,I,A,B}}) where {T,I,A,B}
     return Base.IteratorSize(B)
 end
 Base.haslength(ab::AugmentedBasis) = Base.haslength(ab.basis)
