@@ -38,6 +38,9 @@ coeffs(a::AlgebraElement) = a.coeffs
 function coeffs(x::AlgebraElement, b::AbstractBasis)
     return coeffs(coeffs(x), basis(x), b)
 end
+function adjoint_coeffs(a::AlgebraElement, target::AbstractBasis)
+    return adjoint_coeffs(coeffs(a), target, basis(a))
+end
 basis(a::AlgebraElement) = basis(parent(a))
 
 function AlgebraElement(coeffs, A::AbstractStarAlgebra)
