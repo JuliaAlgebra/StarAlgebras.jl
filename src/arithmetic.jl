@@ -133,3 +133,8 @@ function unsafe_push!(a::SparseArrays.SparseVector, k, v)
     a[k] = MA.add!!(a[k], v)
     return a
 end
+
+function unsafe_push!(a::Vector, k, v)
+    a[k] = MA.add!!(a[k], v)
+    return a
+end
