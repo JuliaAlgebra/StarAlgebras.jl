@@ -25,3 +25,7 @@ end
 # the default arithmetic implementation uses this access
 Base.getindex(ac::ACoeffs, idx) = ac.vals[idx]
 Base.setindex!(ac::ACoeffs, val, idx) = ac.vals[idx] = val
+function SA.unsafe_push!(ac::ACoeffs, idx, val)
+    ac.vals[idx] = MA.add!!(ac.vals[idx], val)
+    return ac
+end

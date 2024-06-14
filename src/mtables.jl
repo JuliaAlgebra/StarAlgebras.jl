@@ -97,23 +97,6 @@ _key(mstr::MTable, k) = mstr[k]
 
 function MA.operate!(
     ms::UnsafeAddMul{<:MTable},
-    res::AbstractCoefficients,
-    v::AbstractCoefficients,
-    w::AbstractCoefficients,
-)
-    for (kv, a) in nonzero_pairs(v)
-        for (kw, b) in nonzero_pairs(w)
-            c = ms.structure(kv, kw)
-            for (k, v) in nonzero_pairs(c)
-                res[ms.structure[k]] += v * a * b
-            end
-        end
-    end
-    return res
-end
-
-function MA.operate!(
-    ms::UnsafeAddMul{<:MTable},
     res::AbstractSparseVector,
     v::AbstractVector,
     w::AbstractVector,
@@ -136,22 +119,5 @@ function MA.operate!(
         end
     end
     res .+= sparsevec(idcs, vals, length(res))
-    return res
-end
-
-function MA.operate!(
-    ms::UnsafeAddMul{<:MTable},
-    res::AbstractVector,
-    v::AbstractVector,
-    w::AbstractVector,
-)
-    for (kv, a) in nonzero_pairs(v)
-        for (kw, b) in nonzero_pairs(w)
-            c = ms.structure(kv, kw)
-            for (k, v) in nonzero_pairs(c)
-                res[ms.structure[k]] += v * a * b
-            end
-        end
-    end
     return res
 end
