@@ -77,3 +77,28 @@ function coeffs!(res, cfs, source::AbstractBasis, target::AbstractBasis)
     end
     return res
 end
+
+"""
+    adjoint_coeffs(cfs, source, target)
+Return `A' * cfs` where `A` is the linear map applied by
+`coeffs`.
+"""
+function adjoint_coeffs(cfs, source::AbstractBasis, target::AbstractBasis)
+    source === target && return cfs
+    source == target && return cfs
+    res = zero_coeffs(valtype(cfs), source)
+    return adjoint_coeffs!(res, cfs, source, target)
+end
+
+function adjoint_coeffs!(res, cfs, source::AbstractBasis, target::AbstractBasis)
+    MA.operate!(zero, res)
+    for (k, v) in nonzero_pairs(cfs)
+        x = target[k]
+        # If `x` is not in `source` then the corresponding row in `A` is zero
+        # so the column in `A'` is zero hence we can ignore it.
+        if x in source
+            res[source[x]] += v
+        end
+    end
+    return res
+end
