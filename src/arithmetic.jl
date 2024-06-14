@@ -91,18 +91,15 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    @assert parent(res) == parent(X) == parent(Y)
+    @assert parent(res) === parent(X) === parent(Y)
     MA.operate_to!(coeffs(res), -, coeffs(X), coeffs(Y))
     return res
 end
 
-_coeffs_if_element(a::AlgebraElement) = coeffs(a)
-_coeffs_if_element(α) = α
-
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
-    args::Vararg{Any,N},
+    args::Vararg{AlgebraElement,N},
 ) where {N}
     for arg in args
         if arg isa AlgebraElement
@@ -110,14 +107,14 @@ function MA.operate_to!(
         end
     end
     mstr = mstructure(basis(res))
-    MA.operate_to!(coeffs(res), mstr, _coeffs_if_element.(args)...)
+    MA.operate_to!(coeffs(res), mstr, coeffs.(args)...)
     return res
 end
 
 function MA.operate!(
     ::UnsafeAddMul{typeof(*)},
     res::AlgebraElement,
-    args::Vararg{Any,N},
+    args::Vararg{AlgebraElement,N},
 ) where {N}
     for arg in args
         if arg isa AlgebraElement
@@ -125,11 +122,12 @@ function MA.operate!(
         end
     end
     mstr = mstructure(basis(res))
-    MA.operate!(UnsafeAddMul(mstr), coeffs(res), _coeffs_if_element.(args)...)
+    MA.operate!(UnsafeAddMul(mstr), coeffs(res), coeffs.(args)...)
     return res
 end
 
-# TODO just push to internal vectors once canonical is implemented for SparseVector
+# TODO just push to internal vectors once canonical `does` not just
+# call `dropzeros!` but also reorders
 function unsafe_push!(a::SparseArrays.SparseVector, k, v)
     a[k] = MA.add!!(a[k], v)
     return a

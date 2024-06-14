@@ -54,42 +54,20 @@ function MA.operate_to!(res, ms::MultiplicativeStructure, args::Vararg{Any,N}) w
     return res
 end
 
-struct One end
-Base.:*(::One, α) = α
-
-function operate_with_constant!(::UnsafeAddMul, res, α, c)
+function operate!(::UnsafeAddMul, res, c)
     for (k, v) in nonzero_pairs(c)
-        unsafe_push!(res, k, α * v)
+        unsafe_push!(res, k, v)
     end
     return res
 end
 
-function operate_with_constant!(op::UnsafeAddMul, res, α, b, c, args::Vararg{Any, N}) where {N}
+function operate!(op::UnsafeAddMul, res, b, c, args::Vararg{Any, N}) where {N}
     for (kb, vb) in nonzero_pairs(b)
         for (kc, vc) in nonzero_pairs(c)
-            operate_with_constant!(op, res, α * vb * vc, op.structure(kb, kc), args...)
+            operate!(op, res, SparseCoefficients((op.structure(kb, kc),), (vb * vc,)), args...)
         end
     end
     return res
-end
-
-_aggregate_constants(constant, non_constant) = (constant, non_constant)
-
-function _aggregate_constants(constant, non_constant, α, args::Vararg{Any,N}) where {N}
-    return _aggregate_constants(constant * α, non_constant, args...)
-end
-
-function _aggregate_constants(constant, non_constant, c::AbstractCoefficients, args::Vararg{Any,N}) where {N}
-    return _aggregate_constants(constant, (non_constant..., c), args...)
-end
-
-function MA.operate!(
-    op::UnsafeAddMul,
-    mc::AbstractCoefficients,
-    args::Vararg{Any,N},
-) where {N}
-    constant, non_constant = _aggregate_constants(One(), tuple(), args...)
-    return operate_with_constant!(op, mc, constant, non_constant...)
 end
 
 struct DiracMStructure{Op} <: MultiplicativeStructure
