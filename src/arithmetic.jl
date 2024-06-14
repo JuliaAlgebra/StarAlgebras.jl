@@ -91,19 +91,51 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    @assert parent(res) === parent(X) === parent(Y)
+    @assert parent(res) == parent(X) == parent(Y)
     MA.operate_to!(coeffs(res), -, coeffs(X), coeffs(Y))
     return res
 end
 
+_coeffs_if_element(a::AlgebraElement) = coeffs(a)
+_coeffs_if_element(α) = α
+
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
-    X::AlgebraElement,
-    Y::AlgebraElement,
-)
-    @assert parent(res) === parent(X) === parent(Y)
-    mstr = mstructure(basis(parent(res)))
-    MA.operate_to!(coeffs(res), mstr, coeffs(X), coeffs(Y))
+    args::Vararg{Any,N},
+) where {N}
+    for arg in args
+        if arg isa AlgebraElement
+            @assert parent(res) == parent(arg)
+        end
+    end
+    mstr = mstructure(basis(res))
+    MA.operate_to!(coeffs(res), mstr, _coeffs_if_element.(args)...)
     return res
+end
+
+function MA.operate!(
+    ::UnsafeAddMul{typeof(*)},
+    res::AlgebraElement,
+    args::Vararg{Any,N},
+) where {N}
+    for arg in args
+        if arg isa AlgebraElement
+            @assert parent(res) == parent(arg)
+        end
+    end
+    mstr = mstructure(basis(res))
+    MA.operate!(UnsafeAddMul(mstr), coeffs(res), _coeffs_if_element.(args)...)
+    return res
+end
+
+# TODO just push to internal vectors once canonical is implemented for SparseVector
+function unsafe_push!(a::SparseArrays.SparseVector, k, v)
+    a[k] = MA.add!!(a[k], v)
+    return a
+end
+
+function unsafe_push!(a::AlgebraElement, k, v)
+    unsafe_push!(coeffs(a), basis(a)[k], v)
+    return a
 end

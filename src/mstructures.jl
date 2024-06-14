@@ -44,40 +44,52 @@ struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
 end
 
-function MA.operate_to!(res, ms::MultiplicativeStructure, v, w)
-    if res === v || res === w
+function MA.operate_to!(res, ms::MultiplicativeStructure, args::Vararg{Any,N}) where {N}
+    if any(Base.Fix1(===, res), args)
         throw(ArgumentError("No alias allowed"))
     end
     MA.operate!(zero, res)
-    MA.operate!(UnsafeAddMul(ms), res, v, w)
+    MA.operate!(UnsafeAddMul(ms), res, args...)
     MA.operate!(canonical, res)
     return res
 end
 
-function MA.operate!(
-    ::UnsafeAddMul{typeof(*)},
-    mc::SparseCoefficients,
-    val,
-    c::AbstractCoefficients,
-)
-    append!(mc.basis_elements, keys(c))
-    vals = values(c)
-    if vals isa AbstractVector
-        append!(mc.values, val .* vals)
-    else
-        append!(mc.values, val * collect(values(c)))
+struct One end
+Base.:*(::One, α) = α
+
+function operate_with_constant!(::UnsafeAddMul, res, α, c)
+    for (k, v) in nonzero_pairs(c)
+        unsafe_push!(res, k, α * v)
     end
-    return mc
+    return res
 end
 
-function MA.operate!(ms::UnsafeAddMul, res, v, w)
-    for (kv, a) in nonzero_pairs(v)
-        for (kw, b) in nonzero_pairs(w)
-            c = ms.structure(kv, kw)
-            MA.operate!(UnsafeAddMul(*), res, a * b, c)
+function operate_with_constant!(op::UnsafeAddMul, res, α, b, c, args::Vararg{Any, N}) where {N}
+    for (kb, vb) in nonzero_pairs(b)
+        for (kc, vc) in nonzero_pairs(c)
+            operate_with_constant!(op, res, α * vb * vc, op.structure(kb, kc), args...)
         end
     end
     return res
+end
+
+_aggregate_constants(constant, non_constant) = (constant, non_constant)
+
+function _aggregate_constants(constant, non_constant, α, args::Vararg{Any,N}) where {N}
+    return _aggregate_constants(constant * α, non_constant, args...)
+end
+
+function _aggregate_constants(constant, non_constant, c::AbstractCoefficients, args::Vararg{Any,N}) where {N}
+    return _aggregate_constants(constant, (non_constant..., c), args...)
+end
+
+function MA.operate!(
+    op::UnsafeAddMul,
+    mc::AbstractCoefficients,
+    args::Vararg{Any,N},
+) where {N}
+    constant, non_constant = _aggregate_constants(One(), tuple(), args...)
+    return operate_with_constant!(op, mc, constant, non_constant...)
 end
 
 struct DiracMStructure{Op} <: MultiplicativeStructure
