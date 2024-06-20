@@ -42,8 +42,13 @@ function Base.zero(sc::SparseCoefficients)
     return SparseCoefficients(empty(keys(sc)), empty(values(sc)))
 end
 
+_similar(x::Tuple) = _similar(x, typeof(x[1]))
+_similar(x::Tuple, ::Type{T}) where {T} = Vector{T}(undef, length(x))
+_similar(x) = similar(x)
+_similar(x, ::Type{T}) where {T} = similar(x, T)
+
 function Base.similar(s::SparseCoefficients, ::Type{T} = valtype(s)) where {T}
-    return SparseCoefficients(similar(s.basis_elements), similar(s.values, T))
+    return SparseCoefficients(_similar(s.basis_elements), _similar(s.values, T))
 end
 
 function MA.mutability(
