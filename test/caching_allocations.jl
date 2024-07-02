@@ -8,6 +8,12 @@
     end
 end
 
+function _test_op(op, a, b)
+    result = @inferred op(a, b)
+    @test typeof(result) == MA.promote_operation(op, typeof(a), typeof(b))
+    return result
+end
+
 @testset "FixedBasis caching && allocations" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
@@ -88,8 +94,10 @@ end
         (1,),
     )
     Z = AlgebraElement(z, fRG)
-    @test Z + Z == 2 * Z
-    @test Z + Z == Y + Y
-    @test Y + Z == Y + Y
-    @test Z + Y == Y + Y
+    @test _test_op(+, Z, Z) == _test_op(*, 2, Z)
+    @test _test_op(+, Z, Z) == _test_op(+, Y, Y)
+    @test _test_op(+, Y, Z) == _test_op(+, Y, Y)
+    @test _test_op(+, Z, Y) == _test_op(+, Y, Y)
+    @test _test_op(-, Z, Z) == _test_op(*, 0, Z)
+    @test _test_op(-, Z, Z) == _test_op(-, Y, Z)
 end

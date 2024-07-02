@@ -38,6 +38,9 @@ Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
 
 Base.similar(ac::AbstractCoefficients) = similar(ac, valtype(ac))
 
+similar_type(::Type{<:Vector}, ::Type{T}) where {T} = Vector{T}
+similar_type(::Type{<:SparseArrays.SparseVector{C,I}}, ::Type{T}) where {C,I,T} = SparseArrays.SparseVector{T,I}
+
 """
     canonical(ac::AbstractCoefficients)
 Compute the canonical form of `ac` (e.g. grouping coefficients together, etc).

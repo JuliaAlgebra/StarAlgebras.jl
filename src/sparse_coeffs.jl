@@ -47,6 +47,13 @@ _similar(x::Tuple, ::Type{T}) where {T} = Vector{T}(undef, length(x))
 _similar(x) = similar(x)
 _similar(x, ::Type{T}) where {T} = similar(x, T)
 
+_similar_type(::Type{<:Tuple}, ::Type{T}) where {T} = Vector{T}
+_similar_type(::Type{V}, ::Type{T}) where {V,T} = similar_type(V, T)
+
+function similar_type(::Type{SparseCoefficients{K,V,Vk,Vv}}, ::Type{T}) where {K,V,Vk,Vv,T}
+    return SparseCoefficients{K,T,_similar_type(Vk, K),_similar_type(Vv, T)}
+end
+
 function Base.similar(s::SparseCoefficients, ::Type{T} = valtype(s)) where {T}
     return SparseCoefficients(_similar(s.basis_elements), _similar(s.values, T))
 end
