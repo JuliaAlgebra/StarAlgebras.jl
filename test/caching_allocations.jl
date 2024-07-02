@@ -68,3 +68,28 @@ end
         _alloc_test(YY, +, Y, YY, 2)
     end
 end
+
+@testset "tuple" begin
+    alph = [:a, :b, :c]
+    A★ = FreeWords(alph)
+    B = SA.DiracBasis(A★)
+
+    fB = SA.FixedBasis(B; n = nwords(A★, 2), mt = UInt32(nwords(A★, 2)))
+    fRG = StarAlgebra(A★, fB)
+
+    y = SA.SparseCoefficients(
+        [first(fB)],
+        [1],
+    )
+    Y = AlgebraElement(y, fRG)
+
+    z = SA.SparseCoefficients(
+        (first(fB),),
+        (1,),
+    )
+    Z = AlgebraElement(z, fRG)
+    @test Z + Z == 2 * Z
+    @test Z + Z == Y + Y
+    @test Y + Z == Y + Y
+    @test Z + Y == Y + Y
+end
