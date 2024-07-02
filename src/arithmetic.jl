@@ -1,5 +1,14 @@
-_coeff_type(X::AlgebraElement) = eltype(X)
-_coeff_type(a) = typeof(a)
+_coeff_type(::Type{A}) where {A<:AlgebraElement} = eltype(A)
+_coeff_type(a::Type) = a
+_coeff_type(a) = _coeff_type(typeof(a))
+
+function algebra_promote_operation(op, args::Vararg{Type,N}) where {N}
+    T = MA.promote_operation(op, _coeff_type.(args)...)
+    if args[2] <: AlgebraElement && MA.promote_operation(coeffs, args[2]) <: DenseArray # what a hack :)
+        return similar_type(args[2], T)
+    end
+    return similar_type(args[1], T)
+end
 
 function _preallocate_output(op, args::Vararg{Any,N}) where {N}
     T = MA.promote_operation(op, _coeff_type.(args)...)
@@ -18,6 +27,9 @@ Base.:(//)(X::AlgebraElement, a::Number) = 1 // a * X
 function Base.:-(X::AlgebraElement)
     return MA.operate_to!(_preallocate_output(*, X, -1), -, X)
 end
+function MA.promote_operation(::typeof(*), ::Type{T}, ::Type{A}) where {T<:Number, A<:AlgebraElement}
+    return algebra_promote_operation(*, A, T)
+end
 function Base.:*(a::Number, X::AlgebraElement)
     return MA.operate_to!(_preallocate_output(*, X, a), *, X, a)
 end
@@ -25,18 +37,21 @@ function Base.:div(X::AlgebraElement, a::Number)
     return MA.operate_to!(_preallocate_output(div, X, a), div, X, a)
 end
 
-function Base.:+(X::AlgebraElement, Y::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(+, X, Y), +, X, Y)
+for op in [:+, :-, :*]
+    @eval begin
+        function MA.promote_operation(::typeof($op), ::Type{X}, ::Type{Y}) where {X<:AlgebraElement,Y<:AlgebraElement}
+            return algebra_promote_operation($op, X, Y)
+        end
+        function Base.$op(X::AlgebraElement, Y::AlgebraElement)
+            return MA.operate_to!(_preallocate_output($op, X, Y), $op, X, Y)
+        end
+    end
 end
-function Base.:-(X::AlgebraElement, Y::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(-, X, Y), -, X, Y)
-end
-function Base.:*(X::AlgebraElement, Y::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(*, X, Y), *, X, Y)
-end
+
 function Base.:*(args::Vararg{AlgebraElement,N}) where {N}
     return MA.operate_to!(_preallocate_output(*, args...), *, args...)
 end
+
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
 # mutable API

@@ -13,6 +13,7 @@ end
     A★ = FreeWords(alph)
     B = SA.DiracBasis(A★)
     RG = StarAlgebra(A★, B)
+    @test typeof(@inferred basis(RG)) == MA.promote_operation(basis, typeof(RG))
 
     @test typeof(zero(RG)) == typeof(RG(0))
     @test typeof(one(RG)) == typeof(RG(1))
@@ -33,6 +34,8 @@ end
     @test AlgebraElement(x, RG) isa AlgebraElement
 
     X = AlgebraElement(x, RG)
+    @test typeof(@inferred coeffs(X)) == MA.promote_operation(coeffs, typeof(X))
+    @test typeof(@inferred basis(X)) == MA.promote_operation(basis, typeof(X))
 
     @test AlgebraElement{Float64}(X) isa AlgebraElement
     Y = AlgebraElement{Float64}(X)

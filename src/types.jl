@@ -25,6 +25,7 @@ struct StarAlgebra{O,T,B<:AbstractBasis{T}} <: AbstractStarAlgebra{O,T}
 end
 
 basis(A::StarAlgebra) = A.basis
+MA.promote_operation(::typeof(basis), ::Type{StarAlgebra{O,T,B}}) where {O,T,B} = B
 object(A::StarAlgebra) = A.object
 
 struct AlgebraElement{A,T,V} <: MA.AbstractMutable
@@ -33,13 +34,20 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
 end
 
 Base.parent(a::AlgebraElement) = a.parent
-Base.eltype(a::AlgebraElement) = valtype(coeffs(a))
+Base.eltype(::Type{A}) where {A<:AlgebraElement} = valtype(MA.promote_operation(coeffs, A))
+Base.eltype(a::AlgebraElement) = eltype(typeof(a))
+function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{A,T,V}}) where {A,T,V}
+    return V
+end
 coeffs(a::AlgebraElement) = a.coeffs
 function coeffs(x::AlgebraElement, b::AbstractBasis)
     return coeffs(coeffs(x), basis(x), b)
 end
 function adjoint_coeffs(a::AlgebraElement, target::AbstractBasis)
     return adjoint_coeffs(coeffs(a), target, basis(a))
+end
+function MA.promote_operation(::typeof(basis), ::Type{<:AlgebraElement{A}}) where {A}
+    return MA.promote_operation(basis, A)
 end
 basis(a::AlgebraElement) = basis(parent(a))
 
@@ -105,6 +113,10 @@ function (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T}
 end
 
 (A::AbstractStarAlgebra)(x::Number) = x * one(A)
+
+function similar_type(::Type{AlgebraElement{A,T,V}}, ::Type{C}) where {A,T,V,C}
+    return AlgebraElement{A,C,similar_type(V, C)}
+end
 
 function Base.similar(X::AlgebraElement, T = eltype(X))
     return AlgebraElement(similar(coeffs(X), T), parent(X))
