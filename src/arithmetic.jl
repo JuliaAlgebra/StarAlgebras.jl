@@ -127,6 +127,24 @@ function MA.operate_to!(
     return res
 end
 
+function mstructure(args::AbstractStarAlgebra...)
+    for arg in args
+        @assert arg == first(args)
+    end
+    return mstructure(basis(args[1]))
+end
+
+function MA.operate!(
+    ::UnsafeAddMul{typeof(*)},
+    res::AlgebraElement,
+    A::BasisTransformation,
+    args::Vararg{AlgebraElement,N},
+) where {N}
+    mstr = mstructure(algebra(res), algebra.(args)...)
+    MA.operate!(UnsafeAddMul(mstr), coeffs(res), coeffs.(args)...)
+    return res
+end
+
 function MA.operate!(
     ::UnsafeAddMul{typeof(*)},
     res::AlgebraElement,
@@ -137,7 +155,7 @@ function MA.operate!(
             @assert parent(res) == parent(arg)
         end
     end
-    mstr = mstructure(basis(res))
+    mstr = mstructure(basis(res), basis.(args)...)
     MA.operate!(UnsafeAddMul(mstr), coeffs(res), coeffs.(args)...)
     return res
 end
