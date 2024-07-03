@@ -107,5 +107,9 @@ end
         @test c .* 2 == res
         @test c .+ 1 == res
         @test 1 .+ c == res
+        @test MA.Zero() .+ c == c
+        @test c .+ MA.Zero() == c
+        err = ArgumentError("Cannot broadcast `StarAlgebras.SparseCoefficients` with another array of different type")
+        @test_throws err c .+ ones(3)
     end
 end

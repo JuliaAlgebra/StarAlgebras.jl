@@ -57,7 +57,6 @@ Base.broadcastable(sc::SparseCoefficients) = sc
 Base.BroadcastStyle(::Type{<:SparseCoefficients{K}}) where {K} = BroadcastStyle{K}()
 # Disallow mixing broadcasts.
 function Base.BroadcastStyle(::BroadcastStyle, ::Base.BroadcastStyle)
-    @show @__LINE__
     return throw(
         ArgumentError(
             "Cannot broadcast `StarAlgebras.SparseCoefficients` with" *
@@ -68,7 +67,6 @@ end
 
 # Allow broadcasting over scalars.
 function Base.BroadcastStyle(style::BroadcastStyle, ::Base.Broadcast.DefaultArrayStyle{0})
-    @show @__LINE__
     return style
 end
 
@@ -79,8 +77,8 @@ Base.axes(sc::SparseCoefficients) = (sc.basis_elements,)
 
 # `_get_arg` and `getindex` are inspired from `JuMP.Containers.SparseAxisArray`
 _getindex(x::SparseCoefficients, index) = getindex(x, index)
-_getindex(x::Any, ::Any) = (@show @__LINE__; x)
-_getindex(x::Ref, ::Any) = (@show @__LINE__; x[])
+_getindex(x::Any, ::Any) = x
+_getindex(x::Ref, ::Any) = x[]
 
 function _get_arg(args::Tuple, index)
     return (_getindex(first(args), index), _get_arg(Base.tail(args), index)...)
