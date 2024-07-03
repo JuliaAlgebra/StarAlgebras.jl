@@ -5,10 +5,7 @@ struct ProductNotWellDefined <: Exception
 end
 
 function Base.showerror(io::IO, ex::ProductNotWellDefined)
-    print(
-        io,
-        "Product of elements $(ex.i) and $(ex.j) is not defined on the basis",
-    )
+    print(io, "Product of elements $(ex.i) and $(ex.j) is not defined on the basis")
     print(io, " or the multiplicative structure could not be completed")
     if isdefined(ex, :msg)
         print(io, ": $(ex.msg)")
@@ -61,7 +58,7 @@ function MA.operate!(::UnsafeAddMul, res, c)
     return res
 end
 
-function MA.operate!(op::UnsafeAddMul, res, b, c, args::Vararg{Any, N}) where {N}
+function MA.operate!(op::UnsafeAddMul, res, b, c, args::Vararg{Any,N}) where {N}
     for (kb, vb) in nonzero_pairs(b)
         for (kc, vc) in nonzero_pairs(c)
             for (k, v) in nonzero_pairs(op.structure(kb, kc))

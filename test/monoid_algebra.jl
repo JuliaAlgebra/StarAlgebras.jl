@@ -34,15 +34,13 @@
         let g = basis(fRG)[rand(1:121)]
             X = RG(g)
             Y = -RG(star(g))
-            for i in 1:3
+            for i = 1:3
                 coeffs(X)[basis(fRG)[rand(1:121)]] += rand(-3:3)
                 coeffs(Y)[basis(fRG)[rand(1:121)]] -= rand(3:3)
             end
 
-            @test coeffs(X) ==
-                  coeffs(coeffs(X, basis(fRG)), basis(fRG), basis(RG))
-            @test coeffs(Y) ==
-                  coeffs(coeffs(Y, basis(fRG)), basis(fRG), basis(RG))
+            @test coeffs(X) == coeffs(coeffs(X, basis(fRG)), basis(fRG), basis(RG))
+            @test coeffs(Y) == coeffs(coeffs(Y, basis(fRG)), basis(fRG), basis(RG))
 
             fX = AlgebraElement(coeffs(X, basis(fRG)), fRG)
             fY = AlgebraElement(coeffs(Y, basis(fRG)), fRG)
@@ -53,19 +51,13 @@
             @test dot(X, X) ≈ norm(X)^2 ≈ dot(coeffs(X), coeffs(X))
             @test dot(fX, fX) ≈ norm(fX)^2 ≈ dot(coeffs(fX), coeffs(fX))
 
-            @test coeffs(fX) ==
-                  coeffs(coeffs(fX, basis(RG)), basis(RG), basis(fRG))
-            @test coeffs(fY) ==
-                  coeffs(coeffs(fY, basis(RG)), basis(RG), basis(fRG))
+            @test coeffs(fX) == coeffs(coeffs(fX, basis(RG)), basis(RG), basis(fRG))
+            @test coeffs(fY) == coeffs(coeffs(fY, basis(RG)), basis(RG), basis(fRG))
 
             @test coeffs(X * Y, basis(fRG)) == coeffs(fX * fY)
-            @test coeffs(X * X, basis(fRG)) ==
-                  coeffs(fX^2) ==
-                  coeffs(X^2, basis(fRG))
+            @test coeffs(X * X, basis(fRG)) == coeffs(fX^2) == coeffs(X^2, basis(fRG))
 
-            @test coeffs(Y * Y, basis(fRG)) ==
-                  coeffs(fY^2) ==
-                  coeffs(Y^2, basis(fRG))
+            @test coeffs(Y * Y, basis(fRG)) == coeffs(fY^2) == coeffs(Y^2, basis(fRG))
 
             MA.operate_to!(Z, *, X, Y)
             MA.operate_to!(fZ, *, fX, fY)
@@ -79,14 +71,14 @@
     end
     @testset "mutable arithmetic" begin
         a = let l = 12, R = 7
-            support = [Word(alph, rand(1:length(alph), rand(0:R))) for _ in 1:l]
+            support = [Word(alph, rand(1:length(alph), rand(0:R))) for _ = 1:l]
             vals = rand(-3:3, l)
             c = SA.SparseCoefficients(support, vals)
             MA.operate!(SA.canonical, c)
             AlgebraElement(c, RG)
         end
         b = let l = 7, R = 3
-            support = [Word(alph, rand(1:length(alph), rand(0:R))) for _ in 1:l]
+            support = [Word(alph, rand(1:length(alph), rand(0:R))) for _ = 1:l]
             vals = rand(-3:3, l)
             c = SA.SparseCoefficients(support, vals)
             MA.operate!(SA.canonical, c)

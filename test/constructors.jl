@@ -25,7 +25,7 @@ end
     @test RG(0) == zero(RG(1))
 
     x = let A = alph, n = 7
-        elts = [Word(A, rand(1:length(A), rand(0:7))) for _ in 1:n]
+        elts = [Word(A, rand(1:length(A), rand(0:7))) for _ = 1:n]
         vals = rand(-5:5, n)
         coeffs = SA.SparseCoefficients(elts, vals)
         MA.operate!(SA.canonical, coeffs)
@@ -93,11 +93,14 @@ end
     @test Z == a
     @test sprint(show, Z) == "2.0·(id) + 1.0·b·c"
     @test sprint(show, 2one(RG) - RG(p)) == "2·(id) - 1·b·c"
-    @test sprint(show, (2 + im) * one(RG) - (3im) * RG(p)) == "(2 + 1im)·(id) + (0 - 3im)·b·c"
-    
-    @test sprint(print, (2 + im) * one(RG) - (3im) * RG(p)) == "(2 + 1im)·(id) + (0 - 3im)·b·c"
+    @test sprint(show, (2 + im) * one(RG) - (3im) * RG(p)) ==
+          "(2 + 1im)·(id) + (0 - 3im)·b·c"
+
+    @test sprint(print, (2 + im) * one(RG) - (3im) * RG(p)) ==
+          "(2 + 1im)·(id) + (0 - 3im)·b·c"
     @test sprint(show, 1e-9 * one(RG)) == "1.0e-9·(id)"
-    @test sprint((io, x) -> show(io, "text/latex", x), 1e-9 * one(RG)) == "\$\$ 1.0 \\cdot 10^{-9} \\cdot (id) \$\$"
+    @test sprint((io, x) -> show(io, "text/latex", x), 1e-9 * one(RG)) ==
+          "\$\$ 1.0 \\cdot 10^{-9} \\cdot (id) \$\$"
 
     @test LinearAlgebra.norm(a, 1) == 3
 
@@ -115,12 +118,12 @@ end
     a = SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG)
     # Tests that `getindex` works even if `zero(typeof(latex))` is not defined
     @test SA.coeffs(a)[p] == latex
-    @test sprint((io, x) -> show(io, "text/latex", x), a) ==
-          "\$\$ (α_β∀) \\cdot b·c \$\$"
+    @test sprint((io, x) -> show(io, "text/latex", x), a) == "\$\$ (α_β∀) \\cdot b·c \$\$"
     # Test that the check for `\\)` handles unicode well
     latex = CustomLaTeXPrint("\\(β∀")
-    @test sprint((io, x) -> show(io, "text/latex", x),
-        SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG)) ==
-          "\$\$ (\\(β∀) \\cdot b·c \$\$"
-    
+    @test sprint(
+        (io, x) -> show(io, "text/latex", x),
+        SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG),
+    ) == "\$\$ (\\(β∀) \\cdot b·c \$\$"
+
 end

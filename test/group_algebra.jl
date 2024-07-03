@@ -6,10 +6,7 @@
     @test contains(sprint(show, RG), "*-algebra of")
 
     @testset "Module structure" begin
-        sc = SA.SparseCoefficients(
-            collect(SA.object(RG)),
-            ones(Int, length(basis(RG))),
-        )
+        sc = SA.SparseCoefficients(collect(SA.object(RG)), ones(Int, length(basis(RG))))
         a = AlgebraElement(sc, RG)
 
         @test -a isa AlgebraElement
@@ -46,19 +43,14 @@
     end
 
     @testset "Additive structure" begin
-        sc = SA.SparseCoefficients(
-            collect(SA.object(RG)),
-            ones(Int, length(basis(RG))),
-        )
+        sc = SA.SparseCoefficients(collect(SA.object(RG)), ones(Int, length(basis(RG))))
         a = AlgebraElement(sc, RG)
         b = sum(sign(g) * RG(g) for g in G)
 
         @test a == sum(RG(g) for g in G)
 
-        @test 1 / 2 * (coeffs(a + b)) == SA.SparseCoefficients(
-            collect(SA.object(RG)),
-            [1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
-        )
+        @test 1 / 2 * (coeffs(a + b)) ==
+              SA.SparseCoefficients(collect(SA.object(RG)), [1.0, 0.0, 1.0, 0.0, 1.0, 0.0])
 
         g, h = PermutationGroups.gens(G)
         k = g * h
@@ -77,9 +69,7 @@
         @test coeffs(a + b - 2a) == coeffs(a) + coeffs(b) - 2coeffs(a)
         @test coeffs(2a // 2) == 2coeffs(a) // 2 == coeffs(a)
         @test coeffs(3a) == 3.0coeffs(a)
-        @test coeffs(2a) - coeffs(a // 1) ==
-              2coeffs(a) - coeffs(a) // 1 ==
-              coeffs(a)
+        @test coeffs(2a) - coeffs(a // 1) == 2coeffs(a) - coeffs(a) // 1 == coeffs(a)
         @test div(3coeffs(a), 2) == coeffs(a)
     end
 

@@ -73,5 +73,5 @@ nwords(M::FreeWords, maxl::Integer) = nwords(M, 0, maxl)
 function nwords(M::FreeWords, minl::Integer, maxl::Integer)
     maxl < minl && return zero(maxl)
     k = oftype(maxl, length(M.alphabet))
-    return sum(k^i for i in minl:maxl)
+    return sum(k^i for i = minl:maxl)
 end
