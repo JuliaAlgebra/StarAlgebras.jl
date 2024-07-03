@@ -13,8 +13,17 @@ function Base.copy(sc::SparseCoefficients)
     return SparseCoefficients(copy(keys(sc)), copy(values(sc)))
 end
 
+function _search(keys::Tuple, key)
+    # `searchsortedfirst` is not defined for `Tuple`
+    return findfirst(isequal(key), keys)
+end
+
+function _search(keys, key::K) where {K}
+    return searchsortedfirst(keys, key; lt = comparable(K))
+end
+
 function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
-    k = searchsortedfirst(sc.basis_elements, key; lt = comparable(K))
+    k = _search(sc.basis_elements, key)
     if k in eachindex(sc.basis_elements)
         v = sc.values[k]
         if sc.basis_elements[k] == key
@@ -30,7 +39,7 @@ end
 function Base.setindex!(sc::SparseCoefficients{K}, val, key::K) where {K}
     k = searchsortedfirst(sc.basis_elements, key; lt = comparable(K))
     if k in eachindex(sc.basis_elements) && sc.basis_elements[k] == key
-        sc.values[k] += val
+        sc.values[k] = val
     else
         insert!(sc.basis_elements, k, key)
         insert!(sc.values, k, val)
