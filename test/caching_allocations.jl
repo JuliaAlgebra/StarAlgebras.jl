@@ -100,4 +100,16 @@ end
     @test _test_op(+, Z, Y) == _test_op(+, Y, Y)
     @test _test_op(-, Z, Z) == _test_op(*, 0, Z)
     @test _test_op(-, Z, Z) == _test_op(-, Y, Z)
+
+    for X in [Y, Z]
+        c = coeffs(X)
+        res = 2 .* c
+        @test c .* 2 == res
+        @test c .+ 1 == res
+        @test 1 .+ c == res
+        @test MA.Zero() .+ c == c
+        @test c .+ MA.Zero() == c
+        err = ArgumentError("Cannot broadcast `StarAlgebras.SparseCoefficients` with another array of different type")
+        @test_throws err c .+ ones(3)
+    end
 end
