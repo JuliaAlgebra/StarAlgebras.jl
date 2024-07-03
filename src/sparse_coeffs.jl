@@ -38,6 +38,17 @@ function Base.setindex!(sc::SparseCoefficients{K}, val, key::K) where {K}
     return sc
 end
 
+################
+# Broadcasting #
+################
+# Inspired from `JuMP.Containers.SparseAxisArray`
+
+struct BroadcastStyle{K} end
+
+Base.broadcastable(sc::SparseCoefficients) = sc
+Base.Broadcast.BroadcastStyle(::Type{<:SparseCoefficients{K}}) where {K} = BroadcastStyle{K}()
+Base.axes(sc::SparseCoefficients) = (sc.basis_elements,)
+
 function Base.zero(sc::SparseCoefficients)
     return SparseCoefficients(empty(keys(sc)), empty(values(sc)))
 end
