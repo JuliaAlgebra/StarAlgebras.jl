@@ -39,8 +39,7 @@ Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
 Base.similar(ac::AbstractCoefficients) = similar(ac, valtype(ac))
 
 similar_type(::Type{<:Vector}, ::Type{T}) where {T} = Vector{T}
-similar_type(::Type{<:SparseArrays.SparseVector{C,I}}, ::Type{T}) where {C,I,T} =
-    SparseArrays.SparseVector{T,I}
+similar_type(::Type{<:SparseArrays.SparseVector{C,I}}, ::Type{T}) where {C,I,T} = SparseArrays.SparseVector{T,I}
 
 """
     canonical(ac::AbstractCoefficients)
@@ -84,7 +83,8 @@ The iterator contains all pairs with `v` potentially non-zero.
     return (k => v for (k, v) in zip(keys(ac), values(ac)))
 end
 
-@inline nonzero_pairs(v::AbstractVector) = (p for p in pairs(v) if !iszero(last(p)))
+@inline nonzero_pairs(v::AbstractVector) =
+    (p for p in pairs(v) if !iszero(last(p)))
 @inline function nonzero_pairs(v::AbstractSparseVector)
     return zip(SparseArrays.nonzeroinds(v), SparseArrays.nonzeros(v))
 end
@@ -149,7 +149,11 @@ function MA.operate!(::typeof(zero), X::AbstractCoefficients)
 end
 
 # unary -
-function MA.operate_to!(res::AbstractCoefficients, ::typeof(-), X::AbstractCoefficients)
+function MA.operate_to!(
+    res::AbstractCoefficients,
+    ::typeof(-),
+    X::AbstractCoefficients,
+)
     if res !== X
         MA.operate!(zero, res)
     end

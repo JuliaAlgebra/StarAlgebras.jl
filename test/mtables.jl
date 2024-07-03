@@ -43,12 +43,16 @@ end
     @test_throws String StarAlgebras.basis(mstr)
 
     @test mstr isa StarAlgebras.MTable{UInt16}
-    @test all(mstr[i, j] == b[b[i]*b[j]] for i in axes(mstr, 1) for j in axes(mstr, 2))
     @test all(
-        mstr[-i, j] == b[star(b[i])*b[j]] for i in axes(mstr, 1) for j in axes(mstr, 2)
+        mstr[i, j] == b[b[i]*b[j]] for i in axes(mstr, 1) for j in axes(mstr, 2)
     )
     @test all(
-        mstr[i, -j] == b[b[i]*star(b[j])] for i in axes(mstr, 1) for j in axes(mstr, 2)
+        mstr[-i, j] == b[star(b[i])*b[j]] for i in axes(mstr, 1) for
+        j in axes(mstr, 2)
+    )
+    @test all(
+        mstr[i, -j] == b[b[i]*star(b[j])] for i in axes(mstr, 1) for
+        j in axes(mstr, 2)
     )
     @test all(
         mstr[-i, -j] == b[star(b[i])*star(b[j])] for i in axes(mstr, 1) for

@@ -67,15 +67,8 @@ function Base.BroadcastStyle(::BroadcastStyle, ::Base.BroadcastStyle)
 end
 
 # Allow broadcasting over scalars.
-<<<<<<< Updated upstream
 function Base.BroadcastStyle(style::BroadcastStyle, ::Base.Broadcast.DefaultArrayStyle{0})
-=======
-function Base.BroadcastStyle(
-    style::BroadcastStyle,
-    ::Base.Broadcast.DefaultArrayStyle{0},
-)
     @show @__LINE__
->>>>>>> Stashed changes
     return style
 end
 
@@ -174,7 +167,7 @@ function MA.operate!(::typeof(canonical), res::SparseCoefficients, cmp::C) where
     end
 
     todelete = BitSet()
-    for i = firstindex(res.basis_elements):lastindex(res.basis_elements)-1
+    for i in firstindex(res.basis_elements):lastindex(res.basis_elements)-1
         if iszero(res.values[i])
             push!(todelete, i)
         elseif res.basis_elements[i] == res.basis_elements[i+1]
@@ -198,7 +191,11 @@ function MA.operate!(::typeof(zero), s::SparseCoefficients)
     return s
 end
 
-function MA.operate_to!(res::SparseCoefficients, ::typeof(-), X::SparseCoefficients)
+function MA.operate_to!(
+    res::SparseCoefficients,
+    ::typeof(-),
+    X::SparseCoefficients,
+)
     return MA.operate_to!(res, *, X, -1)
 end
 

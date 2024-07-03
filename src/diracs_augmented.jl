@@ -45,7 +45,8 @@ Base.isless(ad1::Augmented, ad2::Augmented) = isless(ad1.elt, ad2.elt)
 
 aug(::Augmented) = 0
 
-struct AugmentedBasis{T,I,A<:Augmented{T},B<:AbstractBasis{T,I}} <: ImplicitBasis{A,I}
+struct AugmentedBasis{T,I,A<:Augmented{T},B<:AbstractBasis{T,I}} <:
+       ImplicitBasis{A,I}
     basis::B
 end
 
@@ -114,12 +115,18 @@ function coeffs!(
 )
     s = aug(cfs)
     if !iszero(s)
-        throw("Conversion to $target not possible due to non-zero augmentation: $s")
+        throw(
+            "Conversion to $target not possible due to non-zero augmentation: $s",
+        )
     end
     for (k, v) in nonzero_pairs(cfs)
         isone(k) && continue
         x = source[k]
-        MA.operate!(UnsafeAddMul(*), res, SparseCoefficients((target[Augmented(x)],), (v,)))
+        MA.operate!(
+            UnsafeAddMul(*),
+            res,
+            SparseCoefficients((target[Augmented(x)],), (v,)),
+        )
     end
     MA.operate!(canonical, res)
     return res

@@ -9,7 +9,8 @@ Multiplicative table, stored explicitly as an AbstractMatrix{I}.
     mt[-i, j] == b[star(b[i])*b[j]]
     ```
 """
-struct MTable{T,I,V<:AbstractVector,M<:AbstractMatrix,Ms} <: MultiplicativeStructure
+struct MTable{T,I,V<:AbstractVector,M<:AbstractMatrix,Ms} <:
+       MultiplicativeStructure
     elts::V
     relts::Dict{T,I}
     starof::Vector{I}

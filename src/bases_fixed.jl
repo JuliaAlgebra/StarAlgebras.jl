@@ -1,4 +1,5 @@
-mutable struct FixedBasis{T,I,V<:AbstractVector{T},M<:MTable{T,I}} <: ExplicitBasis{T,I}
+mutable struct FixedBasis{T,I,V<:AbstractVector{T},M<:MTable{T,I}} <:
+               ExplicitBasis{T,I}
     elts::V
     table::M
 end
@@ -34,5 +35,7 @@ Base.iterate(b::FixedBasis, state) = iterate(b.elts, state)
 Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V} = Base.IndexStyle(V)
 
 # To break ambiguity
-Base.@propagate_inbounds Base.getindex(b::FixedBasis{T,I}, i::I) where {T,I<:Integer} =
-    b.elts[i]
+Base.@propagate_inbounds Base.getindex(
+    b::FixedBasis{T,I},
+    i::I,
+) where {T,I<:Integer} = b.elts[i]

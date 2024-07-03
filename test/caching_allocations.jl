@@ -27,7 +27,7 @@ end
     y = spzeros(length(basis(fRG)))
     y[1:k] .= 1
     Y = AlgebraElement(y, fRG)
-    @test Y == sum(fRG(basis(fRG)[i]) for i = 1:k)
+    @test Y == sum(fRG(basis(fRG)[i]) for i in 1:k)
 
     @test Y isa AlgebraElement
 
@@ -83,10 +83,16 @@ end
     fB = SA.FixedBasis(B; n = nwords(A★, 2), mt = UInt32(nwords(A★, 2)))
     fRG = StarAlgebra(A★, fB)
 
-    y = SA.SparseCoefficients([first(fB)], [1])
+    y = SA.SparseCoefficients(
+        [first(fB)],
+        [1],
+    )
     Y = AlgebraElement(y, fRG)
 
-    z = SA.SparseCoefficients((first(fB),), (1,))
+    z = SA.SparseCoefficients(
+        (first(fB),),
+        (1,),
+    )
     Z = AlgebraElement(z, fRG)
     @test _test_op(+, Z, Z) == _test_op(*, 2, Z)
     @test _test_op(+, Z, Z) == _test_op(+, Y, Y)

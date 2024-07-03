@@ -80,7 +80,10 @@ function Base.one(T::Type, A::AbstractStarAlgebra)
         @assert i in basis(A)
         return AlgebraElement(sc, A)
     else
-        return AlgebraElement(coeffs(sc, DiracBasis(object(A)), basis(A)), A)
+        return AlgebraElement(
+            coeffs(sc, DiracBasis(object(A)), basis(A)),
+            A,
+        )
     end
 end
 
