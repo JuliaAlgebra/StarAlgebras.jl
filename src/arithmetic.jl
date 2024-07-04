@@ -36,6 +36,18 @@ end
 function Base.:div(X::AlgebraElement, a::Number)
     return MA.operate_to!(_preallocate_output(div, X, a), div, X, a)
 end
+function Base.:*(
+    a::T,
+    X::AlgebraElement{A},
+) where {T,O,A<:AbstractStarAlgebra{O,T}}
+    return MA.operate_to!(similar(X), Val(:lmul), a, X)
+end
+function Base.:*(
+    X::AlgebraElement{A},
+    a::T,
+) where {T,O,A<:AbstractStarAlgebra{O,T}}
+    return MA.operate_to!(similar(X), Val(:rmul), a, X)
+end
 
 for op in [:+, :-, :*]
     @eval begin
@@ -80,6 +92,12 @@ function MA.operate_to!(
 )
     @assert parent(res) === parent(X)
     MA.operate_to!(coeffs(res), div, coeffs(X), a)
+    return res
+end
+
+function MA.operate_to!(res::AlgebraElement, mul::Val, a, X::AlgebraElement)
+    @assert parent(res) == parent(X)
+    MA.operate_to!(coeffs(res), mul, a, coeffs(X))
     return res
 end
 

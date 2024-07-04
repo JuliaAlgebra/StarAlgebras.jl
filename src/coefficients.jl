@@ -240,3 +240,23 @@ function MA.operate_to!(
     end
     return res
 end
+
+function MA.operate_to!(
+    res::AbstractCoefficients,
+    mul::Val,
+    a,
+    X::AbstractCoefficients,
+)
+    if res === X
+        throw("No aliasing is allowed in shift")
+    else
+        MA.operate!(zero, res)
+        for (k, v) in nonzero_pairs(X)
+            res[__op(a, k, mul)] += v
+        end
+    end
+    return res
+end
+
+__op(a, k, ::Val{:lmul}) = a * k
+__op(a, k, ::Val{:rmul}) = k * a
