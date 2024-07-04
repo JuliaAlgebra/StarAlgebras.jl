@@ -73,8 +73,8 @@
             @test coeffs(Z) == coeffs(fZ, basis(RG))
             @test coeffs(fZ) == coeffs(Z, basis(fRG))
 
-            @test coeffs(2 * X * Y) == coeffs(MA.operate_to!(Z, *, Z, 2))
-            @test coeffs(2 * fX * fY) == coeffs(MA.operate_to!(fZ, *, fZ, 2))
+            @test coeffs(2 * X * Y) == coeffs(MA.operate_to!(Z, *, 2, Z))
+            @test coeffs(2 * fX * fY) == coeffs(MA.operate_to!(fZ, *, 2, fZ))
         end
     end
     @testset "mutable arithmetic" begin
@@ -118,19 +118,19 @@
         end
 
         let d = deepcopy(a)
-            MA.operate_to!(d, *, a, 2)
+            MA.operate_to!(d, *, 2, a)
             @test d == 2a
-            MA.operate_to!(d, *, d, 2)
+            MA.operate_to!(d, *, 2, d)
             @test d == 4a
             MA.operate_to!(d, *, a, b)
             @test d == a * b
             @test_throws ArgumentError MA.operate_to!(d, *, d, b)
 
             d = deepcopy(a)
-            @test @allocated(MA.operate_to!(d, *, d, 2)) == 0
+            @test @allocated(MA.operate_to!(d, *, 2, d)) == 0
             @test d == 2a
 
-            @test @allocated(MA.operate_to!(d, *, a, 2)) == 0
+            @test @allocated(MA.operate_to!(d, *, 2, a)) == 0
             @test d == 2a
 
             MA.operate!(zero, d)

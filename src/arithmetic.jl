@@ -31,7 +31,7 @@ function MA.promote_operation(::typeof(*), ::Type{T}, ::Type{A}) where {T<:Numbe
     return algebra_promote_operation(*, A, T)
 end
 function Base.:*(a::Number, X::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(*, X, a), *, X, a)
+    return MA.operate_to!(_preallocate_output(*, X, a), *, a, X)
 end
 function Base.:div(X::AlgebraElement, a::Number)
     return MA.operate_to!(_preallocate_output(div, X, a), div, X, a)
@@ -64,11 +64,11 @@ end
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
-    X::AlgebraElement,
     a::Number,
+    X::AlgebraElement,
 )
     @assert parent(res) === parent(X)
-    MA.operate_to!(coeffs(res), *, coeffs(X), a)
+    MA.operate_to!(coeffs(res), *, a, coeffs(X))
     return res
 end
 

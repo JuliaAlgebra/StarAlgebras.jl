@@ -122,12 +122,12 @@ end
 
 Base.zero(X::AbstractCoefficients) = MA.operate!(zero, similar(X))
 Base.:-(X::AbstractCoefficients) = MA.operate_to!(__prealloc(X, -1, *), -, X)
-Base.:*(a::Number, X::AbstractCoefficients) = X * a
-Base.:/(X::AbstractCoefficients, a::Number) = X * inv(a)
+Base.:*(X::AbstractCoefficients, a::Number) = a * X
+Base.:/(X::AbstractCoefficients, a::Number) = inv(a) * X
 Base.://(X::AbstractCoefficients, a::Number) = X * 1 // a
 
-function Base.:*(X::AbstractCoefficients, a::Number)
-    return MA.operate_to!(__prealloc(X, a, *), *, X, a)
+function Base.:*(a::Number, X::AbstractCoefficients)
+    return MA.operate_to!(__prealloc(X, a, *), *, a, X)
 end
 function Base.:div(X::AbstractCoefficients, a::Number)
     return MA.operate_to!(__prealloc(X, a, div), div, X, a)
@@ -167,8 +167,8 @@ end
 function MA.operate_to!(
     res::AbstractCoefficients,
     ::typeof(*),
-    X::AbstractCoefficients,
     a::Number,
+    X::AbstractCoefficients,
 )
     if res !== X
         MA.operate!(zero, res)
