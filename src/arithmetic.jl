@@ -30,7 +30,7 @@ end
 function MA.promote_operation(::typeof(*), ::Type{T}, ::Type{A}) where {T<:Number, A<:AlgebraElement}
     return algebra_promote_operation(*, A, T)
 end
-function Base.:*(a::Number, X::AlgebraElement)
+function Base.:*(a::Any, X::AlgebraElement)
     return MA.operate_to!(_preallocate_output(*, X, a), *, a, X)
 end
 function Base.:div(X::AlgebraElement, a::Number)
@@ -64,7 +64,7 @@ end
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
-    a::Number,
+    a::Any,
     X::AlgebraElement,
 )
     @assert parent(res) === parent(X)
