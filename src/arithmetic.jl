@@ -136,9 +136,7 @@ function MA.operate_to!(
     args::Vararg{AlgebraElement,N},
 ) where {N}
     for arg in args
-        if arg isa AlgebraElement
-            @assert parent(res) == parent(arg)
-        end
+        @assert parent(res) == parent(arg)
     end
     mstr = mstructure(basis(res))
     MA.operate_to!(coeffs(res), mstr, coeffs.(args)...)
@@ -151,9 +149,7 @@ function MA.operate!(
     args::Vararg{AlgebraElement,N},
 ) where {N}
     for arg in args
-        if arg isa AlgebraElement
-            @assert parent(res) == parent(arg)
-        end
+        @assert parent(res) == parent(arg)
     end
     mstr = mstructure(basis(res))
     MA.operate!(UnsafeAddMul(mstr), coeffs(res), coeffs.(args)...)
