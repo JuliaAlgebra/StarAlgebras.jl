@@ -40,13 +40,13 @@ function Base.:*(
     a::T,
     X::AlgebraElement{A},
 ) where {T,O,A<:AbstractStarAlgebra{O,T}}
-    return MA.operate_to!(similar(X), Val(:lmul), a, X)
+    return MA.operate_to!(similar(X), __lmul, a, X)
 end
 function Base.:*(
     X::AlgebraElement{A},
     a::T,
 ) where {T,O,A<:AbstractStarAlgebra{O,T}}
-    return MA.operate_to!(similar(X), Val(:rmul), a, X)
+    return MA.operate_to!(similar(X), __rmul, a, X)
 end
 
 for op in [:+, :-, :*]
@@ -95,7 +95,12 @@ function MA.operate_to!(
     return res
 end
 
-function MA.operate_to!(res::AlgebraElement, mul::Val, a, X::AlgebraElement)
+function MA.operate_to!(
+    res::AlgebraElement,
+    mul::Union{typeof(__lmul),typeof(__rmul)},
+    a,
+    X::AlgebraElement,
+)
     @assert parent(res) == parent(X)
     MA.operate_to!(coeffs(res), mul, a, coeffs(X))
     return res
