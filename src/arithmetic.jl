@@ -30,11 +30,23 @@ end
 function MA.promote_operation(::typeof(*), ::Type{T}, ::Type{A}) where {T<:Number, A<:AlgebraElement}
     return algebra_promote_operation(*, A, T)
 end
-function Base.:*(a::Number, X::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(*, X, a), *, X, a)
+function Base.:*(a::Any, X::AlgebraElement)
+    return MA.operate_to!(_preallocate_output(*, X, a), *, a, X)
 end
 function Base.:div(X::AlgebraElement, a::Number)
     return MA.operate_to!(_preallocate_output(div, X, a), div, X, a)
+end
+function Base.:*(
+    a::T,
+    X::AlgebraElement{A},
+) where {T,O,A<:AbstractStarAlgebra{O,T}}
+    return MA.operate_to!(similar(X), __lmul, a, X)
+end
+function Base.:*(
+    X::AlgebraElement{A},
+    a::T,
+) where {T,O,A<:AbstractStarAlgebra{O,T}}
+    return MA.operate_to!(similar(X), __rmul, a, X)
 end
 
 for op in [:+, :-, :*]
@@ -64,11 +76,11 @@ end
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
+    a::Any,
     X::AlgebraElement,
-    a::Number,
 )
     @assert parent(res) === parent(X)
-    MA.operate_to!(coeffs(res), *, coeffs(X), a)
+    MA.operate_to!(coeffs(res), *, a, coeffs(X))
     return res
 end
 
@@ -80,6 +92,17 @@ function MA.operate_to!(
 )
     @assert parent(res) === parent(X)
     MA.operate_to!(coeffs(res), div, coeffs(X), a)
+    return res
+end
+
+function MA.operate_to!(
+    res::AlgebraElement,
+    mul::Union{typeof(__lmul),typeof(__rmul)},
+    a,
+    X::AlgebraElement,
+)
+    @assert parent(res) == parent(X)
+    MA.operate_to!(coeffs(res), mul, a, coeffs(X))
     return res
 end
 
@@ -118,9 +141,7 @@ function MA.operate_to!(
     args::Vararg{AlgebraElement,N},
 ) where {N}
     for arg in args
-        if arg isa AlgebraElement
-            @assert parent(res) == parent(arg)
-        end
+        @assert parent(res) == parent(arg)
     end
     mstr = mstructure(basis(res))
     MA.operate_to!(coeffs(res), mstr, coeffs.(args)...)
@@ -133,9 +154,7 @@ function MA.operate!(
     args::Vararg{AlgebraElement,N},
 ) where {N}
     for arg in args
-        if arg isa AlgebraElement
-            @assert parent(res) == parent(arg)
-        end
+        @assert parent(res) == parent(arg)
     end
     mstr = mstructure(basis(res))
     MA.operate!(UnsafeAddMul(mstr), coeffs(res), coeffs.(args)...)

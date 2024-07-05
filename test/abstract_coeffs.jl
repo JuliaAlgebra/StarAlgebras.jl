@@ -60,4 +60,10 @@
     @test norm(fP2m) == norm(P2m) == norm(fP2m)
     v = coeffs(P2m, basis(fRG)) # an honest vector
     @test dot(fP2m, fP2m) == dot(coeffs(fP2m), v) == dot(v, coeffs(fP2m))
+
+    s1, s2 = PermutationGroups.gens(G)
+    @assert s1 * s2 ≠ s2 * s1
+    Z = RG(1) + RG(s1)
+    @test s2 * Z == RG(s2) + RG(s2 * s1)
+    @test Z * s2 == RG(s2) + RG(s1 * s2)
 end

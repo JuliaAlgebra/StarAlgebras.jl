@@ -122,12 +122,12 @@ end
 
 Base.zero(X::AbstractCoefficients) = MA.operate!(zero, similar(X))
 Base.:-(X::AbstractCoefficients) = MA.operate_to!(__prealloc(X, -1, *), -, X)
-Base.:*(a::Number, X::AbstractCoefficients) = X * a
-Base.:/(X::AbstractCoefficients, a::Number) = X * inv(a)
+Base.:*(X::AbstractCoefficients, a::Any) = a * X
+Base.:/(X::AbstractCoefficients, a::Number) = inv(a) * X
 Base.://(X::AbstractCoefficients, a::Number) = X * 1 // a
 
-function Base.:*(X::AbstractCoefficients, a::Number)
-    return MA.operate_to!(__prealloc(X, a, *), *, X, a)
+function Base.:*(a::Any, X::AbstractCoefficients)
+    return MA.operate_to!(__prealloc(X, a, *), *, a, X)
 end
 function Base.:div(X::AbstractCoefficients, a::Number)
     return MA.operate_to!(__prealloc(X, a, div), div, X, a)
@@ -167,8 +167,8 @@ end
 function MA.operate_to!(
     res::AbstractCoefficients,
     ::typeof(*),
+    a::Any,
     X::AbstractCoefficients,
-    a::Number,
 )
     if res !== X
         MA.operate!(zero, res)
@@ -240,3 +240,25 @@ function MA.operate_to!(
     end
     return res
 end
+
+__lmul(a, k) = a * k
+__rmul(a, k) = k * a
+
+function MA.operate_to!(
+    res::AbstractCoefficients,
+    mul::Union{typeof(__lmul),typeof(__rmul)},
+    a,
+    X::AbstractCoefficients,
+)
+    if res === X
+        throw("No aliasing is allowed in shift")
+    else
+        MA.operate!(zero, res)
+        for (k, v) in nonzero_pairs(X)
+            res[mul(a, k)] += v
+        end
+    end
+    return res
+end
+
+
