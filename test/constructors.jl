@@ -111,6 +111,8 @@ end
     @test coeffs(deepcopy(a)) !== coeffs(a)
     @test parent(deepcopy(a)) === parent(a)
 
+    @test star(a) == a
+
     latex = CustomLaTeXPrint(" \$\$ \\[\\(α_β∀ \\) \\]\t  \$\$")
     a = SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG)
     # Tests that `getindex` works even if `zero(typeof(latex))` is not defined
@@ -122,5 +124,5 @@ end
     @test sprint((io, x) -> show(io, "text/latex", x),
         SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG)) ==
           "\$\$ (\\(β∀) \\cdot b·c \$\$"
-    
+
 end
