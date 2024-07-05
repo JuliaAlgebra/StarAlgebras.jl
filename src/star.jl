@@ -6,7 +6,7 @@ function star(X::AlgebraElement)
     return AlgebraElement(res, parent(X))
 end
 
-star(::AbstractBasis, x) = star(x)
+star(::AbstractBasis, x) = star.(x)
 
 function star(basis::AbstractBasis, d::SparseCoefficients)
     k = star.(Ref(basis), keys(d))
