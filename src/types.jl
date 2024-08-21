@@ -51,9 +51,12 @@ function MA.promote_operation(::typeof(basis), ::Type{<:AlgebraElement{A}}) wher
 end
 basis(a::AlgebraElement) = basis(parent(a))
 
+value_type(coeffs) = valtype(coeffs)
+value_type(::NTuple{N,T}) where {N,T} = T
+
 function AlgebraElement(coeffs, A::AbstractStarAlgebra)
     _sanity_checks(coeffs, A)
-    return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
+    return AlgebraElement{typeof(A),value_type(coeffs),typeof(coeffs)}(coeffs, A)
 end
 
 function AlgebraElement(
