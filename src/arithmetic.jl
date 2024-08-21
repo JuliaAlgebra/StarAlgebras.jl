@@ -140,10 +140,7 @@ function MA.operate_to!(
     ::typeof(*),
     args::Vararg{AlgebraElement,N},
 ) where {N}
-    for arg in args
-        @assert parent(res) == parent(arg)
-    end
-    mstr = mstructure(basis(res))
+    mstr = mstructure(parent(res), parent.(args)...)
     MA.operate_to!(coeffs(res), mstr, coeffs.(args)...)
     return res
 end
@@ -158,23 +155,9 @@ end
 function MA.operate!(
     ::UnsafeAddMul{typeof(*)},
     res::AlgebraElement,
-    A::BasisTransformation,
     args::Vararg{AlgebraElement,N},
 ) where {N}
-    mstr = mstructure(algebra(res), algebra.(args)...)
-    MA.operate!(UnsafeAddMul(mstr), coeffs(res), coeffs.(args)...)
-    return res
-end
-
-function MA.operate!(
-    ::UnsafeAddMul{typeof(*)},
-    res::AlgebraElement,
-    args::Vararg{AlgebraElement,N},
-) where {N}
-    for arg in args
-        @assert parent(res) == parent(arg)
-    end
-    mstr = mstructure(basis(res), basis.(args)...)
+    mstr = mstructure(parent(res), parent.(args)...)
     MA.operate!(UnsafeAddMul(mstr), coeffs(res), coeffs.(args)...)
     return res
 end
