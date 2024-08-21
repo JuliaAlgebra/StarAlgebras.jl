@@ -12,6 +12,13 @@ __needs_parens(a::AlgebraElement) = true
 # We could add a check with `showable` if a `Real` subtype supports it and
 # the feature is requested.
 print_coefficient(io::IO, ::MIME, coeff::Real) = print(io, coeff)
+function print_coefficient(io::IO, ::MIME"text/latex", coeff::Rational)
+    print(io, "\\frac{")
+    print(io, coeff.num)
+    print(io, "}{")
+    print(io, coeff.den)
+    print(io, "}")
+end
 # Scientific notation does not display well in LaTeX so we rewrite it
 function print_coefficient(io::IO, ::MIME"text/latex", coeff::AbstractFloat)
     s = string(coeff)
