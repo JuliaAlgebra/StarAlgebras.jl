@@ -33,6 +33,7 @@ key_type(b) = keytype(b)
 # back to `keytype{::Type{<:AbstractArray})` which returns `Int`.
 key_type(::Type{SparseArrays.SparseVector{V,K}}) where {V,K} = K
 key_type(v::SparseArrays.SparseVector) = key_type(typeof(v))
+key_type(::Tuple) = Int
 
 Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
 
@@ -260,5 +261,3 @@ function MA.operate_to!(
     end
     return res
 end
-
-
