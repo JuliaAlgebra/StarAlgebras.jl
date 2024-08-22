@@ -102,7 +102,7 @@ end
 function _show(io::IO, mime, a::AlgebraElement)
     A = parent(a)
     if iszero(a)
-        T = valtype(coeffs(a))
+        T = value_type(coeffs(a))
         _coeff_elt_print(io, mime, zero(T), first(basis(A)))
     else
         _first = true

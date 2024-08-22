@@ -24,9 +24,9 @@ provided based on random indexing. Additionally one needs to provide:
 abstract type AbstractCoefficients{K,V} end
 
 key_type(::Type{<:AbstractCoefficients{K}}) where {K} = K
-Base.valtype(::Type{<:AbstractCoefficients{K,V}}) where {K,V} = V
+value_type(::Type{<:AbstractCoefficients{K,V}}) where {K,V} = V
 key_type(b::AbstractCoefficients) = key_type(typeof(b))
-Base.valtype(b::AbstractCoefficients) = valtype(typeof(b))
+value_type(b::AbstractCoefficients) = value_type(typeof(b))
 
 key_type(b) = keytype(b)
 # `keytype(::Type{SparseVector{V,K}})` is not defined so it falls
@@ -35,9 +35,16 @@ key_type(::Type{SparseArrays.SparseVector{V,K}}) where {V,K} = K
 key_type(v::SparseArrays.SparseVector) = key_type(typeof(v))
 key_type(::Tuple) = Int
 
+value_type(coeffs) = valtype(coeffs)
+# `valtype` is not defined for `Tuple` so we need to define
+# our own function `value_type` as defining `valtype` for
+# tuples would be type piracy
+value_type(::Type{NTuple{N,T}}) where {N,T} = T
+value_type(::NTuple{N,T}) where {N,T} = T
+
 Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
 
-Base.similar(ac::AbstractCoefficients) = similar(ac, valtype(ac))
+Base.similar(ac::AbstractCoefficients) = similar(ac, value_type(ac))
 
 similar_type(::Type{<:Vector}, ::Type{T}) where {T} = Vector{T}
 similar_type(::Type{<:SparseArrays.SparseVector{C,I}}, ::Type{T}) where {C,I,T} = SparseArrays.SparseVector{T,I}
@@ -97,7 +104,7 @@ end
 
 function LinearAlgebra.dot(ac::AbstractCoefficients, bc::AbstractCoefficients)
     if isempty(values(ac)) || isempty(values(bc))
-        return zero(MA.promote_sum_mul(valtype(ac), valtype(bc)))
+        return zero(MA.promote_sum_mul(value_type(ac), value_type(bc)))
     else
         return sum(c * star(bc[i]) for (i, c) in nonzero_pairs(ac))
     end
@@ -106,7 +113,7 @@ end
 function LinearAlgebra.dot(w::AbstractVector, ac::AbstractCoefficients)
     @assert key_type(ac) <: Integer
     if isempty(values(ac))
-        return zero(MA.promote_sum_mul(eltype(w), valtype(ac)))
+        return zero(MA.promote_sum_mul(eltype(w), value_type(ac)))
     else
         return sum(w[i] * star(v) for (i, v) in nonzero_pairs(ac))
     end
@@ -115,7 +122,7 @@ end
 function LinearAlgebra.dot(ac::AbstractCoefficients, w::AbstractVector)
     @assert key_type(ac) <: Integer
     if isempty(values(ac))
-        return zero(MA.promote_sum_mul(eltype(w), valtype(ac)))
+        return zero(MA.promote_sum_mul(eltype(w), value_type(ac)))
     else
         return sum(v * star(w[i]) for (i, v) in nonzero_pairs(ac))
     end

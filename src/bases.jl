@@ -65,7 +65,7 @@ Translate coefficients `cfs` in `source::AbstractBasis` to basis
 function coeffs(cfs, source::AbstractBasis, target::AbstractBasis)
     source === target && return cfs
     source == target && return cfs
-    res = zero_coeffs(valtype(cfs), target)
+    res = zero_coeffs(value_type(cfs), target)
     return coeffs!(res, cfs, source, target)
 end
 
@@ -86,7 +86,7 @@ Return `A' * cfs` where `A` is the linear map applied by
 function adjoint_coeffs(cfs, source::AbstractBasis, target::AbstractBasis)
     source === target && return cfs
     source == target && return cfs
-    res = zero_coeffs(valtype(cfs), source)
+    res = zero_coeffs(value_type(cfs), source)
     return adjoint_coeffs!(res, cfs, source, target)
 end
 

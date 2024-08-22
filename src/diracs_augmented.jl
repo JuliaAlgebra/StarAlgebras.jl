@@ -2,7 +2,7 @@ aug(cfs::Any) = sum(values(cfs))
 aug(a::AlgebraElement) = aug(coeffs(a))
 
 function aug(ac::AbstractCoefficients)
-    isempty(keys(ac)) && return zero(valtype(ac))
+    isempty(keys(ac)) && return zero(value_type(ac))
     return sum(c * aug(x) for (x, c) in nonzero_pairs(ac))
 end
 

@@ -34,7 +34,7 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
 end
 
 Base.parent(a::AlgebraElement) = a.parent
-Base.eltype(::Type{A}) where {A<:AlgebraElement} = valtype(MA.promote_operation(coeffs, A))
+Base.eltype(::Type{A}) where {A<:AlgebraElement} = value_type(MA.promote_operation(coeffs, A))
 Base.eltype(a::AlgebraElement) = eltype(typeof(a))
 function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{A,T,V}}) where {A,T,V}
     return V
@@ -51,9 +51,6 @@ function MA.promote_operation(::typeof(basis), ::Type{<:AlgebraElement{A}}) wher
 end
 basis(a::AlgebraElement) = basis(parent(a))
 
-value_type(coeffs) = valtype(coeffs)
-value_type(::NTuple{N,T}) where {N,T} = T
-
 function AlgebraElement(coeffs, A::AbstractStarAlgebra)
     _sanity_checks(coeffs, A)
     return AlgebraElement{typeof(A),value_type(coeffs),typeof(coeffs)}(coeffs, A)
@@ -63,7 +60,7 @@ function AlgebraElement(
     coeffs::SparseCoefficients{T},
     A::AbstractStarAlgebra{O,T},
 ) where {O,T}
-    return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
+    return AlgebraElement{typeof(A),value_type(coeffs),typeof(coeffs)}(coeffs, A)
 end
 
 ### constructing elements
@@ -92,7 +89,7 @@ end
 
 Base.zero(a::AlgebraElement) = (b = similar(a); return MA.operate!(zero, b))
 Base.one(a::AlgebraElement) = one(eltype(a), parent(a))
-Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
+Base.iszero(a::AlgebraElement) = all(iszero, coeffs(a))
 
 function Base.isone(a::AlgebraElement)
     c = coeffs(a)

@@ -32,7 +32,7 @@ function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
             return zero(v)
         end
     else
-        return zero(valtype(sc))
+        return zero(value_type(sc))
     end
 end
 
@@ -112,7 +112,7 @@ function similar_type(::Type{SparseCoefficients{K,V,Vk,Vv}}, ::Type{T}) where {K
     return SparseCoefficients{K,T,_similar_type(Vk, K),_similar_type(Vv, T)}
 end
 
-function Base.similar(s::SparseCoefficients, ::Type{T} = valtype(s)) where {T}
+function Base.similar(s::SparseCoefficients, ::Type{T} = value_type(s)) where {T}
     return SparseCoefficients(collect(s.basis_elements), _similar(s.values, T))
 end
 
@@ -127,13 +127,13 @@ end
 
 ### temporary convenience? how to handle this?
 function __prealloc(X::SparseCoefficients, a::Number, op)
-    T = MA.promote_operation(op, valtype(X), typeof(a))
+    T = MA.promote_operation(op, value_type(X), typeof(a))
     return similar(X, T)
 end
 
 function __prealloc(X::SparseCoefficients, Y::SparseCoefficients, op)
     # this is not even correct for op = *
-    T = MA.promote_operation(op, valtype(X), valtype(Y))
+    T = MA.promote_operation(op, value_type(X), value_type(Y))
     return similar(X, T)
 end
 
