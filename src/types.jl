@@ -89,8 +89,7 @@ end
 
 Base.zero(a::AlgebraElement) = (b = similar(a); return MA.operate!(zero, b))
 Base.one(a::AlgebraElement) = one(eltype(a), parent(a))
-# `iszero(coeffs(a))` doesn't work if `coeffs(a) isa Tuple`
-Base.iszero(a::AlgebraElement) = all(iszero, coeffs(a))
+Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
 
 function Base.isone(a::AlgebraElement)
     c = coeffs(a)
