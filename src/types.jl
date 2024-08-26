@@ -34,7 +34,7 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
 end
 
 Base.parent(a::AlgebraElement) = a.parent
-Base.eltype(::Type{A}) where {A<:AlgebraElement} = valtype(MA.promote_operation(coeffs, A))
+Base.eltype(::Type{A}) where {A<:AlgebraElement} = value_type(MA.promote_operation(coeffs, A))
 Base.eltype(a::AlgebraElement) = eltype(typeof(a))
 function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{A,T,V}}) where {A,T,V}
     return V
@@ -53,14 +53,14 @@ basis(a::AlgebraElement) = basis(parent(a))
 
 function AlgebraElement(coeffs, A::AbstractStarAlgebra)
     _sanity_checks(coeffs, A)
-    return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
+    return AlgebraElement{typeof(A),value_type(coeffs),typeof(coeffs)}(coeffs, A)
 end
 
 function AlgebraElement(
     coeffs::SparseCoefficients{T},
     A::AbstractStarAlgebra{O,T},
 ) where {O,T}
-    return AlgebraElement{typeof(A),valtype(coeffs),typeof(coeffs)}(coeffs, A)
+    return AlgebraElement{typeof(A),value_type(coeffs),typeof(coeffs)}(coeffs, A)
 end
 
 ### constructing elements

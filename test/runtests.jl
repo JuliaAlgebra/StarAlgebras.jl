@@ -26,6 +26,7 @@ include("test_example_words.jl")
 include("test_example_acoeffs.jl")
 
 @testset "StarAlgebras" begin
+    include("basic.jl")
     # proof of concept
     using PermutationGroups
     include("perm_grp_algebra.jl")
