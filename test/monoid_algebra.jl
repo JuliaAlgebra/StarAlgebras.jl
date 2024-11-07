@@ -7,7 +7,7 @@
 
     # no caching
     fB = SA.FixedBasis(basis(RG); n = nwords(A★, 0, 8), mt = 0)
-    @test fB.table.elts === fB.elts
+    @test fB.table.elts === SA.supp(fB)
 
     fRG = StarAlgebra(A★, fB)
 
