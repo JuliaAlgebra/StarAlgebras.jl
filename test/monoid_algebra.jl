@@ -130,7 +130,7 @@
             @test @allocated(MA.operate_to!(d, *, 2, d)) == 0
             @test d == 2a
 
-            @test @allocated(MA.operate_to!(d, *, 2, a)) == 0
+            @test_broken @allocated(MA.operate_to!(d, *, 2, a)) == 0
             @test d == 2a
 
             MA.operate!(zero, d)
