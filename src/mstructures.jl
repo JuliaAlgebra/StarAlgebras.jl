@@ -74,19 +74,21 @@ function MA.operate!(::UnsafeAdd, res, b)
     return res
 end
 
+function MA.operate!(::UnsafeAddMul, res, A, α)
+    for (k, v) in nonzero_pairs(A)
+        unsafe_push!(res, k, v * α)
+    end
+end
+
 function MA.operate!(op::UnsafeAddMul, res, A, B, α)
     for (kA, vA) in nonzero_pairs(A)
         for (kB, vB) in nonzero_pairs(B)
-            for (k, v) in nonzero_pairs(op.structure(kA, kB))
-                cfs = MA.@rewrite α * vA * vB * v
-                MA.operate!(
-                    UnsafeAdd(),
-                    res,
-                    # op.structure[k] is identity (for abstract MultiplicativeStructure),
-                    # or translates to index (for MTable)
-                    SparseCoefficients((op.structure[k],), (cfs,)),
-                )
-            end
+            MA.operate!(
+                op,
+                res,
+                op.structure(kA, kB),
+                MA.@rewrite(α * vA * vB),
+            )
         end
     end
     return res

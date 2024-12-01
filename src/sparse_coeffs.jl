@@ -116,6 +116,10 @@ function Base.similar(s::SparseCoefficients, ::Type{T} = value_type(s)) where {T
     return SparseCoefficients(collect(s.basis_elements), _similar(s.values, T))
 end
 
+function map_keys(f::Function, s::SparseCoefficients)
+    return SparseCoefficients(map(f, s.basis_elements), s.values)
+end
+
 function MA.mutability(
     ::Type{<:SparseCoefficients{K,V,Vk,Vv}},
     ::typeof(canonical),

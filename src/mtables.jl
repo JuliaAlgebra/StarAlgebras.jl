@@ -50,16 +50,18 @@ function __iscomputed(mt::MTable, i, j)
     return isassigned(mt.table, i, j)
 end
 
+_map_keys(mt::MTable, coefs) = map_keys(Base.Fix1(getindex, mt), coefs)
+
 function (mt::MTable{T})(x::T, y::T) where {T}
     i = __absindex(mt, mt[x])
     j = __absindex(mt, mt[y])
-    return checkbounds(Bool, mt.table, i, j) ? mt(i, j) : mt.mstr(x, y)
+    return mt(i, j)
 end
 
 function (mt::MTable)(i::Integer, j::Integer)
     if !checkbounds(Bool, mt.table, i, j)
         x, y = mt[i], mt[j]
-        return mt.mstr(x, y)
+        return _map_keys(mt, mt.mstr(x, y))
     end
     if !__iscomputed(mt, i, j)
         lock(mt.lock) do
@@ -74,7 +76,7 @@ function (mt::MTable)(i::Integer, j::Integer)
         yield()
     end
 
-    return mt.table[i, j] # and load again
+    return _map_keys(mt, mt.table[i, j]) # and load again
 end
 
 function thread_unsafe_complete!(mt::MTable, i::Integer, j::Integer)
