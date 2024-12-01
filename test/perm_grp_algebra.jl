@@ -1,3 +1,6 @@
+using Test
+using PermutationGroups
+import StarAlgebras as SA
 @testset "POC: group algebra" begin
     G = PermGroup(perm"(1,2,3,4,5,6)", perm"(1,2)")
     g = Permutation(perm"(1,4,3,6)(2,5)", G)
@@ -17,7 +20,7 @@
     zcfs = SA.SparseCoefficients([one(G), h], [1, -1])
     xzcfs = SA.SparseCoefficients([one(G), g, h, g * h], [1, -1, -1, 1])
 
-    RG = SA.StarAlgebra(G, db)
+   RG = SA.StarAlgebra(G, db)
 
     x = SA.AlgebraElement(xcfs, RG)
     y = SA.AlgebraElement(ycfs, RG)
@@ -95,5 +98,48 @@
             count(i -> isassigned(mt, i), eachindex(mt)), length(mt)
         end
         @test a ≤ b
+    end
+
+    @testset "FiniteSupportBasis" begin
+        S1 = unique!(rand(G, 7))
+        S = unique!([S1; [a * b for a in S1 for b in S1]])
+        subb = SA.SubBasis(S, db)
+        smstr = SA.mstructure(subb)
+        @test smstr(1, 2).basis_elements[1] == subb[1] * subb[2]
+
+        sbRG = SA.StarAlgebra(G, subb)
+
+        x = let z = zeros(Int, length(SA.basis(sbRG)))
+            z[1:length(S1)] .= rand(-1:1, length(S1))
+            SA.AlgebraElement(z, sbRG)
+        end
+
+        y = let z = zeros(Int, length(SA.basis(sbRG)))
+            z[1:length(S1)] .= rand(-1:1, length(S1))
+            SA.AlgebraElement(z, sbRG)
+        end
+
+        dx = SA.AlgebraElement(SA.coeffs(x, SA.basis(RG)), RG)
+        dy = SA.AlgebraElement(SA.coeffs(y, SA.basis(RG)), RG)
+
+        @test dx + dy == SA.AlgebraElement(SA.coeffs(x + y, SA.basis(RG)), RG)
+
+        @test dx * dy == SA.AlgebraElement(SA.coeffs(x * y, SA.basis(RG)), RG)
+
+        a = SA.AlgebraElement([2], SA.StarAlgebra(G, SA.SubBasis([g], db)))
+        b = SA.AlgebraElement([-3], SA.StarAlgebra(G, SA.SubBasis([h], db)))
+        # `Base.+` assumes that using the basis of the first argument will suffice
+        # We should redefine `Base.:+(a::SubBasis, b::SubBasis)` to first
+        # convert `a` and `b` to their implicit basis equivalent and then
+        # do `+` and then convert the result back
+        # `MultivariateBases` defines an `implicit` function.
+        # Why not having an `explicit` as well ?
+        # My dream implementation would be
+        # Base.:+(a::SubBasis, b::SubBasis) = explicit(implicit(a) + implicit(b))
+        # so we just need to implement `implicit` and `explicit` 👼
+        @test_broken SA.explicit(SA.implicit(a)) == a
+        @test_broken SA.explicit(SA.implicit(b)) == b
+        @test_broken a + b == SA.explicit(SA.implicit(a) + SA.implicit(b))
+        @test_broken a * b == SA.explicit(SA.implicit(a) * SA.implicit(b))
     end
 end
