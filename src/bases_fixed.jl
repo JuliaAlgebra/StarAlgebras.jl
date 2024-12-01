@@ -19,8 +19,6 @@ Base.iterate(b::FiniteSupportBasis, state) = iterate(supp(b), state)
 #     return Base.IndexStyle(V)
 # end
 
-# To break ambiguity
-# ??
 Base.@propagate_inbounds function Base.getindex(
     b::FiniteSupportBasis,
     i::Integer,
@@ -53,25 +51,22 @@ Base.in(x, b::FixedBasis) = haskey(b.relts, x)
 Base.getindex(b::FixedBasis{T}, x::T) where {T} = b.relts[x]
 Base.getindex(b::FixedBasis, i::Integer) = b.elts[i]
 
-struct SubBasis{T,I,V,B<:AbstractBasis{T,I}} <: FiniteSupportBasis{T,I}
-    supporting_elts::V
+struct SubBasis{T,I,V<:AbstractVector{I},B<:AbstractBasis{T,I}} <:
+       FiniteSupportBasis{T,I}
+    supporting_idcs::V
     parent_basis::B
 end
 
-supp(sb::SubBasis) = sb.supporting_elts
+supp(sb::SubBasis) = sb.supporting_idcs
 Base.parent(sub::SubBasis) = sub.parent_basis
 
 Base.in(x, b::SubBasis) = x in supp(b)
 function Base.getindex(b::SubBasis{T,I}, x::T) where {T,I<:Integer}
-    k = findfirst(==(x), supp(b))
-    isnothing(k) && throw("x=$x is not supported on SubBasis")
-    @info T I
-    return convert(I, k)
+    return convert(I, parent(b)[supp(b)[x]])
 end
 
 function Base.getindex(b::SubBasis{T,T}, x::T) where {T}
-    x in supp(b) && return x
-    throw("x=$x is not supported on SubBasis")
+    parent(b)[x] in supp(b) && return x
 end
 
 struct SubMStructure{SB<:SubBasis,MS} <: MultiplicativeStructure
