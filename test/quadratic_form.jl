@@ -29,7 +29,7 @@ Base.getindex(g::Gramm, i, j) = g.matrix[i, j]
     ]
     Q = SA.QuadraticForm(Gramm(m, gbasis))
     b = basis(Q)
-    @test A(Q) == π * b[1]' * b[1]
+    @test A(Q) == π * b[1] * b[1]
 
     m = [
         0 1//2 0 0
@@ -39,7 +39,7 @@ Base.getindex(g::Gramm, i, j) = g.matrix[i, j]
     ]
     Q = SA.QuadraticForm(Gramm(m, gbasis))
     b = basis(Q)
-    @test A(Q) == 1 // 2 * b[1]' * b[2]
+    @test A(Q) == 1 // 2 * b[1] * b[2]
 
     m = [
         0 0 0 0
@@ -49,7 +49,7 @@ Base.getindex(g::Gramm, i, j) = g.matrix[i, j]
     ]
     Q = SA.QuadraticForm(Gramm(m, gbasis))
     b = basis(Q)
-    @test A(Q) == π * b[2]' * b[2] - b[2]' * b[3]
+    @test A(Q) == π * b[2] * b[2] - b[2] * b[3]
 
     m = [
         0 0 0 0
@@ -59,9 +59,15 @@ Base.getindex(g::Gramm, i, j) = g.matrix[i, j]
     ]
     Q = SA.QuadraticForm(Gramm(m, gbasis))
     b = basis(Q)
+    @test A(Q) == π * b[3] * b[2] + b[4] * b[3]
+
+    Q = SA.QuadraticForm{SA.star}(Gramm(m, gbasis))
     @test A(Q) == π * b[3]' * b[2] + b[4]' * b[3]
 
     m = ones(Int, 4, 4)
     Q = SA.QuadraticForm(Gramm(m, gbasis))
+    @test A(Q) == sum(bi * bj for bi in gbasis for bj in gbasis)
+
+    Q = SA.QuadraticForm{SA.star}(Gramm(m, gbasis))
     @test A(Q) == sum(bi' * bj for bi in gbasis for bj in gbasis)
 end

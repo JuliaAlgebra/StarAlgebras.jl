@@ -132,6 +132,14 @@ function AlgebraElement{T}(X::AlgebraElement) where {T}
     return AlgebraElement(w, parent(X))
 end
 
+"""
+    AlgebraElement(qf::QuadraticForm, A::AbstractStarAlgebra)
+Construct an algebra element in `A` representing quadratic form.
+
+!!! warning
+    It is assumed that all basis elements of `qf` belong to `A`, or at least
+    that `keys` of their coefficients can be found in the basis of `A`.
+"""
 function AlgebraElement(qf::QuadraticForm, A::AbstractStarAlgebra)
     @assert all(b -> parent(b) == A, basis(qf))
     res = zero(eltype(qf), A)
