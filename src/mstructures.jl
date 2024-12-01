@@ -61,14 +61,22 @@ function MA.operate!(::UnsafeAddMul, res, c)
     return res
 end
 
-function MA.operate!(op::UnsafeAddMul, res, b, c, args::Vararg{Any, N}) where {N}
+function MA.operate!(
+    op::UnsafeAddMul,
+    res,
+    b,
+    c,
+    args::Vararg{Any,N};
+    cfs = nothing,
+) where {N}
     for (kb, vb) in nonzero_pairs(b)
         for (kc, vc) in nonzero_pairs(c)
             for (k, v) in nonzero_pairs(op.structure(kb, kc))
+                _cfs = isnothing(cfs) ? vb * vc * v : vb * vc * v * cfs
                 MA.operate!(
                     op,
                     res,
-                    SparseCoefficients((_key(op.structure, k),), (vb * vc * v,)),
+                    SparseCoefficients((_key(op.structure, k),), (_cfs,)),
                     args...,
                 )
             end
@@ -84,4 +92,35 @@ end
 function (mstr::DiracMStructure)(x::T, y::T) where {T}
     xy = mstr.op(x, y)
     return SparseCoefficients((xy,), (1,))
+end
+
+"""
+    QuadraticForm(Q)
+A simple wrapper for representing a quadratic form.
+
+A `QuadraticForm(Q)` represents actually a **sesquilinear form** with respect to
+its basis `b`, i.e. `star.(b)·Q·b = ∑ᵢⱼ Q[i,j]·star(b[i])·b[j]`.
+
+# Necessary methods:
+ * `basis(Q)` - a **finite** basis `b` of the quadratic form;
+ * `Base.getindex(Q, i::T, j::T)` - the value at `i`-th and `j`-th basis elements
+   where `T` is the type of indicies of `basis(Q)`;
+ * `Base.eltype(Q)` - the type of `Q[i,j]`.
+"""
+struct QuadraticForm{T}
+    Q::T
+end
+
+Base.eltype(qf::QuadraticForm) = eltype(qf.Q)
+basis(qf::QuadraticForm) = basis(qf.Q)
+Base.getindex(qf::QuadraticForm, i::T, j::T) where {T} = qf.Q[i, j]
+
+function MA.operate!(op::UnsafeAddMul, res, Q::QuadraticForm)
+    for (i, b1) in pairs(basis(Q))
+        b1★ = star(b1)
+        for (j, b2) in pairs(basis(Q))
+            MA.operate!(op, res, coeffs(b1★), coeffs(b2); cfs = Q[i, j])
+        end
+    end
+    return res
 end

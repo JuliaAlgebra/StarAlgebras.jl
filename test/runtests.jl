@@ -37,6 +37,7 @@ include("test_example_acoeffs.jl")
 
     # free monoid algebra
     include("monoid_algebra.jl")
+    include("quadratic_form.jl")
 
     include("caching_allocations.jl")
 
