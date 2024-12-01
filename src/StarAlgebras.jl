@@ -8,6 +8,8 @@ import MutableArithmetics as MA
 export StarAlgebra, AlgebraElement
 export basis, coeffs, star
 
+function star end
+
 # AbstractCoefficients
 ## abstract definitions
 include("coefficients.jl")
