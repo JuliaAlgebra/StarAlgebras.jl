@@ -131,3 +131,12 @@ function AlgebraElement{T}(X::AlgebraElement) where {T}
     end
     return AlgebraElement(w, parent(X))
 end
+
+function AlgebraElement(qf::QuadraticForm, A::AbstractStarAlgebra)
+    @assert all(b -> parent(b) == A, basis(qf))
+    res = zero(eltype(qf), A)
+    MA.operate_to!(coeffs(res), mstructure(A), qf)
+    return res
+end
+
+(A::AbstractStarAlgebra)(qf::QuadraticForm) = AlgebraElement(qf, A)
