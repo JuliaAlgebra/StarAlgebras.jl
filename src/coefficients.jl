@@ -115,7 +115,7 @@ function LinearAlgebra.dot(w::AbstractVector, ac::AbstractCoefficients)
     if isempty(values(ac))
         return zero(MA.promote_sum_mul(eltype(w), value_type(ac)))
     else
-        return sum(w[i] * star(v) for (i, v) in nonzero_pairs(ac))
+        return sum(w[i] * v for (i, v) in nonzero_pairs(ac))
     end
 end
 
