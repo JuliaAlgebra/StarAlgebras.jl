@@ -131,6 +131,9 @@
             @test @allocated(MA.operate_to!(d, *, 2, a)) == 0
             @test d == 2a
 
+            @test @allocated(MA.operate_to!(d, *, 2, d)) == 0
+            @test d == 4a
+
             MA.operate_to!(d, *, a, b, 2)
             @test d == 2 * a * b
         end
