@@ -33,6 +33,7 @@ include("algebra_elts.jl")
 include("star.jl")
 
 include("arithmetic.jl")
+include("quadratic_form.jl")
 include("show.jl")
 
 # augmented basis implementation
