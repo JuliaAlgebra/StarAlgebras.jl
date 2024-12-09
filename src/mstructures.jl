@@ -31,53 +31,53 @@ When the product is not representable faithfully,
 """
 abstract type MultiplicativeStructure end
 
-"""
-    struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
-        structure::M
-    end
-
-The value of `(op::UnsafeAddMul)(a, b, c)` is `a + structure(b, c)`
-where `a` is not expected to be canonicalized before the operation `+`
-and should not be expected to be canonicalized after either.
-"""
 struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
 end
 
-function MA.operate_to!(res, ms::MultiplicativeStructure, args::Vararg{Any,N}) where {N}
-    if any(Base.Fix1(===, res), args)
-        throw(ArgumentError("No alias allowed"))
+"""
+    operate_to!(res, ms::MultiplicativeStructure, A, B[, α = true])
+Compute `α·A·B` storing the result in `res`. Return `res`.
+
+`res` is assumed to behave like `AbstractCoefficients` and not aliased with any
+other arguments.
+`A` and `B` are assumed to behave like `AbstractCoefficients`, while `α` will
+be treated as a scalar.
+
+Canonicalization of the result happens only once at the end of the operation.
+"""
+function MA.operate_to!(res, ms::MultiplicativeStructure, A, B, α = true)
+    if res === A || res === B
+        throw(
+            ArgumentError(
+                "Aliasing arguments in multiplication is not supported",
+            ),
+        )
     end
     MA.operate!(zero, res)
-    MA.operate!(UnsafeAddMul(ms), res, args...)
+    res = MA.operate_to!(res, UnsafeAddMul(ms), A, B, α)
     MA.operate!(canonical, res)
     return res
 end
 
-function MA.operate!(::UnsafeAddMul, res, c)
-    for (k, v) in nonzero_pairs(c)
+struct UnsafeAdd end
+
+function MA.operate_to!(res, ::UnsafeAdd, b)
+    for (k, v) in nonzero_pairs(b)
         unsafe_push!(res, k, v)
     end
     return res
 end
 
-function MA.operate!(
-    op::UnsafeAddMul,
-    res,
-    b,
-    c,
-    args::Vararg{Any,N};
-    cfs = nothing,
-) where {N}
-    for (kb, vb) in nonzero_pairs(b)
-        for (kc, vc) in nonzero_pairs(c)
-            for (k, v) in nonzero_pairs(op.structure(kb, kc))
-                _cfs = isnothing(cfs) ? vb * vc * v : vb * vc * v * cfs
-                MA.operate!(
-                    op,
+function MA.operate_to!(res, op::UnsafeAddMul, A, B, α = true)
+    for (kA, vA) in nonzero_pairs(A)
+        for (kB, vB) in nonzero_pairs(B)
+            for (k, v) in nonzero_pairs(op.structure(kA, kB))
+                cfs = MA.@rewrite α * vA * vB * v
+                MA.operate_to!(
                     res,
-                    SparseCoefficients((_key(op.structure, k),), (_cfs,)),
-                    args...,
+                    UnsafeAdd(),
+                    SparseCoefficients((_key(op.structure, k),), (cfs,)),
                 )
             end
         end

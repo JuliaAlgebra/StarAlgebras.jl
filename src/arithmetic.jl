@@ -60,10 +60,6 @@ for op in [:+, :-, :*]
     end
 end
 
-function Base.:*(args::Vararg{AlgebraElement,N}) where {N}
-    return MA.operate_to!(_preallocate_output(*, args...), *, args...)
-end
-
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
 # mutable API
@@ -130,7 +126,8 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    @assert parent(res) === parent(X) === parent(Y)
+    @assert parent(res) == parent(X)
+    @assert parent(X) == parent(Y)
     MA.operate_to!(coeffs(res), -, coeffs(X), coeffs(Y))
     return res
 end
@@ -138,26 +135,28 @@ end
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
-    args::Vararg{AlgebraElement,N},
-) where {N}
-    for arg in args
-        @assert parent(res) == parent(arg)
-    end
+    A::AlgebraElement,
+    B::AlgebraElement,
+    α = true,
+)
+    @assert parent(res) == parent(A)
+    @assert parent(res) == parent(B)
     mstr = mstructure(basis(res))
-    MA.operate_to!(coeffs(res), mstr, coeffs.(args)...)
+    MA.operate_to!(coeffs(res), mstr, coeffs(A), coeffs(B), α)
     return res
 end
 
-function MA.operate!(
-    ::UnsafeAddMul{typeof(*)},
+function MA.operate_to!(
     res::AlgebraElement,
-    args::Vararg{AlgebraElement,N},
-) where {N}
-    for arg in args
-        @assert parent(res) == parent(arg)
-    end
+    mul::UnsafeAddMul{typeof(*)},
+    A::AlgebraElement,
+    B::AlgebraElement,
+    α = true,
+)
+    @assert parent(res) == parent(A)
+    @assert parent(res) == parent(B)
     mstr = mstructure(basis(res))
-    MA.operate!(UnsafeAddMul(mstr), coeffs(res), coeffs.(args)...)
+    MA.operate_to!(coeffs(res), mul, coeffs(A), coeffs(B), α)
     return res
 end
 
