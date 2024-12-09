@@ -127,11 +127,12 @@
             @test_throws ArgumentError MA.operate_to!(d, *, d, b)
 
             d = deepcopy(a)
-            @test @allocated(MA.operate_to!(d, *, 2, d)) == 0
-            @test d == 2a
-
+            MA.operate_to!(d, *, 2, a) # preallocates memory in coefficients
             @test @allocated(MA.operate_to!(d, *, 2, a)) == 0
             @test d == 2a
+
+            @test @allocated(MA.operate_to!(d, *, 2, d)) == 0
+            @test d == 4a
 
             MA.operate_to!(d, *, a, b, 2)
             @test d == 2 * a * b
