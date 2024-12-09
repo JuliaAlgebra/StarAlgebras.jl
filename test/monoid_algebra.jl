@@ -133,11 +133,8 @@
             @test @allocated(MA.operate_to!(d, *, 2, a)) == 0
             @test d == 2a
 
-            MA.operate!(zero, d)
-            MA.operate!(SA.UnsafeAddMul(*), d, a, b, b)
-            MA.operate!(SA.canonical, SA.coeffs(d))
-            @test a * b^2 == *(a, b, b)
-            @test d == *(a, b, b)
+            MA.operate_to!(d, *, a, b, 2)
+            @test d == 2 * a * b
         end
     end
 end
