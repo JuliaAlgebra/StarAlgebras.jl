@@ -37,7 +37,7 @@ function MA.operate_to!(
     for (i, b1) in pairs(basis(Q))
         b1★ = ε(b1)
         for (j, b2) in pairs(basis(Q))
-            MA.operate_to!(res, op, coeffs(b1★), coeffs(b2), Q[i, j])
+            MA.operate!(op, res, coeffs(b1★), coeffs(b2), Q[i, j])
         end
     end
     MA.operate!(canonical, res)

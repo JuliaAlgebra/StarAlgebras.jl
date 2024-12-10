@@ -143,12 +143,12 @@ function MA.operate_to!(
     return res
 end
 
-function MA.operate_to!(
-    res::AlgebraElement,
+function MA.operate!(
     mul::UnsafeAddMul,
+    res::AlgebraElement,
     ABC::Vararg{AlgebraElement,N},
 ) where {N}
-    MA.operate_to!(coeffs(res), mul, map(coeffs, ABC)..., true)
+    MA.operate!(mul, coeffs(res), map(coeffs, ABC)..., true)
     return res
 end
 
