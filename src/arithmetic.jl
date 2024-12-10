@@ -135,28 +135,20 @@ end
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
-    A::AlgebraElement,
-    B::AlgebraElement,
-    α = true,
-)
-    @assert parent(res) == parent(A)
-    @assert parent(res) == parent(B)
+    ABC::Vararg{AlgebraElement,N},
+) where {N}
+    @assert allequal(parent, (res, ABC...))
     mstr = mstructure(basis(res))
-    MA.operate_to!(coeffs(res), mstr, coeffs(A), coeffs(B), α)
+    MA.operate_to!(coeffs(res), mstr, map(coeffs, ABC)..., true)
     return res
 end
 
 function MA.operate_to!(
     res::AlgebraElement,
-    mul::UnsafeAddMul{typeof(*)},
-    A::AlgebraElement,
-    B::AlgebraElement,
-    α = true,
-)
-    @assert parent(res) == parent(A)
-    @assert parent(res) == parent(B)
-    mstr = mstructure(basis(res))
-    MA.operate_to!(coeffs(res), mul, coeffs(A), coeffs(B), α)
+    mul::UnsafeAddMul,
+    ABC::Vararg{AlgebraElement,N},
+) where {N}
+    MA.operate_to!(coeffs(res), mul, map(coeffs, ABC)..., true)
     return res
 end
 
