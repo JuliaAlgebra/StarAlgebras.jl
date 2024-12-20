@@ -1,13 +1,13 @@
-struct Gramm{T,B}
+struct Gram{T,B}
     matrix::T
     basis::B
 end
 
-function Base.eltype(g::Gramm)
+function Base.eltype(g::Gram)
     return promote_type(eltype(g.matrix), eltype(eltype(basis(g))))
 end
-SA.basis(g::Gramm) = g.basis
-Base.getindex(g::Gramm, i, j) = g.matrix[i, j]
+SA.basis(g::Gram) = g.basis
+Base.getindex(g::Gram, i, j) = g.matrix[i, j]
 
 @testset "QuadraticForm" begin
     A = let alph = [:a, :b, :c]
@@ -27,7 +27,7 @@ Base.getindex(g::Gramm, i, j) = g.matrix[i, j]
         0 0 0 0
         0 0 0 0
     ]
-    Q = SA.QuadraticForm(Gramm(m, gbasis))
+    Q = SA.QuadraticForm(Gram(m, gbasis))
     b = basis(Q)
     @test A(Q) == π * b[1] * b[1]
 
@@ -37,7 +37,7 @@ Base.getindex(g::Gramm, i, j) = g.matrix[i, j]
         0 0 0 0
         0 0 0 0
     ]
-    Q = SA.QuadraticForm(Gramm(m, gbasis))
+    Q = SA.QuadraticForm(Gram(m, gbasis))
     b = basis(Q)
     @test A(Q) == 1 // 2 * b[1] * b[2]
 
@@ -47,7 +47,7 @@ Base.getindex(g::Gramm, i, j) = g.matrix[i, j]
         0 0 0 0
         0 0 0 0
     ]
-    Q = SA.QuadraticForm(Gramm(m, gbasis))
+    Q = SA.QuadraticForm(Gram(m, gbasis))
     b = basis(Q)
     @test A(Q) == π * b[2] * b[2] - b[2] * b[3]
 
@@ -57,17 +57,18 @@ Base.getindex(g::Gramm, i, j) = g.matrix[i, j]
         0 π 0 0
         0 0 1 0
     ]
-    Q = SA.QuadraticForm(Gramm(m, gbasis))
+    Q = SA.QuadraticForm(Gram(m, gbasis))
     b = basis(Q)
     @test A(Q) == π * b[3] * b[2] + b[4] * b[3]
 
-    Q = SA.QuadraticForm{SA.star}(Gramm(m, gbasis))
+    Q = SA.QuadraticForm{SA.star}(Gram(m, gbasis))
     @test A(Q) == π * b[3]' * b[2] + b[4]' * b[3]
 
     m = ones(Int, 4, 4)
-    Q = SA.QuadraticForm(Gramm(m, gbasis))
+    Q = SA.QuadraticForm(Gram(m, gbasis))
     @test A(Q) == sum(bi * bj for bi in gbasis for bj in gbasis)
 
-    Q = SA.QuadraticForm{SA.star}(Gramm(m, gbasis))
+    Q = SA.QuadraticForm{SA.star}(Gram(m, gbasis))
     @test A(Q) == sum(bi' * bj for bi in gbasis for bj in gbasis)
+
 end
