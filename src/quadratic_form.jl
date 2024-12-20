@@ -34,18 +34,16 @@ function MA.operate_to!(
     args...,
 )
     MA.operate!(zero, res)
-    MA.operate!(UnsafeAdd(), res, ms, Q, args...)
+    MA.operate!(UnsafeAddMul(ms), res, Q, args...)
     MA.operate!(canonical, res)
     return res
 end
 
 function MA.operate!(
-    ::UnsafeAdd,
+    op::UnsafeAddMul,
     res,
-    ms::MultiplicativeStructure,
     Q::QuadraticForm{T,ε},
 ) where {T,ε}
-    op = UnsafeAddMul(ms)
     for (i, b1) in pairs(basis(Q))
         b1★ = ε(b1)
         for (j, b2) in pairs(basis(Q))
@@ -55,13 +53,11 @@ function MA.operate!(
 end
 
 function MA.operate!(
-    ::UnsafeAdd,
+    op::UnsafeAddMul,
     res,
-    ms::MultiplicativeStructure,
     Q::QuadraticForm{T,ε},
     p,
 ) where {T,ε}
-    op = UnsafeAddMul(ms)
     for (i, b1) in pairs(basis(Q))
         b1★ = ε(b1)
         for (j, b2) in pairs(basis(Q))
