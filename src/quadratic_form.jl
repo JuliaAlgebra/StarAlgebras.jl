@@ -30,9 +30,21 @@ Base.getindex(qf::QuadraticForm, i::T, j::T) where {T} = qf.Q[i, j]
 function MA.operate_to!(
     res,
     ms::MultiplicativeStructure,
+    Q::QuadraticForm,
+    args...,
+)
+    MA.operate!(zero, res)
+    MA.operate!(UnsafeAdd(), res, ms, Q, args...)
+    MA.operate!(canonical, res)
+    return res
+end
+
+function MA.operate!(
+    ::UnsafeAdd,
+    res,
+    ms::MultiplicativeStructure,
     Q::QuadraticForm{T,ε},
 ) where {T,ε}
-    MA.operate!(zero, res)
     op = UnsafeAddMul(ms)
     for (i, b1) in pairs(basis(Q))
         b1★ = ε(b1)
@@ -40,8 +52,22 @@ function MA.operate_to!(
             MA.operate!(op, res, coeffs(b1★), coeffs(b2), Q[i, j])
         end
     end
-    MA.operate!(canonical, res)
-    return res
+end
+
+function MA.operate!(
+    ::UnsafeAdd,
+    res,
+    ms::MultiplicativeStructure,
+    Q::QuadraticForm{T,ε},
+    p,
+) where {T,ε}
+    op = UnsafeAddMul(ms)
+    for (i, b1) in pairs(basis(Q))
+        b1★ = ε(b1)
+        for (j, b2) in pairs(basis(Q))
+            MA.operate!(op, res, coeffs(b1★), coeffs(b2), coeffs(p), Q[i, j])
+        end
+    end
 end
 
 """
