@@ -152,6 +152,11 @@ function MA.operate!(
     return res
 end
 
+function MA.operate!(add::UnsafeAdd, res::AlgebraElement, A::AlgebraElement)
+    MA.operate!(add, coeffs(res), coeffs(A))
+    return res
+end
+
 # TODO just push to internal vectors once canonical `does` not just
 # call `dropzeros!` but also reorders
 function unsafe_push!(a::SparseArrays.SparseVector, k, v)
