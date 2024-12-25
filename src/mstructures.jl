@@ -36,7 +36,7 @@ struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
 end
 
 """
-    operate_to!(res, ms::MultiplicativeStructure, A, B[, α = true])
+    operate_to!(res, ms::MultiplicativeStructure, A, B, α)
 Compute `α·A·B` storing the result in `res`. Return `res`.
 
 `res` is assumed to behave like `AbstractCoefficients` and not aliased with any
