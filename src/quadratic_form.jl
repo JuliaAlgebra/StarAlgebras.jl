@@ -31,10 +31,9 @@ function MA.operate_to!(
     res,
     ms::MultiplicativeStructure,
     Q::QuadraticForm,
-    args...,
 )
     MA.operate!(zero, res)
-    MA.operate!(UnsafeAddMul(ms), res, Q, args...)
+    MA.operate!(UnsafeAddMul(ms), res, Q)
     MA.operate!(canonical, res)
     return res
 end
@@ -48,20 +47,6 @@ function MA.operate!(
         b1★ = ε(b1)
         for (j, b2) in pairs(basis(Q))
             MA.operate!(op, res, coeffs(b1★), coeffs(b2), Q[i, j])
-        end
-    end
-end
-
-function MA.operate!(
-    op::UnsafeAddMul,
-    res,
-    Q::QuadraticForm{T,ε},
-    p,
-) where {T,ε}
-    for (i, b1) in pairs(basis(Q))
-        b1★ = ε(b1)
-        for (j, b2) in pairs(basis(Q))
-            MA.operate!(op, res, coeffs(b1★), coeffs(b2), coeffs(p), Q[i, j])
         end
     end
 end

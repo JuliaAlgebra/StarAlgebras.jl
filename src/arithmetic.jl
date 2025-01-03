@@ -146,9 +146,14 @@ end
 function MA.operate!(
     mul::UnsafeAddMul,
     res::AlgebraElement,
-    ABC::Vararg{AlgebraElement,N},
-) where {N}
-    MA.operate!(mul, coeffs(res), map(coeffs, ABC)..., true)
+    A::AlgebraElement,
+    B::AlgebraElement,
+    α = true,
+)
+    # ABC::Vararg{AlgebraElement,N},
+    # ) where {N}
+    MA.operate!(mul, coeffs(res), coeffs(A), coeffs(B), α)
+    # MA.operate!(mul, coeffs(res), map(coeffs, ABC)..., true)
     return res
 end
 
