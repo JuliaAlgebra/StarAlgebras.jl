@@ -40,6 +40,11 @@ function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{A,T,V}}) w
     return V
 end
 coeffs(a::AlgebraElement) = a.coeffs
+
+function MA.operate!(T::typeof(canonical), a::AlgebraElement)
+    return MA.operate!(T, coeffs(a))
+end
+
 function coeffs(x::AlgebraElement, b::AbstractBasis)
     return coeffs(coeffs(x), basis(x), b)
 end
