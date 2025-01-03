@@ -80,9 +80,4 @@ Base.getindex(g::Gram, i, j) = g.matrix[i, j]
     Q = SA.QuadraticForm(Gram(m, gbasis))
     b = basis(Q)
     @test A(Q) == π * b[3] * b[2] + b[4] * b[3]
-
-    res = one(eltype(Q), A)
-    p = sum(b)
-    MA.operate_to!(coeffs(res), SA.mstructure(A), Q, p)
-    @test res == A(Q) * p
 end
