@@ -46,7 +46,7 @@ function MA.operate!(
     for (i, b1) in pairs(basis(Q))
         b1★ = ε(b1)
         for (j, b2) in pairs(basis(Q))
-            MA.operate!(op, res, coeffs(b1★), coeffs(b2), Q[i, j])
+            MA.operate!(op, res, b1★, b2, Q[i, j])
         end
     end
 end
@@ -62,7 +62,7 @@ Construct an algebra element in `A` representing quadratic form `qf`.
 function AlgebraElement(qf::QuadraticForm, A::AbstractStarAlgebra)
     @assert all(b -> parent(b) == A, basis(qf))
     res = zero(eltype(qf), A)
-    MA.operate_to!(coeffs(res), mstructure(A), qf)
+    MA.operate_to!(res, mstructure(A), qf)
     return res
 end
 
