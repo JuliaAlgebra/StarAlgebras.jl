@@ -59,7 +59,7 @@ function MA.operate_to!(
         )
     end
     MA.operate!(zero, res)
-    res = MA.operate!(UnsafeAddMul(ms), res, args...)
+    MA.operate!(UnsafeAddMul(ms), res, args...)
     MA.operate!(canonical, res)
     return res
 end
@@ -73,27 +73,16 @@ function MA.operate!(::UnsafeAdd, res, b)
     return res
 end
 
+function MA.operate!(::UnsafeAddMul, res, A, α)
+    for (k, v) in nonzero_pairs(A)
+        unsafe_push!(res, k, v * α)
+    end
+end
+
 function MA.operate!(op::UnsafeAddMul, res, A, B, α)
     for (kA, vA) in nonzero_pairs(A)
         for (kB, vB) in nonzero_pairs(B)
-            for (k, v) in nonzero_pairs(op.structure(kA, kB))
-                cfs = MA.@rewrite α * vA * vB * v
-                MA.operate!(
-                    UnsafeAdd(),
-                    res,
-                    SparseCoefficients((_key(op.structure, k),), (cfs,)),
-                )
-            end
-        end
-    end
-    return res
-end
-
-function MA.operate!(op::UnsafeAddMul, res, A, B, C, α)
-    for (kA, vA) in nonzero_pairs(A)
-        for (kB, vB) in nonzero_pairs(B)
-            cfs = MA.@rewrite α * vA * vB
-            MA.operate!(op, res, op.structure(kA, kB), C, cfs)
+            MA.operate!(op, res, op.structure(kA, kB), α * vA * vB)
         end
     end
     return res

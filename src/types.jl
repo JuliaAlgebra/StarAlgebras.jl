@@ -98,15 +98,11 @@ Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
 
 function Base.isone(a::AlgebraElement)
     c = coeffs(a)
-    A = parent(a)
-    cfs1 = SparseCoefficients((one(object(A)),), (1,))
-
-    if basis(A) isa DiracBasis
-        return c == cfs1
-    else
-        dc = coeffs(c, basis(a), DiracBasis(object(parent(a))))
-        return dc == cfs1
+    if !isone(length(nonzero_pairs(c)))
+        return false
     end
+    key, coef = only(nonzero_pairs(c))
+    return isone(coef) && isone(basis(a)[key])
 end
 
 function (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T}

@@ -28,25 +28,27 @@ basis(qf::QuadraticForm) = basis(qf.Q)
 Base.getindex(qf::QuadraticForm, i::T, j::T) where {T} = qf.Q[i, j]
 
 function MA.operate_to!(
-    res,
-    ms::MultiplicativeStructure,
+    res::AlgebraElement,
+    ::typeof(copy),
     Q::QuadraticForm,
 )
     MA.operate!(zero, res)
-    MA.operate!(UnsafeAddMul(ms), res, Q)
+    MA.operate!(UnsafeAdd(), res, Q)
     MA.operate!(canonical, res)
     return res
 end
 
 function MA.operate!(
-    op::UnsafeAddMul,
+    ::UnsafeAdd,
     res,
     Q::QuadraticForm{T,ε},
 ) where {T,ε}
+    b = basis(Q)
+    mstr = mstructure(basis(res))
     for (i, b1) in pairs(basis(Q))
         b1★ = ε(b1)
         for (j, b2) in pairs(basis(Q))
-            MA.operate!(op, res, b1★, b2, Q[i, j])
+            MA.operate!(UnsafeAddMul(*), coeffs(res), mstr(basis(res)[b1★], basis(res)[b2]), Q[i, j])
         end
     end
 end
