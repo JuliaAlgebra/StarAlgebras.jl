@@ -51,12 +51,8 @@ be treated as a scalar.
 
 Canonicalization of the result happens only once at the end of the operation.
 """
-function MA.operate_to!(
-    res,
-    ms::MultiplicativeStructure,
-    args::Vararg{Any,N},
-) where {N}
-    if any(Base.Fix1(===, res), args)
+function MA.operate_to!(res, ms::MultiplicativeStructure, A, B, α = true)
+    if any(Base.Fix1(===, res), (A, B))
         throw(
             ArgumentError(
                 "Aliasing arguments in multiplication is not supported",
@@ -64,7 +60,7 @@ function MA.operate_to!(
         )
     end
     MA.operate!(zero, res)
-    res = MA.operate!(UnsafeAddMul(ms), res, args...)
+    res = MA.operate!(UnsafeAddMul(ms), res, A, B, α)
     MA.operate!(canonical, res)
     return res
 end
@@ -91,16 +87,6 @@ function MA.operate!(op::UnsafeAddMul, res, A, B, α)
                     SparseCoefficients((op.structure[k],), (cfs,)),
                 )
             end
-        end
-    end
-    return res
-end
-
-function MA.operate!(op::UnsafeAddMul, res, A, B, C, α)
-    for (kA, vA) in nonzero_pairs(A)
-        for (kB, vB) in nonzero_pairs(B)
-            cfs = MA.@rewrite α * vA * vB
-            MA.operate!(op, res, op.structure(kA, kB), C, cfs)
         end
     end
     return res
