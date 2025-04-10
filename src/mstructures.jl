@@ -31,6 +31,11 @@ When the product is not representable faithfully,
 """
 abstract type MultiplicativeStructure end
 
+# this should be identity unless mstructure uses internal integer indexing
+# like MTable does, then this should return the index, similarly to what
+# getindex for basis does.
+Base.getindex(::MultiplicativeStructure, x) = x
+
 struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
 end
@@ -81,7 +86,9 @@ function MA.operate!(op::UnsafeAddMul, res, A, B, α)
                 MA.operate!(
                     UnsafeAdd(),
                     res,
-                    SparseCoefficients((_key(op.structure, k),), (cfs,)),
+                    # op.structure[k] is identity (for abstract MultiplicativeStructure),
+                    # or translates to index (for MTable)
+                    SparseCoefficients((op.structure[k],), (cfs,)),
                 )
             end
         end
