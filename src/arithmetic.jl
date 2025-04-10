@@ -135,11 +135,12 @@ end
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
-    ABC::Vararg{AlgebraElement,N},
-) where {N}
-    @assert allequal(parent, (res, ABC...))
+    A::AlgebraElement,
+    B::AlgebraElement
+)
+    @assert allequal(parent, (res, A, B))
     mstr = mstructure(basis(res))
-    MA.operate_to!(coeffs(res), mstr, map(coeffs, ABC)..., true)
+    MA.operate_to!(coeffs(res), mstr, coeffs(A), coeffs(B), true)
     return res
 end
 
@@ -150,10 +151,7 @@ function MA.operate!(
     B::AlgebraElement,
     α = true,
 )
-    # ABC::Vararg{AlgebraElement,N},
-    # ) where {N}
     MA.operate!(mul, coeffs(res), coeffs(A), coeffs(B), α)
-    # MA.operate!(mul, coeffs(res), map(coeffs, ABC)..., true)
     return res
 end
 
