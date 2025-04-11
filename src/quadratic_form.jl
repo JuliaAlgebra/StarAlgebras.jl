@@ -28,27 +28,33 @@ basis(qf::QuadraticForm) = basis(qf.Q)
 Base.getindex(qf::QuadraticForm, i::T, j::T) where {T} = qf.Q[i, j]
 
 function MA.operate_to!(
-    res,
-    ms::MultiplicativeStructure,
+    res::AlgebraElement,
+    ::typeof(+),
     Q::QuadraticForm,
 )
     MA.operate!(zero, res)
-    MA.operate!(UnsafeAddMul(ms), res, Q)
+    MA.operate!(UnsafeAdd(), res, Q)
     MA.operate!(canonical, res)
     return res
 end
 
 function MA.operate!(
-    op::UnsafeAddMul,
-    res,
+    ::UnsafeAdd,
+    res::AlgebraElement,
     Q::QuadraticForm{T,ε},
 ) where {T,ε}
+    op = UnsafeAddMul(mstructure(basis(res)))
     for (i, b1) in pairs(basis(Q))
         b1★ = ε(b1)
         for (j, b2) in pairs(basis(Q))
             MA.operate!(op, res, b1★, b2, Q[i, j])
         end
     end
+end
+
+function MA.operate!(op::UnsafeAddMul, res::AlgebraElement{A,T}, b1::T, b2::T, a) where {A, T}
+    b = basis(res)
+    return MA.operate!(op, coeffs(res), mstructure(b)(b[b1], b[b2]), a)
 end
 
 """
@@ -62,7 +68,7 @@ Construct an algebra element in `A` representing quadratic form `qf`.
 function AlgebraElement(qf::QuadraticForm, A::AbstractStarAlgebra)
     @assert all(b -> parent(b) == A, basis(qf))
     res = zero(eltype(qf), A)
-    MA.operate_to!(res, mstructure(A), qf)
+    MA.operate_to!(res, +, qf)
     return res
 end
 
