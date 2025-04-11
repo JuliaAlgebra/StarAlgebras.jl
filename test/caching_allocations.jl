@@ -49,19 +49,15 @@ end
     @test_throws SA.UndefRefError all(!iszero, SA.mstructure(fRG).table)
 
     @static if v"1.10" ≤ VERSION
-        @test (@allocations Y * Y) > k^2 - 2 * k
+        @test (@allocations Y * Y) > 2(k^2 - 2 * k)
         @test Y * Y isa AlgebraElement
-        @test (@allocations Y * Y) ≤ 26
-    else
-        k1 = @allocated Y * Y
-        @test Y * Y isa AlgebraElement
-        Y * Y
-        k2 = @allocated Y * Y
-        @test k2 / k1 < 0.7
+        res = SA._preallocate_output(*, Y, Y)
+        @test @allocations(SA._preallocate_output(*, Y, Y)) ≤ 10
+        MA.operate_to!(res, *, Y, Y) # makes sure res is of right size
+        @test (@allocations MA.operate_to!(res, *, Y, Y)) ≤ 1
     end
 
     @test all(!iszero, SA.mstructure(fRG).table)
-
 
     @static if v"1.10" ≤ VERSION
         YY = deepcopy(Y)
