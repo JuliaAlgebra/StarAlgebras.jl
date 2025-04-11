@@ -138,7 +138,8 @@ function MA.operate_to!(
     A::AlgebraElement,
     B::AlgebraElement
 )
-    @assert allequal(parent, (res, A, B))
+    @assert parent(res) == parent(A)
+    @assert parent(A) == parent(B)
     mstr = mstructure(basis(res))
     MA.operate_to!(coeffs(res), mstr, coeffs(A), coeffs(B), true)
     return res
