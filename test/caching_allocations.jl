@@ -1,11 +1,8 @@
-# `@allocations` is not defined on Julia v1.6
-@static if v"1.10" ≤ VERSION
-    function _alloc_test(output, op, a, b, allocs)
-        MA.operate_to!(output, op, a, b)
-        expected = op(a, b)
-        @test @allocations(MA.operate_to!(output, op, a, b)) <= allocs
-        @test output == expected
-    end
+function _alloc_test(output, op, a, b, allocs)
+    MA.operate_to!(output, op, a, b)
+    expected = op(a, b)
+    @test @allocations(MA.operate_to!(output, op, a, b)) <= allocs
+    @test output == expected
 end
 
 function _test_op(op, a, b)
@@ -30,12 +27,9 @@ end
     @test Y == sum(fRG(basis(fRG)[i]) for i in 1:k)
 
     @test Y isa AlgebraElement
-
-    @static if v"1.10" ≤ VERSION
-        star(Y)
-        star(Y)
-        @test (@allocations star(Y)) ≤ 6
-    end
+    star(Y)
+    @allocations star(Y)
+    @test (@allocations star(Y)) ≤ 6
 
     @test SA.supp(Y) == basis(fRG)[1:k]
 
@@ -48,27 +42,23 @@ end
     @test all(!iszero(mstr.table))
     @test_throws SA.UndefRefError all(!iszero, SA.mstructure(fRG).table)
 
-    @static if v"1.10" ≤ VERSION
-        @test (@allocations Y * Y) > 2(k^2 - 2 * k)
-        @test Y * Y isa AlgebraElement
-        res = SA._preallocate_output(*, Y, Y)
-        @test @allocations(SA._preallocate_output(*, Y, Y)) ≤ 10
-        MA.operate_to!(res, *, Y, Y) # makes sure res is of right size
-        @test (@allocations MA.operate_to!(res, *, Y, Y)) ≤ 1
-    end
+    @test (@allocations Y * Y) > 2(k^2 - 2 * k)
+    @test Y * Y isa AlgebraElement
+    res = SA._preallocate_output(*, Y, Y)
+    @test @allocations(SA._preallocate_output(*, Y, Y)) ≤ 10
+    MA.operate_to!(res, *, Y, Y) # makes sure res is of right size
+    @test (@allocations MA.operate_to!(res, *, Y, Y)) ≤ 1
 
     @test all(!iszero, SA.mstructure(fRG).table)
 
-    @static if v"1.10" ≤ VERSION
-        YY = deepcopy(Y)
-        _alloc_test(YY, *, Y, Y, 25)
-        _alloc_test(YY, +, Y, Y, 0)
-        _alloc_test(YY, -, Y, Y, 0)
+    YY = deepcopy(Y)
+    _alloc_test(YY, *, Y, Y, 0)
+    _alloc_test(YY, +, Y, Y, 0)
+    _alloc_test(YY, -, Y, Y, 0)
 
-        # SparseArrays calls `Base.unalias` which allocates:
-        _alloc_test(YY, +, YY, Y, 4)
-        _alloc_test(YY, +, Y, YY, 4)
-    end
+    # SparseArrays calls `Base.unalias` which allocates:
+    _alloc_test(YY, +, YY, Y, 4)
+    _alloc_test(YY, +, Y, YY, 4)
 end
 
 @testset "tuple" begin
