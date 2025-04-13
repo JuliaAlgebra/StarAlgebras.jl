@@ -1,3 +1,6 @@
+# This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
+# Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
+
 function Base.show(io::IO, A::AbstractStarAlgebra)
     ioc = IOContext(io, :limit => true, :compact => true)
     return print(ioc, "*-algebra of ", object(A))

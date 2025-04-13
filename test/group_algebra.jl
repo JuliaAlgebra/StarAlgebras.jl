@@ -1,3 +1,6 @@
+# This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
+# Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
+
 @testset "Permutation group algebra: arithmetic " begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
     b = SA.DiracBasis(G)

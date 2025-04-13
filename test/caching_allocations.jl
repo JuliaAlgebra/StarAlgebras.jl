@@ -1,11 +1,11 @@
-# `@allocations` is not defined on Julia v1.6
-@static if v"1.10" ≤ VERSION
-    function _alloc_test(output, op, a, b, allocs)
-        MA.operate_to!(output, op, a, b)
-        expected = op(a, b)
-        @test @allocations(MA.operate_to!(output, op, a, b)) <= allocs
-        @test output == expected
-    end
+# This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
+# Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
+
+function _alloc_test(output, op, a, b, allocs)
+    MA.operate_to!(output, op, a, b)
+    expected = op(a, b)
+    @test @allocations(MA.operate_to!(output, op, a, b)) <= allocs
+    @test output == expected
 end
 
 function _test_op(op, a, b)
