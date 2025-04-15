@@ -56,7 +56,7 @@ _map_keys(mt::MTable, coefs) = map_keys(Base.Fix1(getindex, mt), coefs)
 (mt::MTable{T})(x::T, y::T) where {T} = mt(x, y, T)
 (mt::MTable{T,I})(x::Integer, y::Integer) where {T,I} = mt(x, y, I)
 
-function (mt::MTable{T})(x::T, y::T, ::Type{U}) where {U}
+function (mt::MTable{T})(x::T, y::T, ::Type{U}) where {T,U}
     i = __absindex(mt, mt[x])
     j = __absindex(mt, mt[y])
     return mt(i, j, U)
