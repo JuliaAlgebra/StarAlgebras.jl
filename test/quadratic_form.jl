@@ -1,18 +1,21 @@
-struct Gram{U,T,B}
+struct Gram{T,B}
     matrix::T
     basis::B
 end
 
-function Gram{U}(matrix, basis) where {U}
-    return Gram{U,typeof(matrix),typeof(basis)}(matrix, basis)
+function Base.eltype(g::Gram)
+    T = eltype(g.matrix)
+    basis_eltype = eltype(basis(g))
+    U = if basis_eltype <: SA.AlgebraElement
+        # We will multiply with the coefficients of these `AlgebraElement`
+        promote_type(T, eltype(basis_eltype))
+    else
+        # We will multiply with the basis elements which will be keys of
+        # the `SparseCoefficients` so we won't multiply with any other coefficient
+        T
+    end
+    return MA.promote_operation(+, U, U)
 end
-
-function Gram(matrix, basis)
-    U = promote_type(eltype(matrix), eltype(eltype(basis)))
-    return Gram{U}(matrix, basis)
-end
-
-Base.eltype(::Gram{U}) where {U} = U
 
 SA.basis(g::Gram) = g.basis
 Base.getindex(g::Gram, i, j) = g.matrix[i, j]
@@ -118,7 +121,7 @@ end
         false true  false
         true  false true
     ]
-    Q = SA.QuadraticForm(Gram{Int}(m, explicit))
+    Q = SA.QuadraticForm(Gram(m, explicit))
     A = SA.StarAlgebra(nothing, implicit)
     @test A(Q) == SA.AlgebraElement(
         SA.SparseCoefficients(

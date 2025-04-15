@@ -51,7 +51,9 @@ function __iscomputed(mt::MTable, i, j)
 end
 
 _map_keys(mt::MTable, coefs) = map_keys(Base.Fix1(getindex, mt), coefs)
-(mt::MTable{T,I})(x, y, ::Type{I}) where {T,I} = _map_keys(mt, mt(x, y, T))
+function (mt::MTable{T,I})(x, y, ::Type{I}) where {T,I}
+    return map_keys(Base.Fix1(getindex, mt), mt(x, y, T))
+end
 
 (mt::MTable{T})(x::T, y::T) where {T} = mt(x, y, T)
 (mt::MTable{T,I})(x::Integer, y::Integer) where {T,I} = mt(x, y, I)
