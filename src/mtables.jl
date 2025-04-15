@@ -9,7 +9,7 @@ Multiplicative table, stored explicitly as an AbstractMatrix{I}.
     mt[-i, j] == b[star(b[i])*b[j]]
     ```
 """
-struct MTable{T,I,V<:AbstractVector,M<:AbstractMatrix,Ms} <:
+struct MTable{T,I<:Integer,V<:AbstractVector,M<:AbstractMatrix,Ms} <:
        MultiplicativeStructure
     elts::V
     relts::Dict{T,I}
@@ -51,17 +51,21 @@ function __iscomputed(mt::MTable, i, j)
 end
 
 _map_keys(mt::MTable, coefs) = map_keys(Base.Fix1(getindex, mt), coefs)
+(mt::MTable{T,I})(x, y, ::Type{I}) where {T,I} = _map_keys(mt, mt(x, y, T))
 
-function (mt::MTable{T})(x::T, y::T) where {T}
+(mt::MTable{T})(x::T, y::T) where {T} = mt(x, y, T)
+(mt::MTable{T,I})(x::Integer, y::Integer) where {T,I} = mt(x, y, I)
+
+function (mt::MTable{T})(x::T, y::T, ::Type{U}) where {U}
     i = __absindex(mt, mt[x])
     j = __absindex(mt, mt[y])
-    return mt(i, j)
+    return mt(i, j, U)
 end
 
-function (mt::MTable)(i::Integer, j::Integer)
+function (mt::MTable{T})(i::Integer, j::Integer, ::Type{T}) where {T}
     if !checkbounds(Bool, mt.table, i, j)
         x, y = mt[i], mt[j]
-        return _map_keys(mt, mt.mstr(x, y))
+        return mt.mstr(x, y)
     end
     if !__iscomputed(mt, i, j)
         lock(mt.lock) do
@@ -75,7 +79,7 @@ function (mt::MTable)(i::Integer, j::Integer)
         yield()
     end
 
-    return _map_keys(mt, mt.table[i, j]) # and load again
+    return mt.table[i, j] # and load again
 end
 
 function thread_unsafe_complete!(mt::MTable, i::Integer, j::Integer)
