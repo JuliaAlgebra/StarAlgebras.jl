@@ -90,6 +90,7 @@ Base.getindex(g::Gram, i, j) = g.matrix[i, j]
     @test A(Q) == π * b[3] * b[2] + b[4] * b[3]
 end
 
+# An`ImplicitBasis` that simply maps its keys (`Int`s) to basis elements (`Float64`s). 
 struct IntToFloat <: SA.ImplicitBasis{Float64,Int} end
 SA.mstructure(::IntToFloat) = SA.DiracMStructure(*)
 Base.first(::IntToFloat) = 1.0
