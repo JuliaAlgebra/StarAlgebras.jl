@@ -25,7 +25,7 @@ function supp(a::AlgebraElement)
     return [b[i] for (i, _) in nonzero_pairs(coeffs(a))]
 end
 
-function LinearAlgebra.norm(a::AlgebraElement, p::Real)
+function LinearAlgebra.norm(a::AlgebraElement, p::Real=2)
     return LinearAlgebra.norm(coeffs(a), p)
 end
 
@@ -37,5 +37,6 @@ function LinearAlgebra.dot(w::AbstractVector, b::AlgebraElement)
     return LinearAlgebra.dot(w, coeffs(b))
 end
 function LinearAlgebra.dot(a::AlgebraElement, w::AbstractVector)
+    @assert key_type(basis(parent(a))) <: Integer
     return LinearAlgebra.dot(coeffs(a), w)
 end

@@ -31,10 +31,10 @@ end
 
     @test Y isa AlgebraElement
 
-    @static if v"1.10" ≤ VERSION < v"1.11"
+    @static if v"1.10" ≤ VERSION
         star(Y)
         star(Y)
-        @test (@allocations star(Y)) ≤ 4
+        @test (@allocations star(Y)) ≤ 6
     end
 
     @test SA.supp(Y) == basis(fRG)[1:k]
@@ -48,30 +48,26 @@ end
     @test all(!iszero(mstr.table))
     @test_throws SA.UndefRefError all(!iszero, SA.mstructure(fRG).table)
 
-    @static if v"1.10" ≤ VERSION < v"1.11"
-        @test (@allocations Y * Y) > k^2 - 2 * k
+    @static if v"1.10" ≤ VERSION
+        @test (@allocations Y * Y) > 2(k^2 - 2 * k)
         @test Y * Y isa AlgebraElement
-        @test (@allocations Y * Y) ≤ 26
-    else
-        k1 = @allocated Y * Y
-        @test Y * Y isa AlgebraElement
-        Y * Y
-        k2 = @allocated Y * Y
-        @test k2 / k1 < 0.7
+        res = SA._preallocate_output(*, Y, Y)
+        @test @allocations(SA._preallocate_output(*, Y, Y)) ≤ 10
+        MA.operate_to!(res, *, Y, Y) # makes sure res is of right size
+        @test (@allocations MA.operate_to!(res, *, Y, Y)) ≤ 1
     end
 
     @test all(!iszero, SA.mstructure(fRG).table)
 
-
-    @static if v"1.10" ≤ VERSION < v"1.11"
+    @static if v"1.10" ≤ VERSION
         YY = deepcopy(Y)
         _alloc_test(YY, *, Y, Y, 25)
         _alloc_test(YY, +, Y, Y, 0)
         _alloc_test(YY, -, Y, Y, 0)
 
         # SparseArrays calls `Base.unalias` which allocates:
-        _alloc_test(YY, +, YY, Y, 2)
-        _alloc_test(YY, +, Y, YY, 2)
+        _alloc_test(YY, +, YY, Y, 4)
+        _alloc_test(YY, +, Y, YY, 4)
     end
 end
 

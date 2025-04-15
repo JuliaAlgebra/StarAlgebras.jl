@@ -92,9 +92,6 @@ function complete!(mt::MTable)
     return mt
 end
 
-_key(_, k) = k
-_key(mstr::MTable, k) = mstr[k]
-
 function MA.operate!(
     ms::UnsafeAddMul{<:MTable},
     res::AbstractSparseVector,

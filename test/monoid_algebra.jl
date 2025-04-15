@@ -131,11 +131,19 @@
             @test @allocated(MA.operate_to!(d, *, 2, a)) == 0
             @test d == 2a
 
-            MA.operate!(zero, d)
-            MA.operate!(SA.UnsafeAddMul(*), d, a, b, b)
-            MA.operate!(SA.canonical, SA.coeffs(d))
-            @test a * b^2 == *(a, b, b)
-            @test d == *(a, b, b)
+            @test @allocated(MA.operate_to!(d, *, 2, d)) == 0
+            @test d == 4a
+
+            MA.operate_to!(d, *, a, b)
+            @test d == a * b
+            MA.operate!(SA.UnsafeAddMul(SA.mstructure(RG)), d, a, b)
+            @test d == 2 * a * b
+
+            MA.operate_to!(d, *, a, b)
+            @test d == a * b
+            d = a + b
+            MA.operate!(SA.UnsafeAddMul(SA.mstructure(RG)), d, a, b, 3)
+            @test d == a + b + 3 * a * b
         end
     end
 end

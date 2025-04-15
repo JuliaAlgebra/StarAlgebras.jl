@@ -8,6 +8,8 @@ import MutableArithmetics as MA
 export StarAlgebra, AlgebraElement
 export basis, coeffs, star
 
+function star end
+
 # AbstractCoefficients
 ## abstract definitions
 include("coefficients.jl")
@@ -31,6 +33,7 @@ include("algebra_elts.jl")
 include("star.jl")
 
 include("arithmetic.jl")
+include("quadratic_form.jl")
 include("show.jl")
 
 # augmented basis implementation
