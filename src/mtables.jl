@@ -50,7 +50,6 @@ function __iscomputed(mt::MTable, i, j)
     return isassigned(mt.table, i, j)
 end
 
-_map_keys(mt::MTable, coefs) = map_keys(Base.Fix1(getindex, mt), coefs)
 function (mt::MTable{T,I})(x, y, ::Type{I}) where {T,I}
     return map_keys(Base.Fix1(getindex, mt), mt(x, y, T))
 end
