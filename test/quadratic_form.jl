@@ -7,8 +7,19 @@ struct Gram{T,B}
 end
 
 function Base.eltype(g::Gram)
-    return promote_type(eltype(g.matrix), eltype(eltype(basis(g))))
+    T = eltype(g.matrix)
+    basis_eltype = eltype(basis(g))
+    U = if basis_eltype <: SA.AlgebraElement
+        # We will multiply with the coefficients of these `AlgebraElement`
+        promote_type(T, eltype(basis_eltype))
+    else
+        # We will multiply with the basis elements which will be keys of
+        # the `SparseCoefficients` so we won't multiply with any other coefficient
+        T
+    end
+    return MA.promote_operation(+, U, U)
 end
+
 SA.basis(g::Gram) = g.basis
 Base.getindex(g::Gram, i, j) = g.matrix[i, j]
 
@@ -83,4 +94,46 @@ Base.getindex(g::Gram, i, j) = g.matrix[i, j]
     Q = SA.QuadraticForm(Gram(m, gbasis))
     b = basis(Q)
     @test A(Q) == π * b[3] * b[2] + b[4] * b[3]
+end
+
+# An`ImplicitBasis` that simply maps its keys (`Int`s) to basis elements (`Float64`s). 
+struct IntToFloat <: SA.ImplicitBasis{Float64,Int} end
+SA.mstructure(::IntToFloat) = SA.DiracMStructure(*)
+Base.first(::IntToFloat) = 1.0
+Base.getindex(::IntToFloat, i::Int) = convert(Float64, i)
+Base.getindex(::IntToFloat, i::Float64) = convert(Int, i)
+
+struct SubBasis{T,I,V<:AbstractVector{I},B<:SA.ImplicitBasis{T,I}} <: SA.ExplicitBasis{Float64,Int}
+    implicit::B
+    indices::V
+end
+Base.length(b::SubBasis) = length(b.indices)
+function Base.iterate(b::SubBasis, args...)
+    elem_state = iterate(b.indices, args...)
+    if isnothing(elem_state)
+        return
+    end
+    return b.implicit[elem_state[1]], elem_state[2]
+end
+
+@testset "IntToFloat basis" begin
+    implicit = IntToFloat()
+    explicit = SubBasis(implicit, 1:3)
+    m = Bool[
+        true  false true
+        false true  false
+        true  false true
+    ]
+    Q = SA.QuadraticForm(Gram(m, explicit))
+    A = SA.StarAlgebra(nothing, implicit)
+    @test A(Q) == SA.AlgebraElement(
+        SA.SparseCoefficients(
+            [1.0, 3.0, 4.0, 9.0],
+            [1, 2, 1, 1],
+        ),
+        A,
+    )
+    mt = SA.MTable(float.(1:6), SA.DiracMStructure(*), (0, 0))
+    @test mt(2.0, 3.0) == SA.SparseCoefficients([6.0], [1])
+    @test mt(2.0, 3.0) == mt(2, 3)
 end

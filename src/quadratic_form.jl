@@ -55,7 +55,7 @@ function MA.operate!(
     end
 end
 
-function MA.operate!(op::UnsafeAddMul, res::AlgebraElement{A,T}, b1::T, b2::T, a) where {A, T}
+function MA.operate!(op::UnsafeAddMul, res::AlgebraElement{A}, b1::T, b2::T, a) where {O,T,A<:AbstractStarAlgebra{O,T}}
     b = basis(res)
     return MA.operate!(op, coeffs(res), mstructure(b)(b[b1], b[b2]), a)
 end
@@ -69,7 +69,9 @@ Construct an algebra element in `A` representing quadratic form `qf`.
     that `keys` of their coefficients can be found in the basis of `A`.
 """
 function AlgebraElement(qf::QuadraticForm, A::AbstractStarAlgebra)
-    @assert all(b -> parent(b) == A, basis(qf))
+    @assert all(basis(qf)) do b
+        return !isa(b, AlgebraElement) || parent(b) == A
+    end
     res = zero(eltype(qf), A)
     MA.operate_to!(res, +, qf)
     return res

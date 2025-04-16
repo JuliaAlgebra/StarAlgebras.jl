@@ -12,7 +12,7 @@ Multiplicative table, stored explicitly as an AbstractMatrix{I}.
     mt(-i, j) == b[star(b[i])*b[j]]
     ```
 """
-struct MTable{T,I,V<:AbstractVector,M<:AbstractMatrix,Ms} <:
+struct MTable{T,I<:Integer,V<:AbstractVector,M<:AbstractMatrix,Ms} <:
        MultiplicativeStructure
     elts::V
     relts::Dict{T,I}
@@ -53,13 +53,20 @@ function __iscomputed(mt::MTable, i, j)
     return isassigned(mt.table, i, j)
 end
 
-function (mt::MTable{T})(x::T, y::T) where {T}
-    i = __absindex(mt, mt[x])
-    j = __absindex(mt, mt[y])
-    return checkbounds(Bool, mt.table, i, j) ? mt(i, j) : mt.mstr(x, y)
+function (mt::MTable{T,I})(x, y, ::Type{I}) where {T,I}
+    return map_keys(Base.Fix1(getindex, mt), mt(x, y, T))
 end
 
-function (mt::MTable)(i::Integer, j::Integer)
+(mt::MTable{T})(x::T, y::T) where {T} = mt(x, y, T)
+(mt::MTable{T,I})(x::Integer, y::Integer) where {T,I} = mt(x, y, I)
+
+function (mt::MTable{T})(x::T, y::T, ::Type{U}) where {T,U}
+    i = __absindex(mt, mt[x])
+    j = __absindex(mt, mt[y])
+    return mt(i, j, U)
+end
+
+function (mt::MTable{T})(i::Integer, j::Integer, ::Type{T}) where {T}
     if !checkbounds(Bool, mt.table, i, j)
         x, y = mt[i], mt[j]
         return mt.mstr(x, y)
