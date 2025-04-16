@@ -32,7 +32,7 @@ Implements
 When the product is not representable faithfully,
    `ProductNotWellDefined` exception should be thrown.
 """
-abstract type MultiplicativeStructure end
+abstract type MultiplicativeStructure{T} end
 
 # this should be identity unless mstructure uses internal integer indexing
 # like MTable does, then this should return the index, similarly to what

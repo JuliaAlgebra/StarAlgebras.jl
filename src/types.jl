@@ -14,21 +14,16 @@ function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
 end
 
 # concrete implementation
-struct StarAlgebra{O,T,B<:AbstractBasis{T}} <: AbstractStarAlgebra{O,T}
+struct StarAlgebra{O,T,M<:MStructure{T}} <: AbstractStarAlgebra{O,T}
     object::O
-    basis::B
-
-    function StarAlgebra(obj, basis::AbstractBasis)
-        O = typeof(obj)
-        T = eltype(basis)
-        B = typeof(basis)
-
-        return new{O,T,B}(obj, basis)
-    end
+    mstructure::M
 end
 
-basis(A::StarAlgebra) = A.basis
-MA.promote_operation(::typeof(basis), ::Type{StarAlgebra{O,T,B}}) where {O,T,B} = B
+mstructure(A::StarAlgebra) = a.mstructure
+basis(A::StarAlgebra) = basis(mstructure(A))
+function MA.promote_operation(::typeof(basis), ::Type{StarAlgebra{O,T,M}}) where {O,T,M}
+    return MA.promote_operation(bass, M)
+end
 object(A::StarAlgebra) = A.object
 
 struct AlgebraElement{A,T,V} <: MA.AbstractMutable
