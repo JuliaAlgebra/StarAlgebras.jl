@@ -113,7 +113,7 @@ function Base.iterate(b::SubBasis, args...)
     return b.implicit[elem_state[1]], elem_state[2]
 end
 
-@testset "Dummy" begin
+@testset "IntToFloat basis" begin
     implicit = IntToFloat()
     explicit = SubBasis(implicit, 1:3)
     m = Bool[
