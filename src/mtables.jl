@@ -3,10 +3,10 @@
 Multiplicative table, stored explicitly as an AbstractMatrix{I}.
 
 !!! note
-    Accessing `mt[i,j]` with negative indices returns the product of
+    Accessing `mt(i,j)` with negative indices returns the product of
     `star`ed basis elements, i.e.
     ```julia
-    mt[-i, j] == b[star(b[i])*b[j]]
+    mt(-i, j) == b[star(b[i])*b[j]]
     ```
 """
 struct MTable{T,I,V<:AbstractVector,M<:AbstractMatrix,Ms} <:
@@ -67,6 +67,7 @@ function (mt::MTable)(i::Integer, j::Integer)
         end
     end
 
+    # TODO remove for v1.12 https://github.com/JuliaLang/julia/pull/54707
     res = mt.table[i, j] # load
     while res != mt.table[i, j] # compare
         res = mt.table[i, j] # and load again
@@ -79,6 +80,8 @@ end
 function thread_unsafe_complete!(mt::MTable, i::Integer, j::Integer)
     g, h = mt[i], mt[j]
     gh_cfs = mt.mstr(g, h)
+    # TODO use atomic for v1.12 https://github.com/JuliaLang/julia/pull/54707
+    #      but then we'll have to use `AtomicMemory`
     mt.table[i, j] = gh_cfs
     return mt
 end
