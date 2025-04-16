@@ -1,3 +1,6 @@
+# This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
+# Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
+
 Base.hash(a::AlgebraElement, h::UInt) = hash(coeffs(a), hash(parent(a), h))
 
 function Base.:(==)(X::AlgebraElement, Y::AlgebraElement)

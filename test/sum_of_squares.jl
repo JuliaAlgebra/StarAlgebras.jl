@@ -1,3 +1,6 @@
+# This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
+# Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
+
 @testset "sum of squares in FreeGroup *-algebra" begin
     F = Groups.FreeGroup(4)
     S = [Groups.gens(F); inv.(Groups.gens(F))]

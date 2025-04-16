@@ -1,3 +1,6 @@
+# This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
+# Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
+
 @testset "POC: group algebra" begin
     G = PermGroup(perm"(1,2,3,4,5,6)", perm"(1,2)")
     g = Permutation(perm"(1,4,3,6)(2,5)", G)
