@@ -31,8 +31,9 @@ function MTable(
     @assert length(basis) ≥ last(dims)
 
     starof = [basis[star(x)] for x in basis]
-    table = Matrix{T}(undef, dims)
-    @assert !isbitstype(T) || dims == (0, 0)
+    C = typeof(mstr(first(basis), first(basis)))
+    table = Matrix{C}(undef, dims)
+    @assert !isbitstype(C) || dims == (0, 0)
 
     return MTable(basis, mstr, starof, table, Base.Threads.SpinLock())
 end

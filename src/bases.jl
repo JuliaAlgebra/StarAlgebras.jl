@@ -50,7 +50,8 @@ Explicit bases are stored e.g. in an `AbstractVector` and hence immutable
 """
 abstract type ExplicitBasis{T,I} <: AbstractBasis{T,I} end
 
-Base.keys(ib::ExplicitBasis) = Base.OneTo(length(ib))
+Base.keys(eb::ExplicitBasis) = Base.OneTo(length(eb))
+Base.size(eb::ExplicitBasis) = (length(eb),)
 
 function zero_coeffs(::Type{S}, eb::ExplicitBasis{T,I}) where {S,T,I}
     return spzeros(S, I, length(eb))
