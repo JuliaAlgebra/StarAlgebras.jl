@@ -71,7 +71,7 @@
     end
     @testset "Fixed Basis" begin
         m = PermutationGroups.order(UInt16, G)
-        fb = SA.FixedBasis(collect(G), (m, m))
+        fb = SA.FixedBasis(collect(G))
 
         @test fb[fb[g]] == g
 
