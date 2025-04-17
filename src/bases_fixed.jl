@@ -9,6 +9,7 @@ end
 
 function FixedBasis{T,I}(elts::AbstractVector{T}) where {T,I}
     relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
+
     return FixedBasis{T,I,typeof(elts)}(elts, relts)
 end
 
@@ -20,7 +21,7 @@ end
 
 FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} = FixedBasis{T,typeof(n)}(basis; n)
 
-Base.in(x, b::FixedBasis) = haskey(mstructure(b), x)
+Base.in(x, b::FixedBasis) = haskey(b.relts, x)
 Base.getindex(b::FixedBasis{T}, x::T) where {T} = b.relts[x]
 Base.getindex(b::FixedBasis, i::Integer) = b.elts[i]
 

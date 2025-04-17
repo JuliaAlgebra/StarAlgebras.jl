@@ -121,6 +121,10 @@ struct DiracMStructure{T,I,B<:AbstractBasis{T,I},Op} <: MultiplicativeStructure{
     op::Op
 end
 
+function MA.promote_operation(::typeof(basis), ::Type{<:DiracMStructure{T,I,B}}) where {T,I,B}
+    return B
+end
+
 function (mstr::DiracMStructure{T})(x::T, y::T, ::Type{T}) where {T}
     xy = mstr.op(x, y)
     return SparseCoefficients((xy,), (1,))

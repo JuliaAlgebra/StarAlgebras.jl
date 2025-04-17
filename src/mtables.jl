@@ -38,6 +38,13 @@ function MTable(
     return MTable(basis, mstr, starof, table, Base.Threads.SpinLock())
 end
 
+function MTable(
+    basis::AbstractBasis{T,I},
+    dims::NTuple{2,I},
+) where {T,I<:Integer}
+    return MTable(basis, DiracMStructure(basis, *), dims)
+end
+
 Base.@propagate_inbounds function __absindex(mt::MTable, i::Integer)
     return ifelse(i > 0, i, oftype(i, mt.starof[abs(i)]))
 end

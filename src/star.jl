@@ -5,22 +5,25 @@ Base.adjoint(a::AlgebraElement) = star(a)
 star(x::Any) = x'
 
 function star(X::AlgebraElement)
-    res = star(basis(X), coeffs(X))
+    res = star(mstructure(X), coeffs(X))
     return AlgebraElement(res, parent(X))
 end
 
-star(::AbstractBasis, x) = star(x)
+star(::MultiplicativeStructure, x) = star(x)
 
-function star(basis::AbstractBasis, d::SparseCoefficients)
-    k = star.(Ref(basis), keys(d))
+function star(mstr::MultiplicativeStructure, d::SparseCoefficients)
+    k = star.(Ref(mstr), keys(d))
     v = star.(values(d))
     return SparseCoefficients(k, v)
 end
 
-function star(basis::FixedBasis, coeffs::SparseVector)
-    nzidcs = mstructure(basis).starof[SparseArrays.nonzeroinds(coeffs)]
+function star(mstr::MTable{T}, el::T) where T
+    return basis(mstr)[mstr.starof[basis(mstr)[el]]]
+end
+
+function star(mstr::MTable, coeffs::SparseVector)
+    nzidcs = mstr.starof[SparseArrays.nonzeroinds(coeffs)]
     nzvals = star.(SparseArrays.nonzeros(coeffs))
 
-    v = SparseVector(length(coeffs), nzidcs, nzvals)
-    return v
+    return SparseVector(length(coeffs), nzidcs, nzvals)
 end

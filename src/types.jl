@@ -17,10 +17,12 @@ struct StarAlgebra{O,T,M<:MultiplicativeStructure{T}} <: AbstractStarAlgebra{O,T
     mstructure::M
 end
 
+StarAlgebra(object, basis::AbstractBasis) = StarAlgebra(object, DiracMStructure(basis, *))
+
 mstructure(A::StarAlgebra) = A.mstructure
 basis(A::StarAlgebra) = basis(mstructure(A))
 function MA.promote_operation(::typeof(basis), ::Type{StarAlgebra{O,T,M}}) where {O,T,M}
-    return MA.promote_operation(bass, M)
+    return MA.promote_operation(basis, M)
 end
 object(A::StarAlgebra) = A.object
 
