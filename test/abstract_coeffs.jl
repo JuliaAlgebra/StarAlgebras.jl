@@ -4,6 +4,11 @@
 @testset "Abstract coefficients" begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
     RG = StarAlgebra(G, SA.DiracBasis(G))
+
+    A = SA.AlgebraElement(SA.SparseCoefficients(collect(G), Float64.(1:6)), RG)
+    B = SA.AlgebraElement(SA.SparseCoefficients(collect(G)[2:2], [-1]), RG)
+    @test (A - B)^2 == A^2 - A * B - B * A + B^2
+
     fRG = let RG = RG, n = UInt32(length(basis(RG)))
         fb = SA.FixedBasis(basis(RG); n = n)
         StarAlgebra(SA.object(RG), fb)
