@@ -52,7 +52,7 @@ Base.in(g::T, b::MappedBasis{T}) where {T} = haskey(b, b.inverse_map(g))
 Base.haskey(b::MappedBasis{T,I}, k::I) where {T,I} = k in object(b)
 
 function Base.getindex(b::MappedBasis{T}, x::T) where {T}
-    return b.unmap(x)
+    return b.inverse_map(x)
 end
 
 function Base.getindex(b::MappedBasis{T,I}, x::I) where {T,I}
