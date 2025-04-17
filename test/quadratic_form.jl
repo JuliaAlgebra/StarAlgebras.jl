@@ -32,7 +32,7 @@ Base.getindex(g::Gram, i, j) = g.matrix[i, j]
     gbasis = let (id, a, b, c) = A.(Iterators.take(SA.object(A), 4))
         # basis has to be star-invariant:
         bas = 1.0 * [one(A), (a + b) / 2, (a + c) / 2, (b + c) / 2]
-        SA.FixedBasis(bas, SA.DiracMStructure(*))
+        SA.FixedBasis(bas)
     end
 
     m = [
@@ -96,12 +96,12 @@ Base.getindex(g::Gram, i, j) = g.matrix[i, j]
     @test A(Q) == π * b[3] * b[2] + b[4] * b[3]
 end
 
-# An`ImplicitBasis` that simply maps its keys (`Int`s) to basis elements (`Float64`s). 
+# An`ImplicitBasis` that simply maps its keys (`Int`s) to basis elements (`Float64`s).
 struct IntToFloat <: SA.ImplicitBasis{Float64,Int} end
-SA.mstructure(::IntToFloat) = SA.DiracMStructure(*)
 Base.first(::IntToFloat) = 1.0
 Base.getindex(::IntToFloat, i::Int) = convert(Float64, i)
 Base.getindex(::IntToFloat, i::Float64) = convert(Int, i)
+Base.require_one_based_indexing(::IntToFloat) = nothing
 
 struct SubBasis{T,I,V<:AbstractVector{I},B<:SA.ImplicitBasis{T,I}} <: SA.ExplicitBasis{Float64,Int}
     implicit::B
@@ -133,7 +133,7 @@ end
         ),
         A,
     )
-    mt = SA.MTable(float.(1:6), SA.DiracMStructure(*), (0, 0))
+    mt = SA.MTable(implicit, (0, 0))
     @test mt(2.0, 3.0) == SA.SparseCoefficients([6.0], [1])
     @test mt(2.0, 3.0) == mt(2, 3)
 end

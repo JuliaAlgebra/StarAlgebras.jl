@@ -95,7 +95,7 @@ end
 
 mstructure(db::AugmentedBasis) = AugmentedMStructure(mstructure(db.basis))
 
-struct AugmentedMStructure{M<:DiracMStructure} <: MultiplicativeStructure
+struct AugmentedMStructure{T,I,M<:DiracMStructure{T,I}} <: MultiplicativeStructure{T,I}
     op::M
 end
 

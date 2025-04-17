@@ -75,7 +75,7 @@
 
         @test fb[fb[g]] == g
 
-        fRG = SA.StarAlgebra(G, SA.MTable(fb, SA.DiracMStructure(fb, *), (m, m)))
+        fRG = SA.StarAlgebra(G, SA.MTable(fb, (m, m)))
 
         rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
         r = SA.AlgebraElement(rcfs, RG)

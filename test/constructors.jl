@@ -97,7 +97,7 @@ end
     @test sprint(show, Z) == "2.0·(id) + 1.0·b·c"
     @test sprint(show, 2one(RG) - RG(p)) == "2·(id) - 1·b·c"
     @test sprint(show, (2 + im) * one(RG) - (3im) * RG(p)) == "(2 + 1im)·(id) + (0 - 3im)·b·c"
-    
+
     @test sprint(print, (2 + im) * one(RG) - (3im) * RG(p)) == "(2 + 1im)·(id) + (0 - 3im)·b·c"
     @test sprint(show, 1e-9 * one(RG)) == "1.0e-9·(id)"
     @test sprint((io, x) -> show(io, "text/latex", x), 1e-9 * one(RG)) == "\$\$ 1.0 \\cdot 10^{-9} \\cdot (id) \$\$"
@@ -125,5 +125,5 @@ end
     @test sprint((io, x) -> show(io, "text/latex", x),
         SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG)) ==
           "\$\$ (\\(β∀) \\cdot b·c \$\$"
-    
+
 end
