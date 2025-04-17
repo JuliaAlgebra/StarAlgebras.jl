@@ -19,6 +19,7 @@ mutable struct MappedBasis{T,I,S,F,U} <: ImplicitBasis{T,I}
 
     function MappedBasis{T,I}(itr, map, inverse_map) where {T,I}
         @assert !isempty(itr)
+        @assert T != I || (map == inverse_map == identity)
         return new{T,I,typeof(itr),typeof(map),typeof(inverse_map)}(itr, map, inverse_map)
     end
 end

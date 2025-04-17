@@ -14,6 +14,10 @@ end
 @testset "Algebra and Elements" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
+    # If the map does not change the type then it should be `Base.identity`
+    @test_throws AssertionError SA.MappedBasis(A★, i -> i * one(A★), i -> i * inv(one(A★)))
+    @test_throws AssertionError SA.MappedBasis(A★, i -> i * one(A★), identity)
+    @test_throws AssertionError SA.MappedBasis(A★, identity, i -> i * inv(one(A★)))
     B = SA.identity_basis(A★)
     RG = StarAlgebra(A★, B)
     @test typeof(@inferred basis(RG)) == MA.promote_operation(basis, typeof(RG))
