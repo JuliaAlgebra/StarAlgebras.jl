@@ -14,7 +14,7 @@ function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
 end
 
 # concrete implementation
-struct StarAlgebra{O,T,M<:MStructure{T}} <: AbstractStarAlgebra{O,T}
+struct StarAlgebra{O,T,M<:MultiplicativeStructure{T}} <: AbstractStarAlgebra{O,T}
     object::O
     mstructure::M
 end

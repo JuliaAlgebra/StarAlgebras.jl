@@ -51,6 +51,8 @@ end
 Base.haskey(mstr::MultiplicativeStructure, x) = haskey(mstr.basis, x)
 Base.getindex(mstr::MultiplicativeStructure, x) = basis(mstr)[x]
 
+basis(mstr::MultiplicativeStructure) = mstr.basis
+
 struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
 end
@@ -109,7 +111,7 @@ function MA.operate!(op::UnsafeAddMul, res, A, B, α)
     return res
 end
 
-struct DiracMStructure{T,I,B<:AbstractBasis{T,I},Op} <: MultiplicativeStructure{T}
+struct DiracMStructure{T,I,B<:AbstractBasis{T,I},Op} <: MultiplicativeStructure{T,I}
     basis::B
     op::Op
 end

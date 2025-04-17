@@ -6,9 +6,8 @@
     g = Permutation(perm"(1,4,3,6)(2,5)", G)
     h = Permutation(perm"(2,4,5,1)", G)
 
-    db = SA.DiracBasis(G)
-    @test SA.mstructure(db) == SA.DiracMStructure(*)
-    @test SA.mstructure(db)(g, h) == SA.SparseCoefficients((g * h,), (1,))
+    mstr = SA.DiracMStructure(G, *)
+    @test mstr(g, h) == SA.SparseCoefficients((g * h,), (1,))
 
     @test db[g] == g
     @test db[db[g]] == g

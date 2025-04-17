@@ -2,7 +2,7 @@
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
 """
-    MTable{T, I} <: MultiplicativeStructure{T}
+    MTable{T, I} <: MultiplicativeStructure{T,I}
 Multiplicative table, stored explicitly as an AbstractMatrix{I}.
 
 !!! note
@@ -13,7 +13,7 @@ Multiplicative table, stored explicitly as an AbstractMatrix{I}.
     ```
 """
 struct MTable{T,I<:Integer,B<:AbstractBasis{T,I},Ms,M<:AbstractMatrix} <:
-       MultiplicativeStructure
+       MultiplicativeStructure{T,I}
     basis::B
     mstr::Ms
     starof::Vector{I}
