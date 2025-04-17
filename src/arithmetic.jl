@@ -143,7 +143,7 @@ function MA.operate_to!(
 )
     @assert parent(res) == parent(A)
     @assert parent(A) == parent(B)
-    mstr = mstructure(basis(res))
+    mstr = mstructure(res)
     MA.operate_to!(coeffs(res), mstr, coeffs(A), coeffs(B), true)
     return res
 end

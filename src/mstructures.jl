@@ -48,6 +48,11 @@ function (mstr::MultiplicativeStructure{T,I})(x::I, y::I) where {T,I}
     return mstr(x, y, I)
 end
 
+# To break ambiguity for `DiracBasis` for which `T` and `I` are the same
+function (mstr::MultiplicativeStructure{T,T})(x::T, y::T) where {T}
+    return mstr(x, y, T)
+end
+
 Base.haskey(mstr::MultiplicativeStructure, x) = haskey(mstr.basis, x)
 Base.getindex(mstr::MultiplicativeStructure, x) = basis(mstr)[x]
 
@@ -127,4 +132,10 @@ end
 
 function (mstr::DiracMStructure{T,I})(x::I, y::I, ::Type{U}) where {T,I,U}
     return mstr(mstr[x], mstr[y], U)
+end
+
+# To break ambiguity for `DiracBasis` for which `T` and `I` are the same
+function (mstr::DiracMStructure{T,T})(x::T, y::T, ::Type{T}) where {T}
+    xy = mstr.op(x, y)
+    return SparseCoefficients((xy,), (1,))
 end

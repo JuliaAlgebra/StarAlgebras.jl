@@ -22,7 +22,7 @@ end
     fB = SA.FixedBasis(B; n = nwords(A★, 8), mt = UInt32(nwords(A★, 4)))
     fRG = StarAlgebra(A★, fB)
 
-    k = size(SA.mstructure(basis(fRG)), 1)
+    k = size(SA.mstructure(fRG), 1)
 
     y = spzeros(length(basis(fRG)))
     y[1:k] .= 1
