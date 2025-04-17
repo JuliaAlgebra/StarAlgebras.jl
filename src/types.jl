@@ -3,8 +3,6 @@
 
 abstract type AbstractStarAlgebra{O,T} end
 
-mstructure(A::AbstractStarAlgebra) = mstructure(basis(A))
-
 function _sanity_checks(coeffs, A::AbstractStarAlgebra)
     @assert key_type(coeffs) == key_type(basis(A))
 end
@@ -32,6 +30,7 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
 end
 
 Base.parent(a::AlgebraElement) = a.parent
+mstructure(a::AlgebraElement) = mstructure(parent(a))
 Base.eltype(::Type{A}) where {A<:AlgebraElement} = value_type(MA.promote_operation(coeffs, A))
 Base.eltype(a::AlgebraElement) = eltype(typeof(a))
 function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{A,T,V}}) where {A,T,V}
