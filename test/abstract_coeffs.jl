@@ -4,7 +4,7 @@
 @testset "Abstract coefficients" begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
     RG = StarAlgebra(G, SA.DiracBasis(G))
-    fRG = let RG = RG, n = length(basis(RG))
+    fRG = let RG = RG, n = UInt32(length(basis(RG)))
         fb = SA.FixedBasis(basis(RG); n = n)
         StarAlgebra(SA.object(RG), fb)
     end
@@ -12,8 +12,6 @@
     h = Permutation(perm"(2,3)", G)
 
     α, β = let a = fRG(1), b = fRG(h)
-        @show SA.key_type(coeffs(a, basis(fRG)))
-        @show SA.key_type(ACoeffs(coeffs(a, basis(fRG))))
         x = AlgebraElement(ACoeffs(coeffs(a, basis(fRG))), fRG)
         y = AlgebraElement(ACoeffs(coeffs(b, basis(fRG))), fRG)
         x, y
