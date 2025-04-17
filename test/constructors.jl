@@ -14,7 +14,7 @@ end
 @testset "Algebra and Elements" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
-    B = SA.DiracBasis(A★)
+    B = SA.identity_basis(A★)
     RG = StarAlgebra(A★, B)
     @test typeof(@inferred basis(RG)) == MA.promote_operation(basis, typeof(RG))
 

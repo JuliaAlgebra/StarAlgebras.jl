@@ -1,12 +1,24 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+struct Wrap{T}
+    x::T
+end
+
+wrap(x) = Wrap(x)
+unwrap(w::Wrap) = w.x
+
 @testset "Abstract coefficients" begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
-    RG = StarAlgebra(G, SA.DiracBasis(G))
+    RG = StarAlgebra(G, SA.identity_basis(G))
 
     A = SA.AlgebraElement(SA.SparseCoefficients(collect(G), Float64.(1:6)), RG)
     B = SA.AlgebraElement(SA.SparseCoefficients(collect(G)[2:2], [-1]), RG)
+    @test (A - B)^2 == A^2 - A * B - B * A + B^2
+
+    wRG = StarAlgebra(G, SA.MappedBasis(G, wrap, unwrap))
+    A = SA.AlgebraElement(SA.SparseCoefficients(collect(G), Float64.(1:6)), wRG)
+    B = SA.AlgebraElement(SA.SparseCoefficients(collect(G)[2:2], [-1]), wRG)
     @test (A - B)^2 == A^2 - A * B - B * A + B^2
 
     fRG = let RG = RG, n = UInt32(length(basis(RG)))

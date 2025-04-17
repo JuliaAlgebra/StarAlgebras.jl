@@ -3,7 +3,7 @@
 
 @testset "Permutation group algebra: arithmetic " begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
-    b = SA.DiracBasis(G)
+    b = SA.identity_basis(G)
     RG = StarAlgebra(G, b)
 
     @test contains(sprint(show, RG), "*-algebra of")

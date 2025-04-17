@@ -18,7 +18,7 @@ still be infinite).
 
 * [`ImplicitBasis`](@ref) is best suited for bases which can be enumerated but
   are in princle infinite in size (e.g. monomial basis for the polynomial ring).
-  An example implementation of [`DiracBasis`](@ref) wrapping an iterator can be
+  An example implementation of [`MappedBasis`](@ref) wrapping an iterator can be
   used for this purpose.
 * [`ExplicitBasis`](@ref) can be used for fixed, finite size bases, in particular
   [`FixedBasis`](@ref) implements `AbstractVector`-type storage for elements.
