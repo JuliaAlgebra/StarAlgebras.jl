@@ -19,10 +19,11 @@ end
     A★ = FreeWords(alph)
     B = SA.DiracBasis(A★)
 
-    fB = SA.FixedBasis(B; n = nwords(A★, 8), mt = UInt32(nwords(A★, 4)))
-    fRG = StarAlgebra(A★, fB)
+    fB = SA.FixedBasis(B; n = UInt32(nwords(A★, 8)))
+    mt = UInt32(nwords(A★, 4))
+    fRG = StarAlgebra(A★, SA.MTable(fB, (mt, mt)))
 
-    k = size(SA.mstructure(basis(fRG)), 1)
+    k = size(SA.mstructure(fRG), 1)
 
     y = spzeros(length(basis(fRG)))
     y[1:k] .= 1
@@ -70,8 +71,9 @@ end
     A★ = FreeWords(alph)
     B = SA.DiracBasis(A★)
 
-    fB = SA.FixedBasis(B; n = nwords(A★, 2), mt = UInt32(nwords(A★, 2)))
-    fRG = StarAlgebra(A★, fB)
+    fB = SA.FixedBasis(B; n = UInt32(nwords(A★, 2)))
+    mt = UInt32(nwords(A★, 2))
+    fRG = StarAlgebra(A★, SA.MTable(fB, (mt, mt)))
 
     y = SA.SparseCoefficients(
         [first(fB)],

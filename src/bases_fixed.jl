@@ -1,34 +1,30 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-mutable struct FixedBasis{T,I,V<:AbstractVector{T},M<:MTable{T,I}} <:
+mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
                ExplicitBasis{T,I}
     elts::V
-    table::M
+    relts::Dict{T,I}
+    starof::Vector{I}
 end
 
-function FixedBasis(basis::AbstractBasis; n::Integer, mt::Integer = UInt32(0))
-    @assert 0 ≤ mt ≤ n
-    elts = Iterators.take(basis, n)
-    return FixedBasis(collect(elts), mstructure(basis), (mt, mt))
+function FixedBasis{T,I}(elts::AbstractVector{T}) where {T,I}
+    relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
+    starof = [relts[star(x)] for x in elts]
+    return FixedBasis{T,I,typeof(elts)}(elts, relts, starof)
 end
 
-function FixedBasis(
-    elts::AbstractVector,
-    mstr::MultiplicativeStructure,
-    dims::NTuple{2,I} = (UInt32(0), UInt32(0)),
-) where {I<:Integer}
-    @assert 0 ≤ dims[1] ≤ length(elts)
-    @assert 0 ≤ dims[2] ≤ length(elts)
-    @assert !(eltype(elts) <: Integer)
-    return FixedBasis(elts, MTable(elts, mstr, dims))
+FixedBasis(elts::AbstractVector{T}) where {T} = FixedBasis{T,keytype(elts)}(elts)
+
+function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
+    return FixedBasis{T,I}(collect(Iterators.take(basis, n)))
 end
 
-mstructure(fb::FixedBasis) = fb.table
+FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} = FixedBasis{T,typeof(n)}(basis; n)
 
-Base.in(x, b::FixedBasis) = haskey(mstructure(b), x)
-Base.getindex(b::FixedBasis{T}, x::T) where {T} = mstructure(b)[x]
-Base.getindex(b::FixedBasis, i::Integer) = mstructure(b)[i]
+Base.in(x, b::FixedBasis) = haskey(b.relts, x)
+Base.getindex(b::FixedBasis{T}, x::T) where {T} = b.relts[x]
+Base.getindex(b::FixedBasis, i::Integer) = b.elts[i]
 
 Base.IteratorSize(::Type{<:FixedBasis}) = Base.HasLength()
 Base.length(b::FixedBasis) = length(b.elts)

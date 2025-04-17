@@ -7,8 +7,8 @@
     h = Permutation(perm"(2,4,5,1)", G)
 
     db = SA.DiracBasis(G)
-    @test SA.mstructure(db) == SA.DiracMStructure(*)
-    @test SA.mstructure(db)(g, h) == SA.SparseCoefficients((g * h,), (1,))
+    mstr = SA.DiracMStructure(db, *)
+    @test mstr(g, h) == SA.SparseCoefficients((g * h,), (1,))
 
     @test db[g] == g
     @test db[db[g]] == g
@@ -20,7 +20,7 @@
     zcfs = SA.SparseCoefficients([one(G), h], [1, -1])
     xzcfs = SA.SparseCoefficients([one(G), g, h, g * h], [1, -1, -1, 1])
 
-    RG = SA.StarAlgebra(G, db)
+    RG = SA.StarAlgebra(G, mstr)
 
     x = SA.AlgebraElement(xcfs, RG)
     y = SA.AlgebraElement(ycfs, RG)
@@ -71,11 +71,11 @@
     end
     @testset "Fixed Basis" begin
         m = PermutationGroups.order(UInt16, G)
-        fb = SA.FixedBasis(collect(G), SA.DiracMStructure(*), (m, m))
+        fb = SA.FixedBasis{eltype(G),typeof(m)}(collect(G))
 
         @test fb[fb[g]] == g
 
-        fRG = SA.StarAlgebra(G, fb)
+        fRG = SA.StarAlgebra(G, SA.MTable(fb, (m, m)))
 
         rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
         r = SA.AlgebraElement(rcfs, RG)
@@ -94,7 +94,7 @@
         @test coeffs(r * s, basis(fRG)) isa AbstractVector
         @test fr * fs == SA.AlgebraElement(coeffs(r * s, basis(fRG)), fRG)
 
-        a, b = let mt = SA.mstructure(basis(fRG)).table
+        a, b = let mt = SA.mstructure(fRG).table
             count(i -> isassigned(mt, i), eachindex(mt)), length(mt)
         end
         @test a ≤ b

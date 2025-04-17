@@ -46,7 +46,7 @@ function MA.operate!(
     res::AlgebraElement,
     Q::QuadraticForm{T,ε},
 ) where {T,ε}
-    op = UnsafeAddMul(mstructure(basis(res)))
+    op = UnsafeAddMul(mstructure(res))
     for (i, b1) in pairs(basis(Q))
         b1★ = ε(b1)
         for (j, b2) in pairs(basis(Q))
@@ -56,8 +56,8 @@ function MA.operate!(
 end
 
 function MA.operate!(op::UnsafeAddMul, res::AlgebraElement{A}, b1::T, b2::T, a) where {O,T,A<:AbstractStarAlgebra{O,T}}
-    b = basis(res)
-    return MA.operate!(op, coeffs(res), mstructure(b)(b[b1], b[b2]), a)
+    mstr = mstructure(res)
+    return MA.operate!(op, coeffs(res), mstr(mstr[b1], mstr[b2]), a)
 end
 
 """
