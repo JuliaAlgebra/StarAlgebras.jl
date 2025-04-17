@@ -13,7 +13,7 @@ function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
     return FixedBasis(elts, relts)
 end
 
-FixedBasis(basis::AbstractBasis{T}; n::Integer) = FixedBasis{T,typeof(n)}(basis; n)
+FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} = FixedBasis{T,typeof(n)}(basis; n)
 
 Base.in(x, b::FixedBasis) = haskey(mstructure(b), x)
 Base.getindex(b::FixedBasis{T}, x::T) where {T} = mstructure(b)[x]
