@@ -4,6 +4,7 @@
 struct Wrap{T}
     x::T
 end
+Base.:*(a::Wrap, b::Wrap) = Wrap(a.x * b.x)
 
 wrap(x) = Wrap(x)
 unwrap(w::Wrap) = w.x
@@ -11,15 +12,13 @@ unwrap(w::Wrap) = w.x
 @testset "Abstract coefficients" begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
     RG = StarAlgebra(G, SA.identity_basis(G))
-
-    A = SA.AlgebraElement(SA.SparseCoefficients(collect(G), Float64.(1:6)), RG)
-    B = SA.AlgebraElement(SA.SparseCoefficients(collect(G)[2:2], [-1]), RG)
-    @test (A - B)^2 == A^2 - A * B - B * A + B^2
-
     wRG = StarAlgebra(G, SA.MappedBasis(G, wrap, unwrap))
-    A = SA.AlgebraElement(SA.SparseCoefficients(collect(G), Float64.(1:6)), wRG)
-    B = SA.AlgebraElement(SA.SparseCoefficients(collect(G)[2:2], [-1]), wRG)
-    @test (A - B)^2 == A^2 - A * B - B * A + B^2
+
+    for basis in [RG, wRG]
+        A = SA.AlgebraElement(SA.SparseCoefficients(collect(G), Float64.(1:6)), basis)
+        B = SA.AlgebraElement(SA.SparseCoefficients(collect(G)[2:2], [-1]), basis)
+        @test (A - B)^2 == A^2 - A * B - B * A + B^2
+    end
 
     fRG = let RG = RG, n = UInt32(length(basis(RG)))
         fb = SA.FixedBasis(basis(RG); n = n)
