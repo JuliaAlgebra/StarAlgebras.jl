@@ -60,7 +60,7 @@ function Base.iterate(aw::FreeWords)
     stack = [w]
     return w, (stack, 1)
 end
-# This is needed for fast indexing into DiracBasis:
+# This is needed for fast indexing into `MappedBasis`:
 Base.in(x::Word, fw::FreeWords) = x.alphabet == fw.alphabet
 
 function Base.iterate(aw::FreeWords, state)

@@ -26,7 +26,7 @@ Base.getindex(g::Gram, i, j) = g.matrix[i, j]
 @testset "QuadraticForm" begin
     A = let alph = [:a, :b, :c]
         fw = FreeWords(alph)
-        SA.StarAlgebra(fw, SA.DiracBasis(fw))
+        SA.StarAlgebra(fw, SA.identity_basis(fw))
     end
 
     gbasis = let (id, a, b, c) = A.(Iterators.take(SA.object(A), 4))

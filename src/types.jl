@@ -88,12 +88,12 @@ function Base.one(T::Type, A::AbstractStarAlgebra)
     sc = SparseCoefficients([i], [one(T)])
     # TODO
     # this is not correct, more thought is needed
-    if basis(A) isa DiracBasis
-        @assert i in basis(A)
+    if basis(A) isa MappedBasis
+        @assert haskey(basis(A), i)
         return AlgebraElement(sc, A)
     else
         return AlgebraElement(
-            coeffs(sc, DiracBasis(object(A)), basis(A)),
+            coeffs(sc, identity_basis(object(A)), basis(A)),
             A,
         )
     end
@@ -108,10 +108,10 @@ function Base.isone(a::AlgebraElement)
     A = parent(a)
     cfs1 = SparseCoefficients((one(object(A)),), (1,))
 
-    if basis(A) isa DiracBasis
+    if basis(A) isa MappedBasis
         return c == cfs1
     else
-        dc = coeffs(c, basis(a), DiracBasis(object(parent(a))))
+        dc = coeffs(c, basis(a), identity_basis(object(parent(a))))
         return dc == cfs1
     end
 end
