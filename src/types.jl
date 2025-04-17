@@ -19,7 +19,7 @@ struct StarAlgebra{O,T,M<:MStructure{T}} <: AbstractStarAlgebra{O,T}
     mstructure::M
 end
 
-mstructure(A::StarAlgebra) = a.mstructure
+mstructure(A::StarAlgebra) = A.mstructure
 basis(A::StarAlgebra) = basis(mstructure(A))
 function MA.promote_operation(::typeof(basis), ::Type{StarAlgebra{O,T,M}}) where {O,T,M}
     return MA.promote_operation(bass, M)
