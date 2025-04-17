@@ -10,7 +10,7 @@
     E_R, sizes = Groups.wlmetric_ball(S, ID; radius = 2 * RADIUS)
     @test sizes == [9, 65, 457, 3201, 22409, 156865]
 
-    b = SA.DiracBasis(F)
+    b = SA.identity_basis(F)
 
     RG = StarAlgebra(F, b)
 
