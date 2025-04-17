@@ -5,15 +5,16 @@ mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
                ExplicitBasis{T,I}
     elts::V
     relts::Dict{T,I}
+    starof::Vector{I}
 end
 
 function FixedBasis{T,I}(elts::AbstractVector{T}) where {T,I}
     relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
-
-    return FixedBasis{T,I,typeof(elts)}(elts, relts)
+    starof = [relts[star(x)] for x in elts]
+    return FixedBasis{T,I,typeof(elts)}(elts, relts, starof)
 end
 
-FixedBasis(elts::AbstractVector{T}) where {T} = FixedBasis{T,Int}(elts)
+FixedBasis(elts::AbstractVector{T}) where {T} = FixedBasis{T,keytype(elts)}(elts)
 
 function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
     return FixedBasis{T,I}(collect(Iterators.take(basis, n)))

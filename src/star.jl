@@ -9,20 +9,26 @@ function star(X::AlgebraElement)
     return AlgebraElement(res, parent(X))
 end
 
-star(::MultiplicativeStructure, x) = star(x)
+star(mstr::MultiplicativeStructure, x) = star(basis(mstr), x)
 
-function star(mstr::MultiplicativeStructure, d::SparseCoefficients)
-    k = star.(Ref(mstr), keys(d))
+star(::AbstractBasis, x) = star(x)
+
+function star(b::AbstractBasis, d::SparseCoefficients)
+    k = star.(Ref(b), keys(d))
     v = star.(values(d))
     return SparseCoefficients(k, v)
 end
 
-function star(mstr::MTable{T}, el::T) where T
-    return basis(mstr)[mstr.starof[basis(mstr)[el]]]
+function star(b::FixedBasis, i::Integer)
+    return b.starof[i]
 end
 
-function star(mstr::MTable, coeffs::SparseVector)
-    nzidcs = mstr.starof[SparseArrays.nonzeroinds(coeffs)]
+function star(b::FixedBasis{T}, el::T) where T
+    return b[star(b, b[el])]
+end
+
+function star(b::FixedBasis, coeffs::SparseVector)
+    nzidcs = b.starof[SparseArrays.nonzeroinds(coeffs)]
     nzvals = star.(SparseArrays.nonzeros(coeffs))
 
     return SparseVector(length(coeffs), nzidcs, nzvals)

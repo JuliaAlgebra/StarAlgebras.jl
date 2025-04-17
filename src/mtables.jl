@@ -16,7 +16,6 @@ struct MTable{T,I<:Integer,B<:AbstractBasis{T,I},Ms,M<:AbstractMatrix} <:
        MultiplicativeStructure{T,I}
     basis::B
     mstr::Ms
-    starof::Vector{I}
     table::M
     lock::Base.Threads.SpinLock
 end
@@ -33,12 +32,11 @@ function MTable(
         @assert length(basis) ≥ last(dims)
     end
 
-    starof = [basis[star(x)] for x in basis]
     C = typeof(mstr(first(basis), first(basis)))
     table = Matrix{C}(undef, dims)
     @assert !isbitstype(C) || dims == (0, 0)
 
-    return MTable(basis, mstr, starof, table, Base.Threads.SpinLock())
+    return MTable(basis, mstr, table, Base.Threads.SpinLock())
 end
 
 function MTable(
@@ -49,7 +47,7 @@ function MTable(
 end
 
 Base.@propagate_inbounds function __absindex(mt::MTable, i::Integer)
-    return ifelse(i > 0, i, oftype(i, mt.starof[abs(i)]))
+    return ifelse(i > 0, i, oftype(i, star(mt, abs(i))))
 end
 
 Base.size(mt::MTable, i::Vararg) = size(mt.table, i...)
