@@ -4,20 +4,25 @@
 mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
                ExplicitBasis{T,I}
     elts::V
-    relts::Dict{V,I}
+    relts::Dict{T,I}
 end
 
-function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
-    elts = collect(Iterators.take(basis, n))
+function FixedBasis{T,I}(elts::AbstractVector{T}) where {T,I}
     relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
-    return FixedBasis(elts, relts)
+    return FixedBasis{T,I,typeof(elts)}(elts, relts)
+end
+
+FixedBasis(elts::AbstractVector{T}) where {T} = FixedBasis{T,Int}(elts)
+
+function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
+    return FixedBasis{T,I}(collect(Iterators.take(basis, n)))
 end
 
 FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} = FixedBasis{T,typeof(n)}(basis; n)
 
 Base.in(x, b::FixedBasis) = haskey(mstructure(b), x)
-Base.getindex(b::FixedBasis{T}, x::T) where {T} = mstructure(b)[x]
-Base.getindex(b::FixedBasis, i::Integer) = mstructure(b)[i]
+Base.getindex(b::FixedBasis{T}, x::T) where {T} = b.relts[x]
+Base.getindex(b::FixedBasis, i::Integer) = b.elts[i]
 
 Base.IteratorSize(::Type{<:FixedBasis}) = Base.HasLength()
 Base.length(b::FixedBasis) = length(b.elts)
