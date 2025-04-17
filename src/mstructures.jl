@@ -57,7 +57,6 @@ function (mstr::MultiplicativeStructure{T,T})(x::T, y::T) where {T}
     return mstr(x, y, T)
 end
 
-Base.haskey(mstr::MultiplicativeStructure, x) = haskey(mstr.basis, x)
 Base.getindex(mstr::MultiplicativeStructure, x) = basis(mstr)[x]
 
 basis(mstr::MultiplicativeStructure) = mstr.basis
