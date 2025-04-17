@@ -27,8 +27,11 @@ function MTable(
     dims::NTuple{2,I},
 ) where {T,I<:Integer}
     Base.require_one_based_indexing(basis)
-    @assert length(basis) ≥ first(dims)
-    @assert length(basis) ≥ last(dims)
+
+    if !isa(Base.IteratorSize(typeof(basis)), Base.IsInfinite)
+        @assert length(basis) ≥ first(dims)
+        @assert length(basis) ≥ last(dims)
+    end
 
     starof = [basis[star(x)] for x in basis]
     C = typeof(mstr(first(basis), first(basis)))
