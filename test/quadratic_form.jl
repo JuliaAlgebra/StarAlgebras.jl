@@ -98,6 +98,7 @@ end
 
 # An`ImplicitBasis` that simply maps its keys (`Int`s) to basis elements (`Float64`s).
 struct IntToFloat <: SA.ImplicitBasis{Float64,Int} end
+Base.IteratorSize(::Type{<:IntToFloat}) = Base.IsInfinite()
 Base.first(::IntToFloat) = 1.0
 Base.getindex(::IntToFloat, i::Int) = convert(Float64, i)
 Base.getindex(::IntToFloat, i::Float64) = convert(Int, i)
