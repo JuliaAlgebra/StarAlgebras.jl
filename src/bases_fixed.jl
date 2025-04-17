@@ -4,12 +4,16 @@
 mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
                ExplicitBasis{T,I}
     elts::V
+    relts::Dict{V,I}
 end
 
-function FixedBasis(basis::AbstractBasis; n::Integer)
-    elts = Iterators.take(basis, n)
-    return FixedBasis(collect(elts))
+function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
+    elts = collect(Iterators.take(basis, n))
+    relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
+    return FixedBasis(elts, relts)
 end
+
+FixedBasis(basis::AbstractBasis{T}; n::Integer) = FixedBasis{T,typeof(n)}(basis; n)
 
 Base.in(x, b::FixedBasis) = haskey(mstructure(b), x)
 Base.getindex(b::FixedBasis{T}, x::T) where {T} = mstructure(b)[x]

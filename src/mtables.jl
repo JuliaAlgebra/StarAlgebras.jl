@@ -12,32 +12,29 @@ Multiplicative table, stored explicitly as an AbstractMatrix{I}.
     mt(-i, j) == b[star(b[i])*b[j]]
     ```
 """
-struct MTable{T,I<:Integer,V<:AbstractVector,M<:AbstractMatrix,Ms} <:
+struct MTable{T,I<:Integer,B<:AbstractBasis{T,I},Ms,M<:AbstractMatrix} <:
        MultiplicativeStructure
-    elts::V
-    relts::Dict{T,I}
+    basis::B
+    mstr::Ms
     starof::Vector{I}
     table::M
-    mstr::Ms
     lock::Base.Threads.SpinLock
 end
 
 function MTable(
-    elts::AbstractVector,
+    basis::AbstractBasis{T,I},
     mstr::MultiplicativeStructure,
     dims::NTuple{2,I},
-) where {I<:Integer}
-    Base.require_one_based_indexing(elts)
-    @assert length(elts) ≥ first(dims)
-    @assert length(elts) ≥ last(dims)
+) where {T,I<:Integer}
+    Base.require_one_based_indexing(basis)
+    @assert length(basis) ≥ first(dims)
+    @assert length(basis) ≥ last(dims)
 
-    relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
-    starof = [relts[star(x)] for x in elts]
-    T = typeof(mstr(first(elts), first(elts)))
+    starof = [basis[star(x)] for x in basis]
     table = Matrix{T}(undef, dims)
     @assert !isbitstype(T) || dims == (0, 0)
 
-    return MTable(elts, relts, starof, table, mstr, Base.Threads.SpinLock())
+    return MTable(basis, mstr, starof, table, Base.Threads.SpinLock())
 end
 
 Base.@propagate_inbounds function __absindex(mt::MTable, i::Integer)
@@ -45,9 +42,7 @@ Base.@propagate_inbounds function __absindex(mt::MTable, i::Integer)
 end
 
 Base.size(mt::MTable, i::Vararg) = size(mt.table, i...)
-Base.haskey(mt::MTable, x) = haskey(mt.relts, x)
-Base.getindex(mt::MTable{T}, x::T) where {T} = mt.relts[x]
-Base.getindex(mt::MTable, i::Integer) = mt.elts[__absindex(mt, i)]
+Base.getindex(mt::MTable, i::Integer) = mt.basis[__absindex(mt, i)]
 
 function __iscomputed(mt::MTable, i, j)
     return isassigned(mt.table, i, j)
@@ -57,7 +52,6 @@ function (mt::MTable{T,I})(x, y, ::Type{I}) where {T,I}
     return map_keys(Base.Fix1(getindex, mt), mt(x, y, T))
 end
 
-(mt::MTable{T})(x::T, y::T) where {T} = mt(x, y, T)
 (mt::MTable{T,I})(x::Integer, y::Integer) where {T,I} = mt(x, y, I)
 
 function (mt::MTable{T})(x::T, y::T, ::Type{U}) where {T,U}

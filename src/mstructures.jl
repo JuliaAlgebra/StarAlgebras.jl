@@ -20,14 +20,20 @@ function Base.showerror(io::IO, ex::ProductNotWellDefined)
 end
 
 """
-    MultiplicativeStructure
+    MultiplicativeStructure{T,I}
 Structure representing multiplication w.r.t its basis.
 
 Implements
-* `basis(ms::MultiplicativeStructure{T}) → AbstractBasis{T}`
-* `Basis.getindex(ms::MultiplicativeStructure{T}, i::T, j::T) →
+* `basis(ms::MultiplicativeStructure{T,I}) → AbstractBasis{T}`
+* `(ms::MultiplicativeStructure{T,I})(i::V, j::V, ::Type{U}) where {V<:Union{T,I},U<:Union{T,I}} →
         Union{AbstractCoefficients, AbstractVector}`
-   the product of `i` and `j` represented by coefficients in `basis(ms)`.
+   the product of `i` and `j` represented by coefficients in `basis(ms)`
+   for which the keys are of type `U<:Union{T,I}`.
+
+The following shortcuts are provided:
+* `(ms::MultiplicativeStructure{T})(i::T, j::T)` → `ms(i, j, T)`
+* `(ms::MultiplicativeStructure{T,I})(i::I, j::I)` → `ms(i, j, I)`
+* `(ms::MultiplicativeStructure)[x]` → `basis(ms)[x]`
 
 When the product is not representable faithfully,
    `ProductNotWellDefined` exception should be thrown.
@@ -42,6 +48,7 @@ function (mstr::MultiplicativeStructure{T,I})(x::I, y::I) where {T,I}
     return mstr(x, y, I)
 end
 
+Base.haskey(mstr::MultiplicativeStructure, x) = haskey(mstr.basis, x)
 Base.getindex(mstr::MultiplicativeStructure, x) = basis(mstr)[x]
 
 struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
@@ -112,7 +119,10 @@ function (mstr::DiracMStructure{T})(x::T, y::T, ::Type{T}) where {T}
     return SparseCoefficients((xy,), (1,))
 end
 
-function (mstr::DiracMStructure{T})(x::T, y::T, ::Type{T}) where {T}
-    xy = mstr.op(x, y)
-    return SparseCoefficients((xy,), (1,))
+function (mt::DiracMStructure{T,I})(x, y, ::Type{I}) where {T,I}
+    return map_keys(Base.Fix1(getindex, mt), mt(x, y, T))
+end
+
+function (mstr::DiracMStructure{T,I})(x::I, y::I, ::Type{U}) where {T,I,U}
+    return mstr(mstr[x], mstr[y], U)
 end
