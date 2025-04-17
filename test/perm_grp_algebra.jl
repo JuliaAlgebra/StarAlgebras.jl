@@ -71,11 +71,11 @@
     end
     @testset "Fixed Basis" begin
         m = PermutationGroups.order(UInt16, G)
-        fb = SA.FixedBasis(collect(G))
+        fb = SA.FixedBasis{eltype(G),typeof(m)}(collect(G))
 
         @test fb[fb[g]] == g
 
-        fRG = SA.StarAlgebra(G, SA.DiracMStructure(fb, *))
+        fRG = SA.StarAlgebra(G, SA.MTable(fb, SA.DiracMStructure(fb, *), (m, m)))
 
         rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
         r = SA.AlgebraElement(rcfs, RG)
