@@ -4,6 +4,8 @@
 abstract type AbstractStarAlgebra{O,T} end
 
 function _sanity_checks(coeffs, A::AbstractStarAlgebra)
+    @show key_type(coeffs)
+    @show key_type(basis(A))
     @assert key_type(coeffs) == key_type(basis(A))
 end
 function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)

@@ -56,8 +56,8 @@ function MA.operate!(
 end
 
 function MA.operate!(op::UnsafeAddMul, res::AlgebraElement{A}, b1::T, b2::T, a) where {O,T,A<:AbstractStarAlgebra{O,T}}
-    b = basis(res)
-    return MA.operate!(op, coeffs(res), mstructure(b)(b[b1], b[b2]), a)
+    mstr = mstructure(res)
+    return MA.operate!(op, coeffs(res), mstr(mstr[b1], mstr[b2]), a)
 end
 
 """

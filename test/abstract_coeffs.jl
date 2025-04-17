@@ -12,6 +12,8 @@
     h = Permutation(perm"(2,3)", G)
 
     α, β = let a = fRG(1), b = fRG(h)
+        @show SA.key_type(coeffs(a, basis(fRG)))
+        @show SA.key_type(ACoeffs(coeffs(a, basis(fRG))))
         x = AlgebraElement(ACoeffs(coeffs(a, basis(fRG))), fRG)
         y = AlgebraElement(ACoeffs(coeffs(b, basis(fRG))), fRG)
         x, y
