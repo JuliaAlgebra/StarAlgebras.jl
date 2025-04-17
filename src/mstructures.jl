@@ -32,12 +32,17 @@ Implements
 When the product is not representable faithfully,
    `ProductNotWellDefined` exception should be thrown.
 """
-abstract type MultiplicativeStructure{T} end
+abstract type MultiplicativeStructure{T,I} end
 
-# this should be identity unless mstructure uses internal integer indexing
-# like MTable does, then this should return the index, similarly to what
-# getindex for basis does.
-Base.getindex(::MultiplicativeStructure, x) = x
+function (mstr::MultiplicativeStructure{T})(x::T, y::T) where {T}
+    return mstr(x, y, T)
+end
+
+function (mstr::MultiplicativeStructure{T,I})(x::I, y::I) where {T,I}
+    return mstr(x, y, I)
+end
+
+Base.getindex(mstr::MultiplicativeStructure, x) = basis(mstr)[x]
 
 struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
@@ -97,11 +102,17 @@ function MA.operate!(op::UnsafeAddMul, res, A, B, α)
     return res
 end
 
-struct DiracMStructure{Op} <: MultiplicativeStructure
+struct DiracMStructure{T,I,B<:AbstractBasis{T,I},Op} <: MultiplicativeStructure{T}
+    basis::B
     op::Op
 end
 
-function (mstr::DiracMStructure)(x::T, y::T) where {T}
+function (mstr::DiracMStructure{T})(x::T, y::T, ::Type{T}) where {T}
+    xy = mstr.op(x, y)
+    return SparseCoefficients((xy,), (1,))
+end
+
+function (mstr::DiracMStructure{T})(x::T, y::T, ::Type{T}) where {T}
     xy = mstr.op(x, y)
     return SparseCoefficients((xy,), (1,))
 end
