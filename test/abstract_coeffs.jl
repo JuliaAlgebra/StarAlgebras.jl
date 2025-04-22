@@ -11,7 +11,7 @@ unwrap(w::Wrap) = w.x
 
 @testset "Abstract coefficients" begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
-    RG = StarAlgebra(G, SA.identity_basis(G))
+    RG = StarAlgebra(G, SA.DiracBasis(G))
     wRG = StarAlgebra(G, SA.MappedBasis(G, wrap, unwrap))
 
     for basis in [RG, wRG]

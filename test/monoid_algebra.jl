@@ -4,7 +4,7 @@
 @testset "Free monoid algebra" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
-    B = SA.identity_basis(A★)
+    B = SA.DiracBasis(A★)
     RG = StarAlgebra(A★, B)
     @test basis(RG) === B
 

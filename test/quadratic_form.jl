@@ -26,7 +26,7 @@ Base.getindex(g::Gram, i, j) = g.matrix[i, j]
 @testset "QuadraticForm" begin
     A = let alph = [:a, :b, :c]
         fw = FreeWords(alph)
-        SA.StarAlgebra(fw, SA.identity_basis(fw))
+        SA.StarAlgebra(fw, SA.DiracBasis(fw))
     end
 
     gbasis = let (id, a, b, c) = A.(Iterators.take(SA.object(A), 4))
@@ -97,12 +97,16 @@ Base.getindex(g::Gram, i, j) = g.matrix[i, j]
 end
 
 # An`ImplicitBasis` that simply maps its keys (`Int`s) to basis elements (`Float64`s).
-struct IntToFloat <: SA.ImplicitBasis{Float64,Int} end
-Base.IteratorSize(::Type{<:IntToFloat}) = Base.IsInfinite()
-Base.first(::IntToFloat) = 1.0
-Base.getindex(::IntToFloat, i::Int) = convert(Float64, i)
-Base.getindex(::IntToFloat, i::Float64) = convert(Int, i)
-Base.require_one_based_indexing(::IntToFloat) = nothing
+struct NaturalNumbers end
+Base.IteratorSize(::Type{NaturalNumbers}) = Base.IsInfinite()
+Base.eltype(::NaturalNumbers) = Int
+Base.iterate(::NaturalNumbers) = (1, 1)
+Base.iterate(::NaturalNumbers, state) = (state + 1, state + 1)
+Base.in(i::Int, ::NaturalNumbers) = i >= 1
+
+
+function Base.require_one_based_indexing(::SA.MappedBasis{T,Int,NaturalNumbers}) where {T} end
+
 
 struct SubBasis{T,I,V<:AbstractVector{I},B<:SA.ImplicitBasis{T,I}} <: SA.ExplicitBasis{Float64,Int}
     implicit::B
@@ -118,7 +122,7 @@ function Base.iterate(b::SubBasis, args...)
 end
 
 @testset "IntToFloat basis" begin
-    implicit = IntToFloat()
+    implicit = SA.MappedBasis(NaturalNumbers(), float, Int)
     explicit = SubBasis(implicit, 1:3)
     m = Bool[
         true  false true

@@ -17,7 +17,7 @@ end
 @testset "FixedBasis caching && allocations" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
-    B = SA.identity_basis(A★)
+    B = SA.DiracBasis(A★)
 
     fB = SA.FixedBasis(B; n = UInt32(nwords(A★, 8)))
     mt = UInt32(nwords(A★, 4))
@@ -69,7 +69,7 @@ end
 @testset "tuple" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
-    B = SA.identity_basis(A★)
+    B = SA.DiracBasis(A★)
 
     fB = SA.FixedBasis(B; n = UInt32(nwords(A★, 2)))
     mt = UInt32(nwords(A★, 2))

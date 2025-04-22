@@ -18,7 +18,7 @@ end
     @test_throws AssertionError SA.MappedBasis(A★, i -> i * one(A★), i -> i * inv(one(A★)))
     @test_throws AssertionError SA.MappedBasis(A★, i -> i * one(A★), identity)
     @test_throws AssertionError SA.MappedBasis(A★, identity, i -> i * inv(one(A★)))
-    B = SA.identity_basis(A★)
+    B = SA.DiracBasis(A★)
     RG = StarAlgebra(A★, B)
     @test typeof(@inferred basis(RG)) == MA.promote_operation(basis, typeof(RG))
 
