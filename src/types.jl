@@ -11,7 +11,15 @@ function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
     @assert length(coeffs) == length(basis(A))
 end
 
-# concrete implementation
+"""
+    struct StarAlgebra{O,T,M<:MultiplicativeStructure{T}} <: AbstractStarAlgebra{O,T}
+        object::O
+        mstructure::M
+    end
+
+Star algebra implementation with an `object` that should implement `one(::O)` and
+a [`MultiplicativeStructure`](@ref) `mstructure`.
+"""
 struct StarAlgebra{O,T,M<:MultiplicativeStructure{T}} <: AbstractStarAlgebra{O,T}
     object::O
     mstructure::M
