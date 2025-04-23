@@ -27,7 +27,7 @@ function MTable(
 ) where {T,I<:Integer}
     Base.require_one_based_indexing(basis)
 
-    if !isa(Base.IteratorSize(typeof(basis)), Base.IsInfinite)
+    if Base.haslength(basis)
         @assert length(basis) ≥ first(dims)
         @assert length(basis) ≥ last(dims)
     end
