@@ -110,6 +110,11 @@ end
 
 object(db::Union{DiracBasis,MappedBasis}) = db.object
 
+function Base.size(b::Union{DiracBasis,MappedBasis})
+    @assert Base.haslength(object(b))
+    return size(object(b))
+end
+
 function Base.length(b::Union{DiracBasis,MappedBasis})
     @assert Base.haslength(object(b))
     return length(object(b))

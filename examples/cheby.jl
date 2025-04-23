@@ -12,6 +12,8 @@ function Base.isless(a::ChebyPoly, b::ChebyPoly)
     return a.n < b.n
 end
 
+SA.star(a::ChebyPoly) = a
+
 struct ChebyMStruct{T,I,B<:SA.AbstractBasis{T,I}} <: SA.MultiplicativeStructure{T,I}
     basis::B
 end

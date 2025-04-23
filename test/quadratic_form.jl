@@ -88,7 +88,13 @@ function Base.iterate(b::SubBasis, args...)
 end
 
 @testset "Int -> Float basis" begin
+    limited = SA.MappedBasis(1:2, float, Int)
+    @test !(3.0 in limited)
+    @test !haskey(limited, 3)
+    @test collect(limited) == [1.0, 2.0]
     implicit = SA.MappedBasis(NaturalNumbers(), float, Int)
+    @test 3.0 in implicit
+    @test haskey(implicit, 3)
     explicit = SubBasis(implicit, 1:3)
     m = Bool[
         true  false true
@@ -111,9 +117,10 @@ end
 
 @testset "Chebyshev basis" begin
     implicit = cheby_basis()
-    explicit = SubBasis(implicit, 1:3)
     mstr = ChebyMStruct(implicit)
     mt = SA.MTable(implicit, mstr, (0, 0))
+    sub = SubBasis(implicit, 1:3)
+    fixed = SA.FixedBasis(implicit; n = 3)
     a = ChebyPoly(2)
     b = ChebyPoly(3)
     expected = SA.SparseCoefficients((ChebyPoly(1), ChebyPoly(5)), (1 // 2, 1 // 2))
@@ -126,14 +133,16 @@ end
             1 // 2 0      2
             0      2      1
         ]
-        Q = SA.QuadraticForm(Gram(m, explicit))
         A = SA.StarAlgebra(nothing, mult)
-        @test A(Q) == SA.AlgebraElement(
-            SA.SparseCoefficients(
-                [0, 1, 2, 3, 5, 6],
-                [3//2, 5//2, 1, 1//2, 2, 1//2],
-            ),
-            A,
-        )
+        for explicit in [sub, fixed]
+            Q = SA.QuadraticForm(Gram(m, explicit))
+            @test A(Q) == SA.AlgebraElement(
+                SA.SparseCoefficients(
+                    [0, 1, 2, 3, 5, 6],
+                    [3//2, 5//2, 1, 1//2, 2, 1//2],
+                ),
+                A,
+            )
+        end
     end
 end
