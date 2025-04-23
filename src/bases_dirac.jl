@@ -31,12 +31,27 @@ struct DiracBasis{T,S} <: ImplicitBasis{T,T}
     end
 end
 
+object(db::Union{DiracBasis,MappedBasis}) = db.object
+
 function Base.IteratorSize(::Type{<:DiracBasis{T,S}}) where {T,S}
     return Base.IteratorSize(S)
 end
 
+function Base.size(b::Union{DiracBasis,MappedBasis})
+    @assert Base.haslength(object(b))
+    return size(object(b))
+end
+
+function Base.length(b::Union{DiracBasis,MappedBasis})
+    @assert Base.haslength(object(b))
+    return length(object(b))
+end
+
 Base.iterate(db::DiracBasis) = iterate(object(db))
 Base.iterate(db::DiracBasis, st) = iterate(object(db), st)
+
+Base.in(g, db::DiracBasis) = g in object(db)
+Base.haskey(db::DiracBasis, g) = in(g, db)
 
 function Base.getindex(db::DiracBasis{T}, x::T) where {T}
     @assert x in object(db)
