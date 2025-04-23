@@ -34,6 +34,8 @@ function MTable(
 
     C = typeof(mstr(first(basis), first(basis)))
     table = Matrix{C}(undef, dims)
+    # this is to avoid situation with allocated garbage in table
+    # we want table to consist of #undefs as "sentiel values"
     @assert !isbitstype(C) || dims == (0, 0)
 
     return MTable(basis, mstr, table, Base.Threads.SpinLock())
