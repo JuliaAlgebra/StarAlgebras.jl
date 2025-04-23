@@ -94,12 +94,14 @@ mutable struct MappedBasis{T,I,S,F,U} <: ImplicitBasis{T,I}
     end
 end
 
-function Base.IteratorSize(::Type{<:MappedBasis{T,I,S}}) where {T,I,S}
-    return Base.IteratorSize(S)
-end
-
 function MappedBasis(itr, map, inverse_map)
     return MappedBasis{typeof(map(first(itr))),eltype(itr)}(itr, map, inverse_map)
+end
+
+object(db::MappedBasis) = db.object
+
+function Base.IteratorSize(::Type{<:MappedBasis{T,I,S}}) where {T,I,S}
+    return Base.IteratorSize(S)
 end
 
 function _iterate(b::MappedBasis, elem_state)
@@ -112,6 +114,16 @@ end
 Base.iterate(b::MappedBasis) = _iterate(b, iterate(object(b)))
 Base.iterate(b::MappedBasis, st) = _iterate(b, iterate(object(b), st))
 
+function Base.size(b::MappedBasis)
+    @assert Base.haslength(object(b))
+    return size(object(b))
+end
+
+function Base.length(b::MappedBasis)
+    @assert Base.haslength(object(b))
+    return length(object(b))
+end
+
 Base.in(g::T, b::MappedBasis{T}) where {T} = haskey(b, b.inverse_map(g))
 Base.haskey(b::MappedBasis{T,I}, k::I) where {T,I} = k in object(b)
 
@@ -121,16 +133,4 @@ end
 
 function Base.getindex(b::MappedBasis{T,I}, x::I) where {T,I}
     return b.map(x)
-end
-
-object(db::Union{DiracBasis,MappedBasis}) = db.object
-
-function Base.size(b::Union{DiracBasis,MappedBasis})
-    @assert Base.haslength(object(b))
-    return size(object(b))
-end
-
-function Base.length(b::Union{DiracBasis,MappedBasis})
-    @assert Base.haslength(object(b))
-    return length(object(b))
 end
