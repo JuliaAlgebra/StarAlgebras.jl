@@ -52,7 +52,7 @@ function (mstr::MultiplicativeStructure{T,I})(x::Integer, y::Integer) where {T,I
     return mstr(convert(I, x), convert(I, y), I)
 end
 
-# To break ambiguity for `MappedBasis{T,T,S,identity,identity}` for which `T` and `I` are the same
+# To break ambiguity for `DiracBasis` for which `T` and `I` are the same
 function (mstr::MultiplicativeStructure{T,T})(x::T, y::T) where {T}
     return mstr(x, y, T)
 end
@@ -141,7 +141,7 @@ function (mstr::DiracMStructure{T,I})(x::I, y::I, ::Type{U}) where {T,I,U}
     return mstr(mstr[x], mstr[y], U)
 end
 
-# To break ambiguity for `MappedBasis{T,T,S,identity,identity}` for which `T` and `I` are the same
+# To break ambiguity for `DiracBasis` for which `T` and `I` are the same
 function (mstr::DiracMStructure{T,T})(x::T, y::T, ::Type{T}) where {T}
     xy = mstr.op(x, y)
     return SparseCoefficients((xy,), (1,))

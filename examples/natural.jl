@@ -1,7 +1,7 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-# An`ImplicitBasis` that simply maps its keys (`Int`s) to basis elements (`Float64`s).
+# An iterator over all natural numbers
 struct NaturalNumbers end
 Base.IteratorSize(::Type{NaturalNumbers}) = Base.IsInfinite()
 Base.eltype(::NaturalNumbers) = Int
