@@ -1,28 +1,6 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-struct Gram{T,B}
-    matrix::T
-    basis::B
-end
-
-function Base.eltype(g::Gram)
-    T = eltype(g.matrix)
-    basis_eltype = eltype(basis(g))
-    U = if basis_eltype <: SA.AlgebraElement
-        # We will multiply with the coefficients of these `AlgebraElement`
-        promote_type(T, eltype(basis_eltype))
-    else
-        # We will multiply with the basis elements which will be keys of
-        # the `SparseCoefficients` so we won't multiply with any other coefficient
-        T
-    end
-    return MA.promote_operation(+, U, U)
-end
-
-SA.basis(g::Gram) = g.basis
-Base.getindex(g::Gram, i, j) = g.matrix[i, j]
-
 @testset "QuadraticForm" begin
     A = let alph = [:a, :b, :c]
         fw = FreeWords(alph)
@@ -96,18 +74,6 @@ Base.getindex(g::Gram, i, j) = g.matrix[i, j]
     @test A(Q) == π * b[3] * b[2] + b[4] * b[3]
 end
 
-# An`ImplicitBasis` that simply maps its keys (`Int`s) to basis elements (`Float64`s).
-struct NaturalNumbers end
-Base.IteratorSize(::Type{NaturalNumbers}) = Base.IsInfinite()
-Base.eltype(::NaturalNumbers) = Int
-Base.iterate(::NaturalNumbers) = (1, 1)
-Base.iterate(::NaturalNumbers, state) = (state + 1, state + 1)
-Base.in(i::Int, ::NaturalNumbers) = i >= 1
-
-
-function Base.require_one_based_indexing(::SA.MappedBasis{T,Int,NaturalNumbers}) where {T} end
-
-
 struct SubBasis{T,I,V<:AbstractVector{I},B<:SA.ImplicitBasis{T,I}} <: SA.ExplicitBasis{Float64,Int}
     implicit::B
     indices::V
@@ -121,7 +87,7 @@ function Base.iterate(b::SubBasis, args...)
     return b.implicit[elem_state[1]], elem_state[2]
 end
 
-@testset "IntToFloat basis" begin
+@testset "Int -> Float basis" begin
     implicit = SA.MappedBasis(NaturalNumbers(), float, Int)
     explicit = SubBasis(implicit, 1:3)
     m = Bool[
