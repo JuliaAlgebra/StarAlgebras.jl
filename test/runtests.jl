@@ -22,11 +22,11 @@ begin
     SA.star(g::GroupElement) = inv(g)
 end
 
-# implementations of the free monoid over an alphabet
-include("test_example_words.jl")
-
-# example implementation of abstract coefficients
-include("test_example_acoeffs.jl")
+for file in readdir(joinpath(@__DIR__, "..", "examples"))
+    if endswith(file, ".jl")
+        include(joinpath(@__DIR__, "..", "examples", file))
+    end
+end
 
 @testset "StarAlgebras" begin
     include("basic.jl")
