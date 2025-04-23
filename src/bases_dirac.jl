@@ -31,18 +31,18 @@ struct DiracBasis{T,S} <: ImplicitBasis{T,T}
     end
 end
 
-object(db::Union{DiracBasis,MappedBasis}) = db.object
+object(db::DiracBasis) = db.object
 
 function Base.IteratorSize(::Type{<:DiracBasis{T,S}}) where {T,S}
     return Base.IteratorSize(S)
 end
 
-function Base.size(b::Union{DiracBasis,MappedBasis})
+function Base.size(b::DiracBasis)
     @assert Base.haslength(object(b))
     return size(object(b))
 end
 
-function Base.length(b::Union{DiracBasis,MappedBasis})
+function Base.length(b::DiracBasis)
     @assert Base.haslength(object(b))
     return length(object(b))
 end
