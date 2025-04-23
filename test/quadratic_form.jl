@@ -108,3 +108,32 @@ end
     @test mt(2.0, 3.0) == SA.SparseCoefficients([6.0], [1])
     @test mt(2.0, 3.0) == mt(2, 3)
 end
+
+@testset "Chebyshev basis" begin
+    implicit = cheby_basis()
+    explicit = SubBasis(implicit, 1:3)
+    mstr = ChebyMStruct(implicit)
+    mt = SA.MTable(implicit, mstr, (0, 0))
+    a = ChebyPoly(2)
+    b = ChebyPoly(3)
+    expected = SA.SparseCoefficients((ChebyPoly(1), ChebyPoly(5)), (1 // 2, 1 // 2))
+    for mult in [mstr, mt]
+        @test mult(a, b) == expected
+        @test mult(a, b, Int) == mult(2, 3)
+        @test mult(a, b) == mult(2, 3, ChebyPoly)
+        m = [
+            2      1 // 2 0
+            1 // 2 0      2
+            0      2      1
+        ]
+        Q = SA.QuadraticForm(Gram(m, explicit))
+        A = SA.StarAlgebra(nothing, mult)
+        @test A(Q) == SA.AlgebraElement(
+            SA.SparseCoefficients(
+                [0, 1, 2, 3, 5, 6],
+                [3//2, 5//2, 1, 1//2, 2, 1//2],
+            ),
+            A,
+        )
+    end
+end
