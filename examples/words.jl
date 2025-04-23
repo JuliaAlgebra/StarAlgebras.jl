@@ -1,6 +1,7 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+# implementations of the free monoid over an alphabet
 struct Word{T}
     alphabet::Vector{T}
     letters::Vector{Int}

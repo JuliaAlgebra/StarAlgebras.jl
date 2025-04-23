@@ -1,6 +1,7 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+# example implementation of abstract coefficients
 struct ACoeffs{T} <: SA.AbstractCoefficients{UInt32,T}
     vals::Vector{T}
 end
