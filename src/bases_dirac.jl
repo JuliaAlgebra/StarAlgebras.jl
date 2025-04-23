@@ -1,19 +1,16 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-mutable struct DiracBasis{T,S,M<:DiracMStructure} <: ImplicitBasis{T,T}
+mutable struct DiracBasis{T,S} <: ImplicitBasis{T,T}
     object::S # any iterable
-    moperation::M
 
-    function DiracBasis(itr, operation = *)
+    function DiracBasis(itr)
         @assert !isempty(itr)
-        mstr = DiracMStructure(operation)
-        return new{eltype(itr),typeof(itr),typeof(mstr)}(itr, mstr)
+        return new{eltype(itr),typeof(itr)}(itr)
     end
 end
 
 object(db::DiracBasis) = db.object
-mstructure(db::DiracBasis{T}) where {T} = db.moperation
 
 function Base.IteratorSize(::Type{<:DiracBasis{T,S}}) where {T,S}
     return Base.IteratorSize(S)

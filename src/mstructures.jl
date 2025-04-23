@@ -20,24 +20,42 @@ function Base.showerror(io::IO, ex::ProductNotWellDefined)
 end
 
 """
-    MultiplicativeStructure
+    MultiplicativeStructure{T,I}
 Structure representing multiplication w.r.t its basis.
 
 Implements
-* `basis(ms::MultiplicativeStructure{T}) → AbstractBasis{T}`
-* `Basis.getindex(ms::MultiplicativeStructure{T}, i::T, j::T) →
+* `basis(ms::MultiplicativeStructure{T,I}) → AbstractBasis{T}`
+* `(ms::MultiplicativeStructure{T,I})(i::V, j::V, ::Type{U}) where {V<:Union{T,I},U<:Union{T,I}} →
         Union{AbstractCoefficients, AbstractVector}`
-   the product of `i` and `j` represented by coefficients in `basis(ms)`.
+   the product of `i` and `j` represented by coefficients in `basis(ms)`
+   for which the keys are of type `U<:Union{T,I}`.
+
+The following shortcuts are provided:
+* `(ms::MultiplicativeStructure{T})(i::T, j::T)` → `ms(i, j, T)`
+* `(ms::MultiplicativeStructure{T,I})(i::I, j::I)` → `ms(i, j, I)`
+* `(ms::MultiplicativeStructure)[x]` → `basis(ms)[x]`
 
 When the product is not representable faithfully,
    `ProductNotWellDefined` exception should be thrown.
 """
-abstract type MultiplicativeStructure end
+abstract type MultiplicativeStructure{T,I} end
 
-# this should be identity unless mstructure uses internal integer indexing
-# like MTable does, then this should return the index, similarly to what
-# getindex for basis does.
-Base.getindex(::MultiplicativeStructure, x) = x
+function (mstr::MultiplicativeStructure{T})(x::T, y::T) where {T}
+    return mstr(x, y, T)
+end
+
+function (mstr::MultiplicativeStructure{T,I})(x::Integer, y::Integer) where {T,I<:Integer}
+    return mstr(convert(I, x), convert(I, y), I)
+end
+
+# To break ambiguity for `DiracBasis` for which `T` and `I` are the same
+function (mstr::MultiplicativeStructure{T,T})(x::T, y::T) where {T}
+    return mstr(x, y, T)
+end
+
+Base.getindex(mstr::MultiplicativeStructure, x) = basis(mstr)[x]
+
+basis(mstr::MultiplicativeStructure) = mstr.basis
 
 struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
@@ -97,11 +115,30 @@ function MA.operate!(op::UnsafeAddMul, res, A, B, α)
     return res
 end
 
-struct DiracMStructure{Op} <: MultiplicativeStructure
+struct DiracMStructure{T,I,B<:AbstractBasis{T,I},Op} <: MultiplicativeStructure{T,I}
+    basis::B
     op::Op
 end
 
-function (mstr::DiracMStructure)(x::T, y::T) where {T}
+function MA.promote_operation(::typeof(basis), ::Type{<:DiracMStructure{T,I,B}}) where {T,I,B}
+    return B
+end
+
+function (mstr::DiracMStructure{T})(x::T, y::T, ::Type{T}) where {T}
+    xy = mstr.op(x, y)
+    return SparseCoefficients((xy,), (1,))
+end
+
+function (mt::DiracMStructure{T,I})(x, y, ::Type{I}) where {T,I}
+    return map_keys(Base.Fix1(getindex, mt), mt(x, y, T))
+end
+
+function (mstr::DiracMStructure{T,I})(x::I, y::I, ::Type{U}) where {T,I,U}
+    return mstr(mstr[x], mstr[y], U)
+end
+
+# To break ambiguity for `DiracBasis` for which `T` and `I` are the same
+function (mstr::DiracMStructure{T,T})(x::T, y::T, ::Type{T}) where {T}
     xy = mstr.op(x, y)
     return SparseCoefficients((xy,), (1,))
 end
