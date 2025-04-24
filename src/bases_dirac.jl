@@ -37,14 +37,14 @@ function Base.IteratorSize(::Type{<:DiracBasis{T,S}}) where {T,S}
     return Base.IteratorSize(S)
 end
 
-function Base.size(b::DiracBasis)
-    @assert Base.haslength(object(b))
-    return size(object(b))
+function Base.size(db::DiracBasis)
+    @assert Base.haslength(object(db))
+    return size(object(db))
 end
 
-function Base.length(b::DiracBasis)
-    @assert Base.haslength(object(b))
-    return length(object(b))
+function Base.length(db::DiracBasis)
+    @assert Base.haslength(object(db))
+    return length(object(db))
 end
 
 Base.iterate(db::DiracBasis) = iterate(object(db))
