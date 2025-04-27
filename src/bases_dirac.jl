@@ -8,7 +8,7 @@
 
 Given any iterable `object` over elements of type `T`, the basis
 corresponds to the list of elements of `object`.
-The type `S` should implement the methods:
+The `object` (its type `S`, respectively) should implement the methods:
 ```julia
 Base.IteratorSize(::Type{S})
 Base.eltype(::S) # Should return `T`
