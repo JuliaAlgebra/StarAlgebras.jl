@@ -89,15 +89,16 @@ mutable struct MappedBasis{T,I,S,F,U} <: ImplicitBasis{T,I}
     map::F
     inverse_map::U
 
-    function MappedBasis{T,I}(itr, map, inverse_map) where {T,I}
+    function MappedBasis{T}(itr, map, inverse_map) where {T}
         @assert !isempty(itr)
+        I = eltype(itr)
         @assert T != I || (map == inverse_map == identity)
         return new{T,I,typeof(itr),typeof(map),typeof(inverse_map)}(itr, map, inverse_map)
     end
 end
 
 function MappedBasis(itr, map, inverse_map)
-    return MappedBasis{typeof(map(first(itr))),eltype(itr)}(itr, map, inverse_map)
+    return MappedBasis{typeof(map(first(itr)))}(itr, map, inverse_map)
 end
 
 object(db::MappedBasis) = db.object
