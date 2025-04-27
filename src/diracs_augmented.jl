@@ -53,9 +53,9 @@ struct AugmentedBasis{T,I,A<:Augmented{T},B<:AbstractBasis{T,I}} <:
     basis::B
 end
 
-function AugmentedBasis(basis::MappedBasis{T,I}) where {T,I}
-    @assert haskey(basis, one(object(basis)))
-    return AugmentedBasis{T,I,Augmented{T},typeof(basis)}(basis)
+function AugmentedBasis(basis::DiracBasis{T}) where {T}
+    @assert one(object(basis)) in basis
+    return AugmentedBasis{T,T,Augmented{T},typeof(basis)}(basis)
 end
 
 object(ab::AugmentedBasis) = object(ab.basis)
@@ -113,7 +113,7 @@ end
 function coeffs!(
     res::AbstractCoefficients,
     cfs::AbstractCoefficients,
-    source::MappedBasis,
+    source::DiracBasis,
     target::AugmentedBasis,
 )
     s = aug(cfs)
