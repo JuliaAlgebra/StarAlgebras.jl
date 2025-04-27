@@ -66,11 +66,11 @@ end
     end
 
 Given any iterable `object` over elements of type `I`, the basis
-corresponds to the list of elements `map(i)` corresponding
-to the indices `i` of `object`. The function `inverse_map` should
+corresponds to the list of elements `map(i::I)` where `i` 
+belongs to `object`. The function `inverse_map` should
 be the inverse of `map`. That is, `inverse_map(map(i))` should be `i`
 for all `i in object`.
-The type `S` should implement the methods:
+The `object` (its type `S`, respectively) should implement the methods:
 ```julia
 Base.IteratorSize(::Type{S})
 Base.eltype(::S) # Should return `I`
