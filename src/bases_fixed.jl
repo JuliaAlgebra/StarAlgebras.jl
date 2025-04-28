@@ -7,6 +7,11 @@
         relts::Dict{T,I}
         starof::Vector{I}
     end
+
+Represents a fixed basis of a star algebra, where `elts` is a vector of elements
+of type `T`, `relts` is a dictionary mapping elements to their indices, and
+`starof` is a vector of indices caching the indices in `elts` of the result of
+the star operation on the basis elements.
 """
 mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <: ExplicitBasis{T,I}
     elts::V
@@ -38,6 +43,19 @@ function Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V}
     return Base.IndexStyle(V)
 end
 
+"""
+    struct SubBasis{T,I,K,V<:AbstractVector{K},B<:AbstractBasis{T,K}} <:
+        ExplicitBasis{T,I}
+        keys::V
+        parent_basis::B
+        is_sorted::Bool
+    end
+
+Represents a sub-basis of a given basis, where `keys` is a vector of keys
+representing the sub-basis elements, `parent_basis` is the parent basis from
+which the sub-basis is derived, and `is_sorted` indicates whether the keys are
+sorted.
+"""
 struct SubBasis{T,I,K,V<:AbstractVector{K},B<:AbstractBasis{T,K}} <:
        ExplicitBasis{T,I}
     keys::V
