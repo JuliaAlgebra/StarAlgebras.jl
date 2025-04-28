@@ -107,8 +107,9 @@ import StarAlgebras as SA
         S1 = unique!(rand(G, 7))
         S = unique!([S1; [a * b for a in S1 for b in S1]])
         subb = SA.SubBasis(S, db)
-        smstr = SA.mstructure(subb)
-        @test smstr(1, 2).basis_elements[1] == subb[1] * subb[2]
+        smstr = SA.DiracMStructure(subb, *)
+        @test only(smstr(1, 2).basis_elements) == subb[subb[1] * subb[2]]
+        @test only(smstr(1, 2, eltype(subb)).basis_elements) == subb[1] * subb[2]
 
         sbRG = SA.StarAlgebra(G, subb)
 
@@ -140,6 +141,7 @@ import StarAlgebras as SA
         # My dream implementation would be
         # Base.:+(a::SubBasis, b::SubBasis) = explicit(implicit(a) + implicit(b))
         # so we just need to implement `implicit` and `explicit` 👼
+        @test_broken SA.explicit(SA.implicit(a)) == a
         @test_broken SA.explicit(SA.implicit(a)) == a
         @test_broken SA.explicit(SA.implicit(b)) == b
         @test_broken a + b == SA.explicit(SA.implicit(a) + SA.implicit(b))

@@ -8,6 +8,7 @@ abstract type FiniteSupportBasis{T,I} <: ExplicitBasis{T,I} end
 Return the supporting elements of `fb` as an indexable vector
 """
 function supp end
+supp(fb::FiniteSupportBasis) = fb.supporting_elts
 
 Base.IteratorSize(::Type{<:FiniteSupportBasis}) = Base.HasLength()
 Base.IteratorEltype(::Type{<:FiniteSupportBasis{T}}) where {T} = T
@@ -26,7 +27,7 @@ Base.@propagate_inbounds function Base.getindex(
     return supp(b)[i]
 end
 
-mutable struct FixedBasis{T,I,V<:AbstractVector{T},M<:MTable{T,I}} <:
+mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
                FiniteSupportBasis{T,I}
     supporting_elts::V
     relts::Dict{T,I}
@@ -46,45 +47,23 @@ function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
 end
 
 FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} = FixedBasis{T,typeof(n)}(basis; n)
-supp(fb::FixedBasis) = fb.supporting_elts
 Base.in(x, b::FixedBasis) = haskey(b.relts, x)
 Base.getindex(b::FixedBasis{T}, x::T) where {T} = b.relts[x]
-Base.getindex(b::FixedBasis, i::Integer) = b.elts[i]
+Base.getindex(b::FixedBasis, i::Integer) = b.supporting_elts[i]
 
-struct SubBasis{T,I,V<:AbstractVector{I},B<:AbstractBasis{T,I}} <:
+struct SubBasis{T,I,K,V<:AbstractVector{K},B<:AbstractBasis{T,K}} <:
        FiniteSupportBasis{T,I}
     supporting_idcs::V
     parent_basis::B
+    function SubBasis(supporting_idcs::AbstractVector{K}, parent_basis::AbstractBasis{T,K}) where {T,K}
+        return new{T,keytype(supporting_idcs),K,typeof(supporting_idcs),typeof(parent_basis)}(supporting_idcs, parent_basis)
+    end
 end
 
 supp(sb::SubBasis) = sb.supporting_idcs
 Base.parent(sub::SubBasis) = sub.parent_basis
 
-Base.in(x, b::SubBasis) = x in supp(b)
-function Base.getindex(b::SubBasis{T,I}, x::T) where {T,I<:Integer}
-    return convert(I, parent(b)[supp(b)[x]])
+Base.in(x, b::SubBasis) = b.parent_basis[x] in supp(b)
+function Base.getindex(b::SubBasis{T,I}, x::T) where {T,I}
+    return convert(I, findfirst(isequal(b.parent_basis[x]), supp(b)))
 end
-
-function Base.getindex(b::SubBasis{T,T}, x::T) where {T}
-    parent(b)[x] in supp(b) && return x
-end
-
-struct SubMStructure{SB<:SubBasis,MS} <: MultiplicativeStructure
-    basis::SB
-    mstructure::MS
-end
-
-function mstructure(b::SubBasis)
-    pb = b.parent_basis
-    return SubMStructure(b, mstructure(pb))
-end
-
-function (mstr::SubMStructure)(x::T, y::T) where {T}
-    b = mstr.basis
-    xy = mstr.mstructure(b[x], b[y])
-    return xy
-end
-
-# this is used for key-lookup in mstructures.jl
-# MA.operate!(op::UnsafeAddMul, …)
-_key(mstr::SubMStructure, k) = findfirst(==(k), supp(mstr.basis))
