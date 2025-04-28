@@ -99,4 +99,32 @@
         end
         @test a ≤ b
     end
+
+    @testset "FiniteSupportBasis" begin
+        S1 = unique!(rand(G, 7))
+        S = unique!([S1; [a * b for a in S1 for b in S1]])
+        subb = SA.SubBasis(S, db)
+        smstr = SA.DiracMStructure(subb, *)
+        @test only(smstr(1, 2).basis_elements) == subb[subb[1] * subb[2]]
+        @test only(smstr(1, 2, eltype(subb)).basis_elements) == subb[1] * subb[2]
+
+        sbRG = SA.StarAlgebra(G, subb)
+
+        x = let z = zeros(Int, length(SA.basis(sbRG)))
+            z[1:length(S1)] .= rand(-1:1, length(S1))
+            SA.AlgebraElement(z, sbRG)
+        end
+
+        y = let z = zeros(Int, length(SA.basis(sbRG)))
+            z[1:length(S1)] .= rand(-1:1, length(S1))
+            SA.AlgebraElement(z, sbRG)
+        end
+
+        dx = SA.AlgebraElement(SA.coeffs(x, SA.basis(RG)), RG)
+        dy = SA.AlgebraElement(SA.coeffs(y, SA.basis(RG)), RG)
+
+        @test dx + dy == SA.AlgebraElement(SA.coeffs(x + y, SA.basis(RG)), RG)
+
+        @test dx * dy == SA.AlgebraElement(SA.coeffs(x * y, SA.basis(RG)), RG)
+    end
 end
