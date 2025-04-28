@@ -1,34 +1,14 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-abstract type FiniteSupportBasis{T,I} <: ExplicitBasis{T,I} end
-
 """
-    supp(fb::FiniteSupportBasis)
-Return the supporting elements of `fb` as an indexable vector
+    mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <: ExplicitBasis{T,I}
+        supporting_elts::V
+        relts::Dict{T,I}
+        starof::Vector{I}
+    end
 """
-function supp end
-supp(fb::FiniteSupportBasis) = fb.supporting_elts
-
-Base.IteratorSize(::Type{<:FiniteSupportBasis}) = Base.HasLength()
-Base.IteratorEltype(::Type{<:FiniteSupportBasis{T}}) where {T} = T
-Base.length(b::FiniteSupportBasis) = length(supp(b))
-
-Base.iterate(b::FiniteSupportBasis) = iterate(supp(b))
-Base.iterate(b::FiniteSupportBasis, state) = iterate(supp(b), state)
-# function Base.IndexStyle(::Type{<:FiniteSupportBasis{T,I,V}}) where {T,I,V}
-#     return Base.IndexStyle(V)
-# end
-
-Base.@propagate_inbounds function Base.getindex(
-    b::FiniteSupportBasis,
-    i::Integer,
-)
-    return supp(b)[i]
-end
-
-mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
-               FiniteSupportBasis{T,I}
+mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <: ExplicitBasis{T,I}
     supporting_elts::V
     relts::Dict{T,I}
     starof::Vector{I}
@@ -49,21 +29,60 @@ end
 FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} = FixedBasis{T,typeof(n)}(basis; n)
 Base.in(x, b::FixedBasis) = haskey(b.relts, x)
 Base.getindex(b::FixedBasis{T}, x::T) where {T} = b.relts[x]
-Base.getindex(b::FixedBasis, i::Integer) = b.supporting_elts[i]
+Base.@propagate_inbounds Base.getindex(b::FixedBasis, i::Integer) = b.supporting_elts[i]
+
+Base.iterate(b::FixedBasis) = iterate(b.supporting_elts)
+Base.iterate(b::FixedBasis, state) = iterate(b.supporting_elts, state)
+function Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V}
+    return Base.IndexStyle(V)
+end
 
 struct SubBasis{T,I,K,V<:AbstractVector{K},B<:AbstractBasis{T,K}} <:
-       FiniteSupportBasis{T,I}
+       ExplicitBasis{T,I}
     supporting_idcs::V
     parent_basis::B
+    is_sorted::Bool
     function SubBasis(supporting_idcs::AbstractVector{K}, parent_basis::AbstractBasis{T,K}) where {T,K}
-        return new{T,keytype(supporting_idcs),K,typeof(supporting_idcs),typeof(parent_basis)}(supporting_idcs, parent_basis)
+        return new{T,keytype(supporting_idcs),K,typeof(supporting_idcs),typeof(parent_basis)}(supporting_idcs, parent_basis, issorted(supporting_idcs))
     end
 end
 
-supp(sb::SubBasis) = sb.supporting_idcs
 Base.parent(sub::SubBasis) = sub.parent_basis
 
-Base.in(x, b::SubBasis) = b.parent_basis[x] in supp(b)
+Base.length(b::SubBasis) = length(b.supporting_idcs)
+function _iterate(b::SubBasis, elem_state)
+    if isnothing(elem_state)
+        return
+    end
+    elem, state = elem_state
+    return parent(b)[elem], state
+end
+Base.iterate(b::SubBasis) = _iterate(b, iterate(b.supporting_idcs))
+Base.iterate(b::SubBasis, st) = _iterate(b, iterate(b.supporting_idcs, st))
+
+function Base.get(b::SubBasis{T,I}, x::T, default) where {T,I}
+    key = b.parent_basis[x]
+    if b.is_sorted
+        i = searchsortedfirst(b.supporting_idcs, key)
+        if i in eachindex(b.supporting_idcs) && b.supporting_idcs[i] == key
+            return convert(I, i)
+        end
+    else
+        i = findfirst(isequal(key), b.supporting_idcs)
+        if !isnothing(i)
+            return convert(I, i)
+        end
+    end
+    return default
+end
+
+Base.in(x::T, b::SubBasis{T}) where T = !isnothing(get(b, x, nothing))
+
+Base.getindex(b::SubBasis, i::Integer) = parent(b)[b.supporting_idcs[i]]
 function Base.getindex(b::SubBasis{T,I}, x::T) where {T,I}
-    return convert(I, findfirst(isequal(b.parent_basis[x]), supp(b)))
+    i = get(b, x, nothing)
+    if isnothing(i)
+        throw(BoundsError(b, x))
+    end
+    return i::I
 end

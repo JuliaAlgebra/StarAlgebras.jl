@@ -39,6 +39,8 @@ Implicit bases are not stored in memory and can be potentially infinite.
 """
 abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
+Base.IteratorEltype(::Type{<:ImplicitBasis{T}}) where {T} = T
+
 function zero_coeffs(::Type{S}, ::ImplicitBasis{T,I}) where {S,T,I}
     return SparseCoefficients(I[], S[])
 end
@@ -50,6 +52,7 @@ Explicit bases are stored e.g. in an `AbstractVector` and hence immutable
 """
 abstract type ExplicitBasis{T,I} <: AbstractBasis{T,I} end
 
+Base.IteratorSize(::Type{<:ExplicitBasis}) = Base.HasLength()
 Base.keys(eb::ExplicitBasis) = Base.OneTo(length(eb))
 Base.size(eb::ExplicitBasis) = (length(eb),)
 
@@ -57,8 +60,8 @@ function zero_coeffs(::Type{S}, eb::ExplicitBasis{T,I}) where {S,T,I}
     return spzeros(S, I, length(eb))
 end
 
-function Base.getindex(eb::ExplicitBasis, range::AbstractRange{<:Integer})
-    return [eb[i] for i in range]
+function Base.getindex(eb::ExplicitBasis{T}, range::AbstractRange{<:Integer}) where {T}
+    return T[eb[i] for i in range]
 end
 
 """

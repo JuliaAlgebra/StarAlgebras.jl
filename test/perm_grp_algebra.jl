@@ -103,10 +103,11 @@ import StarAlgebras as SA
         @test a ≤ b
     end
 
-    @testset "FiniteSupportBasis" begin
+    @testset "SubBasis" begin
         S1 = unique!(rand(G, 7))
         S = unique!([S1; [a * b for a in S1 for b in S1]])
         subb = SA.SubBasis(S, db)
+        collect(subb)
         smstr = SA.DiracMStructure(subb, *)
         @test only(smstr(1, 2).basis_elements) == subb[subb[1] * subb[2]]
         @test only(smstr(1, 2, eltype(subb)).basis_elements) == subb[1] * subb[2]
