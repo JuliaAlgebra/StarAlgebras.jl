@@ -31,6 +31,7 @@ Base.in(x, b::FixedBasis) = haskey(b.relts, x)
 Base.getindex(b::FixedBasis{T}, x::T) where {T} = b.relts[x]
 Base.@propagate_inbounds Base.getindex(b::FixedBasis, i::Integer) = b.supporting_elts[i]
 
+Base.length(b::FixedBasis) = length(b.supporting_elts)
 Base.iterate(b::FixedBasis) = iterate(b.supporting_elts)
 Base.iterate(b::FixedBasis, state) = iterate(b.supporting_elts, state)
 function Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V}
@@ -78,7 +79,7 @@ end
 
 Base.in(x::T, b::SubBasis{T}) where T = !isnothing(get(b, x, nothing))
 
-Base.getindex(b::SubBasis, i::Integer) = parent(b)[b.supporting_idcs[i]]
+Base.@propagate_inbounds Base.getindex(b::SubBasis, i::Integer) = parent(b)[b.supporting_idcs[i]]
 function Base.getindex(b::SubBasis{T,I}, x::T) where {T,I}
     i = get(b, x, nothing)
     if isnothing(i)

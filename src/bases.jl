@@ -39,8 +39,6 @@ Implicit bases are not stored in memory and can be potentially infinite.
 """
 abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
-Base.IteratorEltype(::Type{<:ImplicitBasis{T}}) where {T} = T
-
 function zero_coeffs(::Type{S}, ::ImplicitBasis{T,I}) where {S,T,I}
     return SparseCoefficients(I[], S[])
 end
