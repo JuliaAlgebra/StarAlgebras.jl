@@ -129,22 +129,5 @@ import StarAlgebras as SA
         @test dx + dy == SA.AlgebraElement(SA.coeffs(x + y, SA.basis(RG)), RG)
 
         @test dx * dy == SA.AlgebraElement(SA.coeffs(x * y, SA.basis(RG)), RG)
-
-        a = SA.AlgebraElement([2], SA.StarAlgebra(G, SA.SubBasis([g], db)))
-        b = SA.AlgebraElement([-3], SA.StarAlgebra(G, SA.SubBasis([h], db)))
-        # `Base.+` assumes that using the basis of the first argument will suffice
-        # We should redefine `Base.:+(a::SubBasis, b::SubBasis)` to first
-        # convert `a` and `b` to their implicit basis equivalent and then
-        # do `+` and then convert the result back
-        # `MultivariateBases` defines an `implicit` function.
-        # Why not having an `explicit` as well ?
-        # My dream implementation would be
-        # Base.:+(a::SubBasis, b::SubBasis) = explicit(implicit(a) + implicit(b))
-        # so we just need to implement `implicit` and `explicit` 👼
-        @test_broken SA.explicit(SA.implicit(a)) == a
-        @test_broken SA.explicit(SA.implicit(a)) == a
-        @test_broken SA.explicit(SA.implicit(b)) == b
-        @test_broken a + b == SA.explicit(SA.implicit(a) + SA.implicit(b))
-        @test_broken a * b == SA.explicit(SA.implicit(a) * SA.implicit(b))
     end
 end
