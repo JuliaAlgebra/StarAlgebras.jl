@@ -96,12 +96,13 @@ function Base.get(b::SubBasis{T,I}, x::T, default) where {T,I}
 end
 
 Base.in(x::T, b::SubBasis{T}) where T = !isnothing(get(b, x, nothing))
+Base.haskey(b::SubBasis, i::Integer) = i in eachindex(b.keys)
 
 Base.getindex(b::SubBasis, i::Integer) = parent(b)[b.keys[i]]
 function Base.getindex(b::SubBasis{T,I}, x::T) where {T,I}
     i = get(b, x, nothing)
     if isnothing(i)
-        throw(BoundsError(b, x))
+        throw(KeyError(x))
     end
     return i::I
 end

@@ -107,7 +107,13 @@ import StarAlgebras as SA
         S1 = unique!(rand(G, 7))
         S = unique!([S1; [a * b for a in S1 for b in S1]])
         subb = SA.SubBasis(S, db)
-        collect(subb)
+        a = S1[1]
+        @test subb[a] == 1
+        @test a in subb
+        @test isnothing(get(subb, a^3, nothing))
+        @test_throws KeyError(a^3) subb[a^3]
+        @test !(a^3 in subb)
+        @test collect(subb) == S
         smstr = SA.DiracMStructure(subb, *)
         @test only(smstr(1, 2).basis_elements) == subb[subb[1] * subb[2]]
         @test only(smstr(1, 2, eltype(subb)).basis_elements) == subb[1] * subb[2]

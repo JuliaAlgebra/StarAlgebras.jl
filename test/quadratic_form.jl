@@ -74,19 +74,6 @@
     @test A(Q) == π * b[3] * b[2] + b[4] * b[3]
 end
 
-struct SubBasis{T,I,V<:AbstractVector{I},B<:SA.ImplicitBasis{T,I}} <: SA.ExplicitBasis{Float64,Int}
-    implicit::B
-    indices::V
-end
-Base.length(b::SubBasis) = length(b.indices)
-function Base.iterate(b::SubBasis, args...)
-    elem_state = iterate(b.indices, args...)
-    if isnothing(elem_state)
-        return
-    end
-    return b.implicit[elem_state[1]], elem_state[2]
-end
-
 @testset "Int -> Float basis" begin
     limited = SA.MappedBasis(1:2, float, Int)
     @test !(3.0 in limited)
@@ -95,7 +82,10 @@ end
     implicit = SA.MappedBasis(NaturalNumbers(), float, Int)
     @test 3.0 in implicit
     @test haskey(implicit, 3)
-    explicit = SubBasis(implicit, 1:3)
+    explicit = SA.SubBasis(1:3, implicit)
+    @test 3.0 in explicit
+    @test collect(explicit) == [1.0, 2.0, 3.0]
+    @test haskey(explicit, 3)
     m = Bool[
         true  false true
         false true  false
@@ -119,7 +109,7 @@ end
     implicit = cheby_basis()
     mstr = ChebyMStruct(implicit)
     mt = SA.MTable(implicit, mstr, (0, 0))
-    sub = SubBasis(implicit, 1:3)
+    sub = SA.SubBasis(1:3, implicit)
     fixed = SA.FixedBasis(implicit; n = 3)
     a = ChebyPoly(2)
     b = ChebyPoly(3)
