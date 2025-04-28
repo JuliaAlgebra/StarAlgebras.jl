@@ -44,10 +44,10 @@ Base.iterate(b::FixedBasis, state) = iterate(b.elts, state)
 Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V} = Base.IndexStyle(V)
 
 """
-    struct SubBasis{T,I,K,V<:AbstractVector{K},B<:AbstractBasis{T,K}} <:
+    struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
         ExplicitBasis{T,I}
-        keys::V
         parent_basis::B
+        keys::V
         is_sorted::Bool
     end
 
@@ -56,13 +56,13 @@ representing the sub-basis elements, `parent_basis` is the parent basis from
 which the sub-basis is derived, and `is_sorted` indicates whether the keys are
 sorted.
 """
-struct SubBasis{T,I,K,V<:AbstractVector{K},B<:AbstractBasis{T,K}} <:
+struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
        ExplicitBasis{T,I}
-    keys::V
     parent_basis::B
+    keys::V
     is_sorted::Bool
-    function SubBasis(keys::AbstractVector{K}, parent_basis::AbstractBasis{T,K}) where {T,K}
-        return new{T,keytype(keys),K,typeof(keys),typeof(parent_basis)}(keys, parent_basis, issorted(keys))
+    function SubBasis(parent_basis::AbstractBasis{T,K}, keys::AbstractVector{K}) where {T,K}
+        return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(parent_basis, keys, issorted(keys))
     end
 end
 

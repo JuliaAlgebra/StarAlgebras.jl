@@ -3,6 +3,7 @@
 
 using Test
 using PermutationGroups
+import Random
 import StarAlgebras as SA
 @testset "POC: group algebra" begin
     G = PermGroup(perm"(1,2,3,4,5,6)", perm"(1,2)")
@@ -104,9 +105,10 @@ import StarAlgebras as SA
     end
 
     @testset "SubBasis" begin
+        Random.seed!(0)
         S1 = unique!(rand(G, 7))
         S = unique!([S1; [a * b for a in S1 for b in S1]])
-        subb = SA.SubBasis(S, db)
+        subb = SA.SubBasis(db, S)
         a = S1[1]
         @test subb[a] == 1
         @test a in subb

@@ -82,7 +82,7 @@ end
     implicit = SA.MappedBasis(NaturalNumbers(), float, Int)
     @test 3.0 in implicit
     @test haskey(implicit, 3)
-    explicit = SA.SubBasis(1:3, implicit)
+    explicit = SA.SubBasis(implicit, 1:3)
     @test 3.0 in explicit
     @test collect(explicit) == [1.0, 2.0, 3.0]
     @test haskey(explicit, 3)
@@ -109,7 +109,7 @@ end
     implicit = cheby_basis()
     mstr = ChebyMStruct(implicit)
     mt = SA.MTable(implicit, mstr, (0, 0))
-    sub = SA.SubBasis(1:3, implicit)
+    sub = SA.SubBasis(implicit, 1:3)
     fixed = SA.FixedBasis(implicit; n = 3)
     a = ChebyPoly(2)
     b = ChebyPoly(3)
