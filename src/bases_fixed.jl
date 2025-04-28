@@ -13,7 +13,8 @@ of type `T`, `relts` is a dictionary mapping elements to their indices, and
 `starof` is a vector of indices caching the indices in `elts` of the result of
 the star operation on the basis elements.
 """
-mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <: ExplicitBasis{T,I}
+mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
+               ExplicitBasis{T,I}
     elts::V
     relts::Dict{T,I}
     starof::Vector{I}
@@ -32,16 +33,15 @@ function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
 end
 
 FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} = FixedBasis{T,typeof(n)}(basis; n)
+
 Base.in(x, b::FixedBasis) = haskey(b.relts, x)
 Base.getindex(b::FixedBasis{T}, x::T) where {T} = b.relts[x]
-Base.@propagate_inbounds Base.getindex(b::FixedBasis, i::Integer) = b.elts[i]
+Base.getindex(b::FixedBasis, i::Integer) = b.elts[i]
 
 Base.length(b::FixedBasis) = length(b.elts)
 Base.iterate(b::FixedBasis) = iterate(b.elts)
 Base.iterate(b::FixedBasis, state) = iterate(b.elts, state)
-function Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V}
-    return Base.IndexStyle(V)
-end
+Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V} = Base.IndexStyle(V)
 
 """
     struct SubBasis{T,I,K,V<:AbstractVector{K},B<:AbstractBasis{T,K}} <:
@@ -97,7 +97,7 @@ end
 
 Base.in(x::T, b::SubBasis{T}) where T = !isnothing(get(b, x, nothing))
 
-Base.@propagate_inbounds Base.getindex(b::SubBasis, i::Integer) = parent(b)[b.keys[i]]
+Base.getindex(b::SubBasis, i::Integer) = parent(b)[b.keys[i]]
 function Base.getindex(b::SubBasis{T,I}, x::T) where {T,I}
     i = get(b, x, nothing)
     if isnothing(i)
