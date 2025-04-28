@@ -11,9 +11,22 @@ function Base.show(io::IO, ::MIME"text/latex", s::CustomLaTeXPrint)
     return print(io, s.s)
 end
 
+@testset "DiracBasis" begin
+    db = SA.DiracBasis([2π, -π])
+    @test 2π in db
+    @test haskey(db, 2π)
+    @test !(3π in db)
+    @test !haskey(db, 3π)
+    @test collect(db) == [2π, -π]
+end
+
 @testset "Algebra and Elements" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
+    # If the map does not change the type then it should be `Base.identity`
+    @test_throws AssertionError SA.MappedBasis(A★, i -> i * one(A★), i -> i * inv(one(A★)))
+    @test_throws AssertionError SA.MappedBasis(A★, i -> i * one(A★), identity)
+    @test_throws AssertionError SA.MappedBasis(A★, identity, i -> i * inv(one(A★)))
     B = SA.DiracBasis(A★)
     RG = StarAlgebra(A★, B)
     @test typeof(@inferred basis(RG)) == MA.promote_operation(basis, typeof(RG))

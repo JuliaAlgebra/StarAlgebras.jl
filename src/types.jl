@@ -89,7 +89,7 @@ function Base.one(T::Type, A::AbstractStarAlgebra)
     # TODO
     # this is not correct, more thought is needed
     if basis(A) isa DiracBasis
-        @assert i in basis(A)
+        @assert haskey(basis(A), i)
         return AlgebraElement(sc, A)
     else
         return AlgebraElement(

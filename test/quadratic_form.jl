@@ -1,28 +1,6 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-struct Gram{T,B}
-    matrix::T
-    basis::B
-end
-
-function Base.eltype(g::Gram)
-    T = eltype(g.matrix)
-    basis_eltype = eltype(basis(g))
-    U = if basis_eltype <: SA.AlgebraElement
-        # We will multiply with the coefficients of these `AlgebraElement`
-        promote_type(T, eltype(basis_eltype))
-    else
-        # We will multiply with the basis elements which will be keys of
-        # the `SparseCoefficients` so we won't multiply with any other coefficient
-        T
-    end
-    return MA.promote_operation(+, U, U)
-end
-
-SA.basis(g::Gram) = g.basis
-Base.getindex(g::Gram, i, j) = g.matrix[i, j]
-
 @testset "QuadraticForm" begin
     A = let alph = [:a, :b, :c]
         fw = FreeWords(alph)
@@ -96,14 +74,6 @@ Base.getindex(g::Gram, i, j) = g.matrix[i, j]
     @test A(Q) == π * b[3] * b[2] + b[4] * b[3]
 end
 
-# An`ImplicitBasis` that simply maps its keys (`Int`s) to basis elements (`Float64`s).
-struct IntToFloat <: SA.ImplicitBasis{Float64,Int} end
-Base.IteratorSize(::Type{<:IntToFloat}) = Base.IsInfinite()
-Base.first(::IntToFloat) = 1.0
-Base.getindex(::IntToFloat, i::Int) = convert(Float64, i)
-Base.getindex(::IntToFloat, i::Float64) = convert(Int, i)
-Base.require_one_based_indexing(::IntToFloat) = nothing
-
 struct SubBasis{T,I,V<:AbstractVector{I},B<:SA.ImplicitBasis{T,I}} <: SA.ExplicitBasis{Float64,Int}
     implicit::B
     indices::V
@@ -117,8 +87,14 @@ function Base.iterate(b::SubBasis, args...)
     return b.implicit[elem_state[1]], elem_state[2]
 end
 
-@testset "IntToFloat basis" begin
-    implicit = IntToFloat()
+@testset "Int -> Float basis" begin
+    limited = SA.MappedBasis(1:2, float, Int)
+    @test !(3.0 in limited)
+    @test !haskey(limited, 3)
+    @test collect(limited) == [1.0, 2.0]
+    implicit = SA.MappedBasis(NaturalNumbers(), float, Int)
+    @test 3.0 in implicit
+    @test haskey(implicit, 3)
     explicit = SubBasis(implicit, 1:3)
     m = Bool[
         true  false true
@@ -137,4 +113,36 @@ end
     mt = SA.MTable(implicit, (0, 0))
     @test mt(2.0, 3.0) == SA.SparseCoefficients([6.0], [1])
     @test mt(2.0, 3.0) == mt(2, 3)
+end
+
+@testset "Chebyshev basis" begin
+    implicit = cheby_basis()
+    mstr = ChebyMStruct(implicit)
+    mt = SA.MTable(implicit, mstr, (0, 0))
+    sub = SubBasis(implicit, 1:3)
+    fixed = SA.FixedBasis(implicit; n = 3)
+    a = ChebyPoly(2)
+    b = ChebyPoly(3)
+    expected = SA.SparseCoefficients((ChebyPoly(1), ChebyPoly(5)), (1 // 2, 1 // 2))
+    for mult in [mstr, mt]
+        @test mult(a, b) == expected
+        @test mult(a, b, Int) == mult(2, 3)
+        @test mult(a, b) == mult(2, 3, ChebyPoly)
+        m = [
+            2      1 // 2 0
+            1 // 2 0      2
+            0      2      1
+        ]
+        A = SA.StarAlgebra(nothing, mult)
+        for explicit in [sub, fixed]
+            Q = SA.QuadraticForm(Gram(m, explicit))
+            @test A(Q) == SA.AlgebraElement(
+                SA.SparseCoefficients(
+                    [0, 1, 2, 3, 5, 6],
+                    [3//2, 5//2, 1, 1//2, 2, 1//2],
+                ),
+                A,
+            )
+        end
+    end
 end

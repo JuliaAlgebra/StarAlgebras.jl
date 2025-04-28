@@ -44,6 +44,10 @@ function (mstr::MultiplicativeStructure{T})(x::T, y::T) where {T}
     return mstr(x, y, T)
 end
 
+function (mstr::MultiplicativeStructure{T,I})(x::I, y::I) where {T,I}
+    return mstr(x, y, I)
+end
+
 function (mstr::MultiplicativeStructure{T,I})(x::Integer, y::Integer) where {T,I<:Integer}
     return mstr(convert(I, x), convert(I, y), I)
 end
