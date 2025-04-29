@@ -105,6 +105,8 @@ import StarAlgebras as SA
     end
 
     @testset "SubBasis" begin
+        # If we're unlucky, `a^3` might belong to the basis.
+        # We fix the seed to be sure we are never in that case.
         Random.seed!(0)
         S1 = unique!(rand(G, 7))
         S = unique!([S1; [a * b for a in S1 for b in S1]])
