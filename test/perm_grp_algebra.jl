@@ -1,6 +1,10 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+using Test
+using PermutationGroups
+import Random
+import StarAlgebras as SA
 @testset "POC: group algebra" begin
     G = PermGroup(perm"(1,2,3,4,5,6)", perm"(1,2)")
     g = Permutation(perm"(1,4,3,6)(2,5)", G)
@@ -98,5 +102,43 @@
             count(i -> isassigned(mt, i), eachindex(mt)), length(mt)
         end
         @test a ≤ b
+    end
+
+    @testset "SubBasis" begin
+        # If we're unlucky, `a^3` might belong to the basis.
+        # We fix the seed to be sure we are never in that case.
+        Random.seed!(0)
+        S1 = unique!(rand(G, 7))
+        S = unique!([S1; [a * b for a in S1 for b in S1]])
+        subb = SA.SubBasis(db, S)
+        a = S1[1]
+        @test subb[a] == 1
+        @test a in subb
+        @test isnothing(get(subb, a^3, nothing))
+        @test_throws KeyError(a^3) subb[a^3]
+        @test !(a^3 in subb)
+        @test collect(subb) == S
+        smstr = SA.DiracMStructure(subb, *)
+        @test only(smstr(1, 2).basis_elements) == subb[subb[1] * subb[2]]
+        @test only(smstr(1, 2, eltype(subb)).basis_elements) == subb[1] * subb[2]
+
+        sbRG = SA.StarAlgebra(G, subb)
+
+        x = let z = zeros(Int, length(SA.basis(sbRG)))
+            z[1:length(S1)] .= rand(-1:1, length(S1))
+            SA.AlgebraElement(z, sbRG)
+        end
+
+        y = let z = zeros(Int, length(SA.basis(sbRG)))
+            z[1:length(S1)] .= rand(-1:1, length(S1))
+            SA.AlgebraElement(z, sbRG)
+        end
+
+        dx = SA.AlgebraElement(SA.coeffs(x, SA.basis(RG)), RG)
+        dy = SA.AlgebraElement(SA.coeffs(y, SA.basis(RG)), RG)
+
+        @test dx + dy == SA.AlgebraElement(SA.coeffs(x + y, SA.basis(RG)), RG)
+
+        @test dx * dy == SA.AlgebraElement(SA.coeffs(x * y, SA.basis(RG)), RG)
     end
 end

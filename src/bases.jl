@@ -24,7 +24,6 @@ still be infinite).
   [`FixedBasis`](@ref) implements `AbstractVector`-type storage for elements.
   This can be used e.g. for representing polynomials as (sparse) vectors of
   coefficients w.r.t. a given `FixedBasis`.
-expressed in it.
 """
 abstract type AbstractBasis{T,I} end
 
@@ -34,8 +33,11 @@ key_type(::Type{<:AbstractBasis{T,I}}) where {T,I} = I
 key_type(b::AbstractBasis) = key_type(typeof(b))
 
 """
-    ImplicitBasis{T,I}
-Implicit bases are not stored in memory and can be potentially infinite.
+    abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
+
+Implicit bases are bases that contains the product of all its elements.
+This makes these bases particularly useful to work with [`AlgebraElement`](@ref)s with supports that can not be reasonably bounded.
+Note that these bases may not explictly store its elements in memory as they may be potentially infinite.
 """
 abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
@@ -44,12 +46,13 @@ function zero_coeffs(::Type{S}, ::ImplicitBasis{T,I}) where {S,T,I}
 end
 
 """
-    ExplicitBasis{T,I}
-Explicit bases are stored e.g. in an `AbstractVector` and hence immutable
-(in particular of well defined and fixed length).
-"""
-abstract type ExplicitBasis{T,I} <: AbstractBasis{T,I} end
+    abstract type ExplicitBasis{T,I<:Integer} <: AbstractBasis{T,I} end
 
+Explicit bases are bases of finite length for which the keys are integers.
+"""
+abstract type ExplicitBasis{T,I<:Integer} <: AbstractBasis{T,I} end
+
+Base.IteratorSize(::Type{<:ExplicitBasis}) = Base.HasLength()
 Base.keys(eb::ExplicitBasis) = Base.OneTo(length(eb))
 Base.size(eb::ExplicitBasis) = (length(eb),)
 
@@ -57,8 +60,8 @@ function zero_coeffs(::Type{S}, eb::ExplicitBasis{T,I}) where {S,T,I}
     return spzeros(S, I, length(eb))
 end
 
-function Base.getindex(eb::ExplicitBasis, range::AbstractRange{<:Integer})
-    return [eb[i] for i in range]
+function Base.getindex(eb::ExplicitBasis{T}, range::AbstractRange{<:Integer}) where {T}
+    return T[eb[i] for i in range]
 end
 
 """
