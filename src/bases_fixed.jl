@@ -1,18 +1,6 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-"""
-    mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <: ExplicitBasis{T,I}
-        elts::V
-        relts::Dict{T,I}
-        starof::Vector{I}
-    end
-
-Represents a fixed basis of a star algebra, where `elts` is a vector of elements
-of type `T`, `relts` is a dictionary mapping elements to their indices, and
-`starof` is a vector of indices caching the indices in `elts` of the result of
-the star operation on the basis elements.
-"""
 mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
                ExplicitBasis{T,I}
     elts::V
@@ -20,13 +8,65 @@ mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
     starof::Vector{I}
 end
 
+"""
+    FixedBasis(elts::AbstractVector)
+
+Represents a linear basis which is fixed of length (given by `elts`).
+The elements of `elts` are assumed to be _linearly independent_ and (as a set) invariant under `star`.
+Due to its finiteness, `b::FixedBasis` can be indexed like a vector (by positive integers) and therefore elements expressed in `b` can be represented by simple (sparse) Vectors.
+
+## Examples
+
+```julia
+julia> import StarAlgebras as SA;
+
+julia> SA.star(s::String) = reverse(s) # identity is also fine
+
+julia> b = SA.FixedBasis(["", "a", "b", "aa", "ab", "ba", "bb"]);
+
+julia> b["a"]
+1
+
+julia> b["ab"]
+4
+
+julia> b[4]
+"ab"
+
+julia> b["abc"]
+ERROR: KeyError: key "abc" not found
+[...]
+
+julia> A = SA.StarAlgebra(String, SA.DiracMStructure(b, *))
+*-algebra of String
+
+julia> c = A("a") + A("b")
+1·"a" + 1·"b"
+
+julia> c*A("a")
+1·"aa" + 1·"ba"
+
+julia> A("a")*c
+1·"aa" + 1·"ab"
+
+julia> c*c
+1·"aa" + 1·"ab" + 1·"ba" + 1·"bb"
+
+julia> SA.coeffs(c*c)
+7-element SparseArrays.SparseVector{Int64, Int64} with 4 stored entries:
+  [4]  =  1
+  [5]  =  1
+  [6]  =  1
+  [7]  =  1
+```
+"""
+FixedBasis(elts::AbstractVector{T}) where {T} = FixedBasis{T,keytype(elts)}(elts)
+
 function FixedBasis{T,I}(elts::AbstractVector{T}) where {T,I}
     relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
     starof = [relts[star(x)] for x in elts]
     return FixedBasis{T,I,typeof(elts)}(elts, relts, starof)
 end
-
-FixedBasis(elts::AbstractVector{T}) where {T} = FixedBasis{T,keytype(elts)}(elts)
 
 function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
     return FixedBasis{T,I}(collect(Iterators.take(basis, n)))
