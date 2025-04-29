@@ -36,7 +36,7 @@ key_type(b::AbstractBasis) = key_type(typeof(b))
     abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
 Implicit bases are bases that contains the product of all its elements.
-This makes these bases particularly appropriate as bases of [`AlgebraElement`](@ref)s.
+This makes these bases particularly useful to work with [`AlgebraElement`](@ref)s with supports that can not be reasonably bounded.
 Note that these bases may not explictly store its elements in memory as they may be potentially infinite.
 """
 abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
