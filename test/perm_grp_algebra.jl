@@ -174,4 +174,38 @@ import StarAlgebras as SA
             @test coeffs(one(x)) == coeffs(one(sRG))
         end
     end
+    @testset "Algebra Elements Basis" begin
+        S1 = unique!(collect(Iterators.take(G, 10)))
+        S = unique!([a * b for a in S1 for b in S1])
+
+        elts = [RG(g) - RG(1) for g in S]
+        elts[begin] = RG(1) # we don't want to have zero in the basis
+
+        ab = SA.FixedBasis(elts)
+
+        @test ab[ab[elts[2]]] == elts[2]
+
+        rcfs = SA.SparseCoefficients(rand(elts[1:length(S1)], 5), rand(-2:2, 5))
+        scfs = SA.SparseCoefficients(rand(elts[1:length(S1)], 5), rand(-2:2, 5))
+
+        @test coeffs(rcfs, SA.DiracBasis(elts), ab) isa SparseVector
+
+        aRG = SA.StarAlgebra(RG, SA.MTable(ab, (length(S1), length(S1))))
+
+        ar = SA.AlgebraElement(coeffs(rcfs, SA.DiracBasis(elts), basis(aRG)), aRG)
+        as = SA.AlgebraElement(coeffs(scfs, SA.DiracBasis(elts), basis(aRG)), aRG)
+
+        @test SA.aug(ar) == ar(ab[1]) # one(RG)
+        @test SA.aug(as) == as(ab[1]) # one(RG)
+        @test SA.aug(ar + as) == SA.aug(ar) + SA.aug(as)
+
+        @test coeffs(ar + as, basis(aRG)) isa AbstractVector
+
+        @test isone(one(aRG))
+        @test ar * one(aRG) == ar
+        @test one(aRG) * ar == ar
+        @test eltype(one(Float64, aRG)) == Float64
+        @test isone(one(ar))
+        @test coeffs(one(ar)) == coeffs(one(aRG))
+    end
 end

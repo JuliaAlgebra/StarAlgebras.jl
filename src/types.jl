@@ -76,7 +76,7 @@ function AlgebraElement(
 end
 
 ### constructing elements
-function __coerce(A::AbstractStarAlgebra{O,T}, (x,v)::Pair{T, V}) where {O,T,V}
+function __coerce(A::AbstractStarAlgebra, (x,v)::Pair{K, V}) where {K,V}
     if iszero(v)
         return AlgebraElement(zero_coeffs(V, basis(A)), A)
     elseif x in basis(A)
