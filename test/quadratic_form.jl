@@ -92,7 +92,7 @@ end
         true  false true
     ]
     Q = SA.QuadraticForm(Gram(m, explicit))
-    A = SA.StarAlgebra(nothing, implicit)
+    A = SA.StarAlgebra(PlaceholderObject(), implicit)
     @test A(Q) == SA.AlgebraElement(
         SA.SparseCoefficients(
             [1.0, 3.0, 4.0, 9.0],
@@ -123,7 +123,7 @@ end
             1 // 2 0      2
             0      2      1
         ]
-        A = SA.StarAlgebra(nothing, mult)
+        A = SA.StarAlgebra(PlaceholderObject(), mult)
         for explicit in [sub, fixed]
             Q = SA.QuadraticForm(Gram(m, explicit))
             @test A(Q) == SA.AlgebraElement(
