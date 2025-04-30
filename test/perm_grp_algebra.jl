@@ -37,6 +37,13 @@ import StarAlgebras as SA
     xz = SA.AlgebraElement(xzcfs, RG)
     @test x * z == xz
 
+    @test isone(one(RG))
+    @test x * one(RG) == x
+    @test one(RG) * x == x
+    @test eltype(one(Float64, RG)) == Float64
+    @test isone(one(x))
+    @test coeffs(one(x)) == coeffs(one(RG))
+
     # FIXME Broken
 #    @testset "Augmented basis" begin
 #        ad = SA.AugmentedBasis(db)
@@ -102,6 +109,13 @@ import StarAlgebras as SA
             count(i -> isassigned(mt, i), eachindex(mt)), length(mt)
         end
         @test a ≤ b
+
+        @test isone(one(fRG))
+        @test fr * one(fRG) == fr
+        @test one(fRG) * fr == fr
+        @test eltype(one(Float64, fRG)) == Float64
+        @test isone(one(fr))
+        @test coeffs(one(fr)) == coeffs(one(fRG))
     end
 
     @testset "SubBasis" begin
@@ -122,7 +136,7 @@ import StarAlgebras as SA
         @test only(smstr(1, 2).basis_elements) == subb[subb[1] * subb[2]]
         @test only(smstr(1, 2, eltype(subb)).basis_elements) == subb[1] * subb[2]
 
-        sbRG = SA.StarAlgebra(G, subb)
+        sbRG = SA.StarAlgebra(G, smstr)
 
         x = let z = zeros(Int, length(SA.basis(sbRG)))
             z[1:length(S1)] .= rand(-1:1, length(S1))
@@ -140,5 +154,24 @@ import StarAlgebras as SA
         @test dx + dy == SA.AlgebraElement(SA.coeffs(x + y, SA.basis(RG)), RG)
 
         @test dx * dy == SA.AlgebraElement(SA.coeffs(x * y, SA.basis(RG)), RG)
+
+        if !(one(G) in subb)
+            @test_throws ArgumentError one(sbRG)
+        end
+
+        S2 = unique([S; one(G)])
+        subb2 = SA.SubBasis(db, S2)
+        let sRG = SA.StarAlgebra(G, subb2)
+            x = let z = spzeros(Int, length(SA.basis(sRG)))
+                z[rand(1:length(S2), 10)] += rand(-1:1, 10)
+                SA.AlgebraElement(z, sRG)
+            end
+            @test isone(one(sRG))
+            @test x * one(sRG) == x
+            @test one(sRG) * x == x
+            @test eltype(one(Float64, sRG)) == Float64
+            @test isone(one(x))
+            @test coeffs(one(x)) == coeffs(one(sRG))
+        end
     end
 end
