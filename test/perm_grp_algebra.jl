@@ -179,9 +179,10 @@ import StarAlgebras as SA
         S = unique!([a * b for a in S1 for b in S1])
 
         elts = [RG(g) - RG(1) for g in S]
-        elts[begin] = RG(1) # we don't want to have zero in the basis
-
+        elts[begin] = RG(S[2]) + RG(1)
         ab = SA.FixedBasis(elts)
+        # basis looks like this: [s₁ + e, s₁ - e, s₂ - e, s₃ - e, …]
+        # in particular it doesn't contain 1!
 
         @test ab[ab[elts[2]]] == elts[2]
 
@@ -195,17 +196,13 @@ import StarAlgebras as SA
         ar = SA.AlgebraElement(coeffs(rcfs, SA.DiracBasis(elts), basis(aRG)), aRG)
         as = SA.AlgebraElement(coeffs(scfs, SA.DiracBasis(elts), basis(aRG)), aRG)
 
-        @test SA.aug(ar) == ar(ab[1]) # one(RG)
-        @test SA.aug(as) == as(ab[1]) # one(RG)
+        @test SA.aug(ar) == 2*ar(first(ab)) # one(RG)
+        @test SA.aug(as) == 2as(first(ab)) # one(RG)
         @test SA.aug(ar + as) == SA.aug(ar) + SA.aug(as)
 
         @test coeffs(ar + as, basis(aRG)) isa AbstractVector
 
-        @test isone(one(aRG))
-        @test ar * one(aRG) == ar
-        @test one(aRG) * ar == ar
-        @test eltype(one(Float64, aRG)) == Float64
-        @test isone(one(ar))
-        @test coeffs(one(ar)) == coeffs(one(aRG))
+        @test_throws ArgumentError one(aRG)
+        @test_throws ArgumentError isone(ar)
     end
 end
