@@ -33,7 +33,7 @@ function MA.promote_operation(::typeof(basis), ::Type{StarAlgebra{O,T,M}}) where
     return MA.promote_operation(basis, M)
 end
 object(A::StarAlgebra) = A.object
-Base.isempty(A::StarAlgebra) = isempty(object(A))
+Base.isempty(A::StarAlgebra) = isempty(basis(A))
 
 struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     coeffs::V
@@ -50,8 +50,6 @@ function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{A,T,V}}) w
     return V
 end
 coeffs(a::AlgebraElement) = a.coeffs
-
-
 
 function MA.operate!(T::typeof(canonical), a::AlgebraElement)
     return MA.operate!(T, coeffs(a))
