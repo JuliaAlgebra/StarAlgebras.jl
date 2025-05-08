@@ -2,11 +2,11 @@
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
 aug(cfs::Any) = sum(values(cfs))
-aug(a::AlgebraElement) = aug(coeffs(a))
+aug(a::AlgebraElement) = aug(coeffs(a), basis(a))
 
-function aug(ac::AbstractCoefficients)
-    isempty(keys(ac)) && return zero(value_type(ac))
-    return sum(c * aug(x) for (x, c) in nonzero_pairs(ac))
+function aug(cfs, b::AbstractBasis)
+    isempty(keys(cfs)) && return zero(value_type(cfs))
+    return sum(c * aug(b[x]) for (x, c) in nonzero_pairs(cfs))
 end
 
 struct Augmented{K} <: AbstractCoefficients{K,Int}

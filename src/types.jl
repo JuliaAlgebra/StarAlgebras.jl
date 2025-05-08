@@ -33,6 +33,7 @@ function MA.promote_operation(::typeof(basis), ::Type{StarAlgebra{O,T,M}}) where
     return MA.promote_operation(basis, M)
 end
 object(A::StarAlgebra) = A.object
+Base.isempty(A::StarAlgebra) = isempty(basis(A))
 
 struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     coeffs::V
@@ -40,6 +41,8 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
 end
 
 Base.parent(a::AlgebraElement) = a.parent
+Base.in(x::AlgebraElement, A::AbstractStarAlgebra) = parent(x) == A
+
 mstructure(a::AlgebraElement) = mstructure(parent(a))
 Base.eltype(::Type{A}) where {A<:AlgebraElement} = value_type(MA.promote_operation(coeffs, A))
 Base.eltype(a::AlgebraElement) = eltype(typeof(a))
@@ -76,55 +79,52 @@ function AlgebraElement(
 end
 
 ### constructing elements
-Base.zero(A::AbstractStarAlgebra) = zero(Int, A)
-function Base.zero(T::Type, A::AbstractStarAlgebra)
-    cfs = zero_coeffs(T, basis(A))
-    return AlgebraElement(cfs, A)
-end
-
-Base.one(A::AbstractStarAlgebra) = one(Int, A)
-function Base.one(T::Type, A::AbstractStarAlgebra)
-    i = one(object(A))
-    sc = SparseCoefficients([i], [one(T)])
-    # TODO
-    # this is not correct, more thought is needed
-    if basis(A) isa DiracBasis
-        @assert haskey(basis(A), i)
-        return AlgebraElement(sc, A)
+function __coerce(A::AbstractStarAlgebra, (x,v)::Pair{K, V}) where {K,V}
+    if iszero(v)
+        return AlgebraElement(zero_coeffs(V, basis(A)), A)
+    elseif x in basis(A)
+        cfs = zero_coeffs(V, basis(A))
+        cfs[basis(A)[x]] = v
+        return AlgebraElement(cfs, A)
+    # elseif x in object(A)
+    #     sc = SparseCoefficients([x], [v])
+    #     return AlgebraElement(
+    #         coeffs(sc, DiracBasis(object(A)), basis(A)),
+    #         A,
+    #     )
     else
-        return AlgebraElement(
-            coeffs(sc, DiracBasis(object(A)), basis(A)),
-            A,
-        )
+        throw(ArgumentError("cannot coerce $x to $A"))
     end
 end
 
+Base.zero(A::AbstractStarAlgebra) = zero(Int, A)
+Base.zero(T::Type, A::AbstractStarAlgebra) =
+    __coerce(A, (one(object(A)) => zero(T)))
 Base.zero(a::AlgebraElement) = (b = similar(a); return MA.operate!(zero, b))
-Base.one(a::AlgebraElement) = one(eltype(a), parent(a))
 Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
 
-function Base.isone(a::AlgebraElement)
-    c = coeffs(a)
-    A = parent(a)
-    cfs1 = SparseCoefficients((one(object(A)),), (1,))
+Base.one(A::AbstractStarAlgebra) = one(Int, A)
+Base.one(T::Type, A::AbstractStarAlgebra) =
+    __coerce(A, (one(object(A)) => one(T)))
+Base.one(a::AlgebraElement) = one(eltype(a), parent(a))
 
-    if basis(A) isa DiracBasis
-        return c == cfs1
+function Base.isone(a::AlgebraElement)
+    A = parent(a)
+    id = one(object(A))
+    if id in basis(A)
+        for (i, v) in nonzero_pairs(coeffs(a))
+            isone(v) || return false
+            id == basis(A)[i] || return false
+        end
+        return true
     else
-        dc = coeffs(c, basis(a), DiracBasis(object(parent(a))))
-        return dc == cfs1
+        throw(ArgumentError("basis of $A does not contain $id; `one` and `isone` are unsupported"))
+        # return a == one(a)
     end
 end
 
-function (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T}
-    b = basis(A)
-    @assert elt in b
-    res = zero_coeffs(Int, b)
-    res[b[elt]] = 1
-    return AlgebraElement(res, A)
-end
-
-(A::AbstractStarAlgebra)(x::Number) = x * one(A)
+(A::AbstractStarAlgebra{O,T})(elt::T) where {O,T} = __coerce(A, (elt => 1))
+(A::AbstractStarAlgebra)(x::Number) = __coerce(A, (one(object(A)) => x))
 
 function similar_type(::Type{AlgebraElement{A,T,V}}, ::Type{C}) where {A,T,V,C}
     return AlgebraElement{A,C,similar_type(V, C)}

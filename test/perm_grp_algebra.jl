@@ -37,6 +37,13 @@ import StarAlgebras as SA
     xz = SA.AlgebraElement(xzcfs, RG)
     @test x * z == xz
 
+    @test isone(one(RG))
+    @test x * one(RG) == x
+    @test one(RG) * x == x
+    @test eltype(one(Float64, RG)) == Float64
+    @test isone(one(x))
+    @test coeffs(one(x)) == coeffs(one(RG))
+
     # FIXME Broken
 #    @testset "Augmented basis" begin
 #        ad = SA.AugmentedBasis(db)
@@ -102,6 +109,13 @@ import StarAlgebras as SA
             count(i -> isassigned(mt, i), eachindex(mt)), length(mt)
         end
         @test a ≤ b
+
+        @test isone(one(fRG))
+        @test fr * one(fRG) == fr
+        @test one(fRG) * fr == fr
+        @test eltype(one(Float64, fRG)) == Float64
+        @test isone(one(fr))
+        @test coeffs(one(fr)) == coeffs(one(fRG))
     end
 
     @testset "SubBasis" begin
@@ -122,7 +136,7 @@ import StarAlgebras as SA
         @test only(smstr(1, 2).basis_elements) == subb[subb[1] * subb[2]]
         @test only(smstr(1, 2, eltype(subb)).basis_elements) == subb[1] * subb[2]
 
-        sbRG = SA.StarAlgebra(G, subb)
+        sbRG = SA.StarAlgebra(G, smstr)
 
         x = let z = zeros(Int, length(SA.basis(sbRG)))
             z[1:length(S1)] .= rand(-1:1, length(S1))
@@ -140,5 +154,55 @@ import StarAlgebras as SA
         @test dx + dy == SA.AlgebraElement(SA.coeffs(x + y, SA.basis(RG)), RG)
 
         @test dx * dy == SA.AlgebraElement(SA.coeffs(x * y, SA.basis(RG)), RG)
+
+        if !(one(G) in subb)
+            @test_throws ArgumentError one(sbRG)
+        end
+
+        S2 = unique([S; one(G)])
+        subb2 = SA.SubBasis(db, S2)
+        let sRG = SA.StarAlgebra(G, subb2)
+            x = let z = spzeros(Int, length(SA.basis(sRG)))
+                z[rand(1:length(S2), 10)] += rand(-1:1, 10)
+                SA.AlgebraElement(z, sRG)
+            end
+            @test isone(one(sRG))
+            @test x * one(sRG) == x
+            @test one(sRG) * x == x
+            @test eltype(one(Float64, sRG)) == Float64
+            @test isone(one(x))
+            @test coeffs(one(x)) == coeffs(one(sRG))
+        end
+    end
+    @testset "Algebra Elements Basis" begin
+        S1 = unique!(collect(Iterators.take(G, 10)))
+        S = unique!([a * b for a in S1 for b in S1])
+
+        elts = [RG(g) - RG(1) for g in S]
+        elts[begin] = RG(S[2]) + RG(1)
+        ab = SA.FixedBasis(elts)
+        # basis looks like this: [s₁ + e, s₁ - e, s₂ - e, s₃ - e, …]
+        # in particular it doesn't contain 1!
+
+        @test ab[ab[elts[2]]] == elts[2]
+
+        rcfs = SA.SparseCoefficients(rand(elts[1:length(S1)], 5), rand(-2:2, 5))
+        scfs = SA.SparseCoefficients(rand(elts[1:length(S1)], 5), rand(-2:2, 5))
+
+        @test coeffs(rcfs, SA.DiracBasis(elts), ab) isa SparseVector
+
+        aRG = SA.StarAlgebra(RG, SA.MTable(ab, (length(S1), length(S1))))
+
+        ar = SA.AlgebraElement(coeffs(rcfs, SA.DiracBasis(elts), basis(aRG)), aRG)
+        as = SA.AlgebraElement(coeffs(scfs, SA.DiracBasis(elts), basis(aRG)), aRG)
+
+        @test SA.aug(ar) == 2*ar(first(ab)) # one(RG)
+        @test SA.aug(as) == 2as(first(ab)) # one(RG)
+        @test SA.aug(ar + as) == SA.aug(ar) + SA.aug(as)
+
+        @test coeffs(ar + as, basis(aRG)) isa AbstractVector
+
+        @test_throws ArgumentError one(aRG)
+        @test_throws ArgumentError isone(ar)
     end
 end
