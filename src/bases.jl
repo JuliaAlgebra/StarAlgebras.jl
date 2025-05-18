@@ -11,6 +11,7 @@ Implements
 
 `AbstractBasis` from the outside may look like a vector with arbitrary indices,
 however it may be possibly infinite (and therefore does not define its length).
+The elements of the basis are iterated in increasing order according to `key_isless(b)`.
 
 When `I<:Integer` one may store coefficients w.r.t. the basis in an ordinary
 vector, however it's length has no relation to the size of the basis (which may
@@ -78,9 +79,12 @@ end
 
 function coeffs!(res, cfs, source::AbstractBasis, target::AbstractBasis)
     MA.operate!(zero, res)
+    lt = key_isless(target)
     for (k, v) in nonzero_pairs(cfs)
         x = source[k]
-        res[target[x]] += v
+        kt = target[x]
+        vt = getindex_sorted(res, kt; lt) + v
+        setindex_sorted!(res, vt, target[x]; lt)
     end
     return res
 end

@@ -92,6 +92,10 @@ end
 
 struct UnsafeAdd end
 
+function MA.operate_to!(res::AbstractVector, ::UnsafeAdd, a::AbstractVector, b::AbstractVector)
+    return MA.operate_to!(res, +, a, b)
+end
+
 function MA.operate!(::UnsafeAdd, res, b)
     for (k, v) in nonzero_pairs(b)
         unsafe_push!(res, k, v)

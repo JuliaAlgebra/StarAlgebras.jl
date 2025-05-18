@@ -1,4 +1,5 @@
 # Example with Graded Lex Ordering
+using Test
 import StarAlgebras as SA
 
 struct ExponentsIterator end
@@ -43,7 +44,7 @@ SA.comparable(::ExponentsIterator) = grlex
     mstr = SA.DiracMStructure(basis, *)
     object = Monomial((0, 0))
     alg = SA.StarAlgebra(object, mstr)
-    one(alg)
+    @test isone(one(alg))
     a = SA.AlgebraElement(
         SA.SparseCoefficients(
             collect(Iterators.take(exps, 3)),
@@ -52,4 +53,6 @@ SA.comparable(::ExponentsIterator) = grlex
         alg,
     )
     c = a * a
+    @test c.coeffs.values == [4, -4, 12, 1, -6, 9]
+    @test c.coeffs.basis_elements == [(0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (2, 0)]
 end

@@ -25,7 +25,9 @@ function _search(keys, key::K; lt) where {K}
     return searchsortedfirst(keys, key; lt)
 end
 
-function Base.getindex(sc::SparseCoefficients{K}, key::K; lt) where {K}
+getindex_sorted(c, k; lt) = getindex(c, k)
+
+function getindex_sorted(sc::SparseCoefficients{K}, key::K; lt) where {K}
     k = _search(sc.basis_elements, key; lt)
     if k in eachindex(sc.basis_elements)
         v = sc.values[k]
@@ -39,7 +41,9 @@ function Base.getindex(sc::SparseCoefficients{K}, key::K; lt) where {K}
     end
 end
 
-function Base.setindex!(sc::SparseCoefficients{K}, val, key::K; lt) where {K}
+setindex_sorted!(c, v, i; lt) = setindex!(c, v, i)
+
+function setindex_sorted!(sc::SparseCoefficients{K}, val, key::K; lt) where {K}
     k = searchsortedfirst(sc.basis_elements, key; lt)
     if k in eachindex(sc.basis_elements) && sc.basis_elements[k] == key
         sc.values[k] = val
@@ -219,21 +223,13 @@ end
 
 function MA.operate_to!(
     res::SparseCoefficients,
-    ::typeof(+),
+    ::UnsafeAdd,
     X::SparseCoefficients,
     Y::SparseCoefficients,
 )
-    if res === X
-        append!(res.basis_elements, Y.basis_elements)
-        append!(res.values, Y.values)
-    elseif res === Y
-        append!(res.basis_elements, X.basis_elements)
-        append!(res.values, X.values)
-    else
-        MA.operate!(zero, res)
-        append!(res.basis_elements, X.basis_elements, Y.basis_elements)
-        append!(res.values, X.values, Y.values)
-    end
-    MA.operate!(canonical, res)
+    @assert res !== X
+    @assert res !== Y
+    append!(res.basis_elements, X.basis_elements, Y.basis_elements)
+    append!(res.values, X.values, Y.values)
     return res
 end
