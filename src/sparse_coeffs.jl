@@ -16,17 +16,17 @@ function Base.copy(sc::SparseCoefficients)
     return SparseCoefficients(copy(keys(sc)), copy(values(sc)))
 end
 
-function _search(keys::Tuple, key)
+function _search(keys::Tuple, key; lt)
     # `searchsortedfirst` is not defined for `Tuple`
     return findfirst(isequal(key), keys)
 end
 
-function _search(keys, key::K) where {K}
-    return searchsortedfirst(keys, key; lt = comparable(K))
+function _search(keys, key::K; lt) where {K}
+    return searchsortedfirst(keys, key; lt)
 end
 
-function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
-    k = _search(sc.basis_elements, key)
+function Base.getindex(sc::SparseCoefficients{K}, key::K; lt) where {K}
+    k = _search(sc.basis_elements, key; lt)
     if k in eachindex(sc.basis_elements)
         v = sc.values[k]
         if sc.basis_elements[k] == key
@@ -39,8 +39,8 @@ function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
     end
 end
 
-function Base.setindex!(sc::SparseCoefficients{K}, val, key::K) where {K}
-    k = searchsortedfirst(sc.basis_elements, key; lt = comparable(K))
+function Base.setindex!(sc::SparseCoefficients{K}, val, key::K; lt) where {K}
+    k = searchsortedfirst(sc.basis_elements, key; lt)
     if k in eachindex(sc.basis_elements) && sc.basis_elements[k] == key
         sc.values[k] = val
     else
@@ -142,11 +142,6 @@ function __prealloc(X::SparseCoefficients, Y::SparseCoefficients, op)
     # this is not even correct for op = *
     T = MA.promote_operation(op, value_type(X), value_type(Y))
     return similar(X, T)
-end
-
-comparable(::Type) = isless
-function MA.operate!(::typeof(canonical), res::SparseCoefficients)
-    return MA.operate!(canonical, res, comparable(key_type(res)))
 end
 
 function unsafe_push!(res::SparseCoefficients, key, value)

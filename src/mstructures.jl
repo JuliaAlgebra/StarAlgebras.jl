@@ -86,7 +86,7 @@ function MA.operate_to!(res, ms::MultiplicativeStructure, A, B, α = true)
     end
     MA.operate!(zero, res)
     res = MA.operate!(UnsafeAddMul(ms), res, A, B, α)
-    MA.operate!(canonical, res)
+    MA.operate!(canonical, res, key_isless(ms))
     return res
 end
 

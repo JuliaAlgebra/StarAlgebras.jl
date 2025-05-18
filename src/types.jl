@@ -51,8 +51,13 @@ function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{A,T,V}}) w
 end
 coeffs(a::AlgebraElement) = a.coeffs
 
+comparable(::Type) = isless
+comparable(object) = comparable(eltype(object))
+key_isless(basis::AbstractBasis) = comparable(object(basis))
+key_isless(mstr::MultiplicativeStructure) = key_isless(basis(mstr))
+
 function MA.operate!(T::typeof(canonical), a::AlgebraElement)
-    return MA.operate!(T, coeffs(a))
+    return MA.operate!(T, coeffs(a), key_isless(basis(a)))
 end
 
 function coeffs(x::AlgebraElement, b::AbstractBasis)
@@ -84,7 +89,7 @@ function __coerce(A::AbstractStarAlgebra, (x,v)::Pair{K, V}) where {K,V}
         return AlgebraElement(zero_coeffs(V, basis(A)), A)
     elseif x in basis(A)
         cfs = zero_coeffs(V, basis(A))
-        cfs[basis(A)[x]] = v
+        setindex!(cfs, v, basis(A)[x]; lt = key_isless(basis(A)))
         return AlgebraElement(cfs, A)
     # elseif x in object(A)
     #     sc = SparseCoefficients([x], [v])
