@@ -1,3 +1,8 @@
+# This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
+# Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
+
+# Example implementation of Bivariate polynomials
+# See MultivariatePolynomials.jl for general implementation
 struct ExponentsIterator end
 Base.eltype(::Type{ExponentsIterator}) = NTuple{2,Int}
 Base.IteratorSize(::Type{ExponentsIterator}) = Base.IsInfinite()
