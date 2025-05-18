@@ -71,9 +71,9 @@ end
 MA.operate!(::typeof(canonical), sv::SparseVector) = dropzeros!(sv)
 MA.operate!(::typeof(canonical), v::Vector) = v
 
-# The `AbstractCoefficients` as assumed to be sorted as the
-# `AlgebraElement` is responsible to keep it sorted.
 function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
+    MA.operate!(canonical, ac1)
+    MA.operate!(canonical, ac2)
     all(x -> ==(x...), zip(keys(ac1), keys(ac2))) || return false
     all(x -> ==(x...), zip(values(ac1), values(ac2))) || return false
     return true
