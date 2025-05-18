@@ -112,8 +112,8 @@ _similar(x, ::Type{T}) where {T} = similar(x, T)
 _similar_type(::Type{<:Tuple}, ::Type{T}) where {T} = Vector{T}
 _similar_type(::Type{V}, ::Type{T}) where {V,T} = similar_type(V, T)
 
-function similar_type(::Type{SparseCoefficients{K,V,Vk,Vv}}, ::Type{T}) where {K,V,Vk,Vv,T}
-    return SparseCoefficients{K,T,_similar_type(Vk, K),_similar_type(Vv, T)}
+function similar_type(::Type{SparseCoefficients{K,V,Vk,Vv,L}}, ::Type{T}) where {K,V,Vk,Vv,T,L}
+    return SparseCoefficients{K,T,_similar_type(Vk, K),_similar_type(Vv, T),L}
 end
 
 function Base.similar(s::SparseCoefficients, ::Type{T} = value_type(s)) where {T}
