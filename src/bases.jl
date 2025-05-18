@@ -42,8 +42,11 @@ Note that these bases may not explictly store its elements in memory as they may
 """
 abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
+comparable(::Type) = isless
+comparable(object) = comparable(eltype(object))
+
 function zero_coeffs(::Type{S}, basis::ImplicitBasis{T,I}) where {S,T,I}
-    return SparseCoefficients(I[], S[], key_isless(basis))
+    return SparseCoefficients(I[], S[], comparable(object(basis)))
 end
 
 """

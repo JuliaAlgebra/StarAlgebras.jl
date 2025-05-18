@@ -51,14 +51,8 @@ function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{A,T,V}}) w
 end
 coeffs(a::AlgebraElement) = a.coeffs
 
-comparable(::Type) = isless
-comparable(object) = comparable(eltype(object))
-key_isless(basis::ImplicitBasis) = comparable(object(basis))
-key_isless(::ExplicitBasis) = isless
-key_isless(mstr::MultiplicativeStructure) = key_isless(basis(mstr))
-
 function MA.operate!(T::typeof(canonical), a::AlgebraElement)
-    return MA.operate!(T, coeffs(a), key_isless(basis(a)))
+    return MA.operate!(T, coeffs(a))
 end
 
 function coeffs(x::AlgebraElement, b::AbstractBasis)
