@@ -1,13 +1,14 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-struct SparseCoefficients{K,V,Vk,Vv} <: AbstractCoefficients{K,V}
+struct SparseCoefficients{K,V,Vk,Vv,L} <: AbstractCoefficients{K,V}
     basis_elements::Vk
     values::Vv
+    isless::L
 end
 
-function SparseCoefficients(elts::Ks, vals::Vs) where {Ks,Vs}
-    return SparseCoefficients{eltype(elts),eltype(vals),Ks,Vs}(elts, vals)
+function SparseCoefficients(elts::Ks, vals::Vs, isless = isless) where {Ks,Vs}
+    return SparseCoefficients{eltype(elts),eltype(vals),Ks,Vs,typeof(isless)}(elts, vals, isless)
 end
 
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
@@ -25,10 +26,8 @@ function _search(keys, key::K; lt) where {K}
     return searchsortedfirst(keys, key; lt)
 end
 
-getindex_sorted(c, k; lt) = getindex(c, k)
-
-function getindex_sorted(sc::SparseCoefficients{K}, key::K; lt) where {K}
-    k = _search(sc.basis_elements, key; lt)
+function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
+    k = _search(sc.basis_elements, key; lt = sc.isless)
     if k in eachindex(sc.basis_elements)
         v = sc.values[k]
         if sc.basis_elements[k] == key
@@ -41,10 +40,8 @@ function getindex_sorted(sc::SparseCoefficients{K}, key::K; lt) where {K}
     end
 end
 
-setindex_sorted!(c, v, i; lt) = setindex!(c, v, i)
-
-function setindex_sorted!(sc::SparseCoefficients{K}, val, key::K; lt) where {K}
-    k = searchsortedfirst(sc.basis_elements, key; lt)
+function Base.setindex!(sc::SparseCoefficients{K}, val, key::K) where {K}
+    k = searchsortedfirst(sc.basis_elements, key; lt = sc.isless)
     if k in eachindex(sc.basis_elements) && sc.basis_elements[k] == key
         sc.values[k] = val
     else
@@ -120,7 +117,7 @@ function similar_type(::Type{SparseCoefficients{K,V,Vk,Vv}}, ::Type{T}) where {K
 end
 
 function Base.similar(s::SparseCoefficients, ::Type{T} = value_type(s)) where {T}
-    return SparseCoefficients(collect(s.basis_elements), _similar(s.values, T))
+    return SparseCoefficients(collect(s.basis_elements), _similar(s.values, T), s.isless)
 end
 
 function map_keys(f::Function, s::SparseCoefficients)
@@ -154,18 +151,18 @@ function unsafe_push!(res::SparseCoefficients, key, value)
     return res
 end
 
-# `::C` is needed to force Julia specialize on the function type
+# `{...,L}` is needed to force Julia specialize on the function type
 # Otherwise, we get one allocation when we call `issorted`
 # See https://docs.julialang.org/en/v1/manual/performance-tips/#Be-aware-of-when-Julia-avoids-specializing
-function MA.operate!(::typeof(canonical), res::SparseCoefficients, cmp::C) where {C}
-    sorted = issorted(res.basis_elements; lt = cmp)
+function MA.operate!(::typeof(canonical), res::SparseCoefficients{K,V,Vk,Vv,L}) where {K,V,Vk,Vv,L}
+    sorted = issorted(res.basis_elements; lt = res.isless)
     distinct = allunique(res.basis_elements)
     if sorted && distinct && !any(iszero, res.values)
         return res
     end
 
     if !sorted
-        p = sortperm(res.basis_elements; lt = cmp)
+        p = sortperm(res.basis_elements; lt = res.isless)
         permute!(res.basis_elements, p)
         permute!(res.values, p)
     end
@@ -223,13 +220,21 @@ end
 
 function MA.operate_to!(
     res::SparseCoefficients,
-    ::UnsafeAdd,
+    ::typeof(+),
     X::SparseCoefficients,
     Y::SparseCoefficients,
 )
-    @assert res !== X
-    @assert res !== Y
-    append!(res.basis_elements, X.basis_elements, Y.basis_elements)
-    append!(res.values, X.values, Y.values)
+    if res === X
+        append!(res.basis_elements, Y.basis_elements)
+        append!(res.values, Y.values)
+    elseif res === Y
+        append!(res.basis_elements, X.basis_elements)
+        append!(res.values, X.values)
+    else
+        MA.operate!(zero, res)
+        append!(res.basis_elements, X.basis_elements, Y.basis_elements)
+        append!(res.values, X.values, Y.values)
+    end
+    MA.operate!(canonical, res)
     return res
 end

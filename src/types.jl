@@ -90,7 +90,7 @@ function __coerce(A::AbstractStarAlgebra, (x,v)::Pair{K, V}) where {K,V}
         return AlgebraElement(zero_coeffs(V, basis(A)), A)
     elseif x in basis(A)
         cfs = zero_coeffs(V, basis(A))
-        setindex_sorted!(cfs, v, basis(A)[x]; lt = key_isless(basis(A)))
+        cfs[basis(A)[x]] = v
         return AlgebraElement(cfs, A)
     # elseif x in object(A)
     #     sc = SparseCoefficients([x], [v])

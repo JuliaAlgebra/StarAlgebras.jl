@@ -86,15 +86,11 @@ function MA.operate_to!(res, ms::MultiplicativeStructure, A, B, α = true)
     end
     MA.operate!(zero, res)
     res = MA.operate!(UnsafeAddMul(ms), res, A, B, α)
-    MA.operate!(canonical, res, key_isless(ms))
+    MA.operate!(canonical, res)
     return res
 end
 
 struct UnsafeAdd end
-
-function MA.operate_to!(res::AbstractVector, ::UnsafeAdd, a::AbstractVector, b::AbstractVector)
-    return MA.operate_to!(res, +, a, b)
-end
 
 function MA.operate!(::UnsafeAdd, res, b)
     for (k, v) in nonzero_pairs(b)

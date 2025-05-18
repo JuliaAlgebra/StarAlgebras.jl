@@ -68,8 +68,8 @@ function MA.promote_operation(::typeof(canonical), ::Type{C}) where {C}
 end
 
 # example implementation for vectors
-MA.operate!(::typeof(canonical), sv::SparseVector, ::typeof(isless)) = dropzeros!(sv)
-MA.operate!(::typeof(canonical), v::Vector, ::typeof(isless)) = v
+MA.operate!(::typeof(canonical), sv::SparseVector) = dropzeros!(sv)
+MA.operate!(::typeof(canonical), v::Vector) = v
 
 # The `AbstractCoefficients` as assumed to be sorted as the
 # `AlgebraElement` is responsible to keep it sorted.

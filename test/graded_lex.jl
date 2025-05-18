@@ -49,6 +49,7 @@ SA.comparable(::ExponentsIterator) = grlex
         SA.SparseCoefficients(
             collect(Iterators.take(exps, 3)),
             [2, -1, 3],
+            grlex,
         ),
         alg,
     )

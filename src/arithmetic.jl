@@ -119,9 +119,7 @@ function MA.operate_to!(
 )
     @assert parent(res) == parent(X)
     @assert parent(X) == parent(Y)
-    MA.operate!(zero, coeffs(res))
-    MA.operate_to!(coeffs(res), UnsafeAdd(), coeffs(X), coeffs(Y))
-    MA.operate!(canonical, coeffs(res), key_isless(basis(res)))
+    MA.operate_to!(coeffs(res), +, coeffs(X), coeffs(Y))
     return res
 end
 

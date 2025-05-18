@@ -79,12 +79,9 @@ end
 
 function coeffs!(res, cfs, source::AbstractBasis, target::AbstractBasis)
     MA.operate!(zero, res)
-    lt = key_isless(target)
     for (k, v) in nonzero_pairs(cfs)
         x = source[k]
-        kt = target[x]
-        vt = getindex_sorted(res, kt; lt) + v
-        setindex_sorted!(res, vt, target[x]; lt)
+        res[target[x]] += v
     end
     return res
 end
