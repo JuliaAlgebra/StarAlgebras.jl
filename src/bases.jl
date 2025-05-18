@@ -42,8 +42,8 @@ Note that these bases may not explictly store its elements in memory as they may
 """
 abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
-function zero_coeffs(::Type{S}, ::ImplicitBasis{T,I}) where {S,T,I}
-    return SparseCoefficients(I[], S[])
+function zero_coeffs(::Type{S}, basis::ImplicitBasis{T,I}) where {S,T,I}
+    return SparseCoefficients(I[], S[], key_isless(basis))
 end
 
 """

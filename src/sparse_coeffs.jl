@@ -14,7 +14,7 @@ end
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
 Base.values(sc::SparseCoefficients) = sc.values
 function Base.copy(sc::SparseCoefficients)
-    return SparseCoefficients(copy(keys(sc)), copy(values(sc)))
+    return SparseCoefficients(copy(keys(sc)), copy(values(sc)), sc.isless)
 end
 
 function _search(keys::Tuple, key; lt)
@@ -101,7 +101,7 @@ _first_sparse_coeffs(c::SparseCoefficients, args...) = c
 _first_sparse_coeffs(_, args...) = _first_sparse_coeffs(args...)
 
 function Base.zero(sc::SparseCoefficients)
-    return SparseCoefficients(empty(keys(sc)), empty(values(sc)))
+    return SparseCoefficients(empty(keys(sc)), empty(values(sc)), sc.isless)
 end
 
 _similar(x::Tuple) = _similar(x, typeof(x[1]))
@@ -121,7 +121,7 @@ function Base.similar(s::SparseCoefficients, ::Type{T} = value_type(s)) where {T
 end
 
 function map_keys(f::Function, s::SparseCoefficients)
-    return SparseCoefficients(map(f, s.basis_elements), s.values)
+    return SparseCoefficients(map(f, s.basis_elements), s.values, s.isless)
 end
 
 function MA.mutability(
