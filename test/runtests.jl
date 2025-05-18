@@ -45,6 +45,7 @@ end
     include("caching_allocations.jl")
 
     # some applications:
+    using Groups
     word_isless(a, b) = isless(a.word, b.word)
     SA.comparable(::Type{<:Groups.FPGroupElement}) = word_isless
     include("sum_of_squares.jl")
