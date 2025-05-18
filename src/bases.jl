@@ -11,7 +11,6 @@ Implements
 
 `AbstractBasis` from the outside may look like a vector with arbitrary indices,
 however it may be possibly infinite (and therefore does not define its length).
-The elements of the basis are iterated in increasing order according to `key_isless(b)`.
 
 When `I<:Integer` one may store coefficients w.r.t. the basis in an ordinary
 vector, however it's length has no relation to the size of the basis (which may
@@ -39,6 +38,7 @@ key_type(b::AbstractBasis) = key_type(typeof(b))
 Implicit bases are bases that contains the product of all its elements.
 This makes these bases particularly useful to work with [`AlgebraElement`](@ref)s with supports that can not be reasonably bounded.
 Note that these bases may not explictly store its elements in memory as they may be potentially infinite.
+The elements of the basis are iterated in increasing order according to `comparable(object(b))`.
 """
 abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
