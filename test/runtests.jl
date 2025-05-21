@@ -46,7 +46,7 @@ end
 
     # some applications:
     using Groups
-    word_isless(a, b) = isless(a.word, b.word)
-    SA.comparable(::Type{<:Groups.FPGroupElement}) = word_isless
+    lexord(a, b) = isless(Groups.word(a), Groups.word(b))
+    SA.comparable(::Type{<:Groups.FPGroupElement}) = lexord
     include("sum_of_squares.jl")
 end
