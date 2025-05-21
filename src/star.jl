@@ -16,7 +16,7 @@ star(::AbstractBasis, x) = star(x)
 function star(b::AbstractBasis, d::SparseCoefficients)
     k = star.(Ref(b), keys(d))
     v = star.(values(d))
-    return SparseCoefficients(k, v)
+    return SparseCoefficients(k, v, d.isless)
 end
 
 function star(b::FixedBasis, i::Integer)

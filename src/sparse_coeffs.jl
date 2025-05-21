@@ -1,32 +1,33 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-struct SparseCoefficients{K,V,Vk,Vv} <: AbstractCoefficients{K,V}
+struct SparseCoefficients{K,V,Vk,Vv,L} <: AbstractCoefficients{K,V}
     basis_elements::Vk
     values::Vv
+    isless::L
 end
 
-function SparseCoefficients(elts::Ks, vals::Vs) where {Ks,Vs}
-    return SparseCoefficients{eltype(elts),eltype(vals),Ks,Vs}(elts, vals)
+function SparseCoefficients(elts::Ks, vals::Vs, isless = isless) where {Ks,Vs}
+    return SparseCoefficients{eltype(elts),eltype(vals),Ks,Vs,typeof(isless)}(elts, vals, isless)
 end
 
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
 Base.values(sc::SparseCoefficients) = sc.values
 function Base.copy(sc::SparseCoefficients)
-    return SparseCoefficients(copy(keys(sc)), copy(values(sc)))
+    return SparseCoefficients(copy(keys(sc)), copy(values(sc)), sc.isless)
 end
 
-function _search(keys::Tuple, key)
+function _search(keys::Tuple, key; lt)
     # `searchsortedfirst` is not defined for `Tuple`
     return findfirst(isequal(key), keys)
 end
 
-function _search(keys, key::K) where {K}
-    return searchsortedfirst(keys, key; lt = comparable(K))
+function _search(keys, key::K; lt) where {K}
+    return searchsortedfirst(keys, key; lt)
 end
 
 function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
-    k = _search(sc.basis_elements, key)
+    k = _search(sc.basis_elements, key; lt = sc.isless)
     if k in eachindex(sc.basis_elements)
         v = sc.values[k]
         if sc.basis_elements[k] == key
@@ -40,7 +41,7 @@ function Base.getindex(sc::SparseCoefficients{K}, key::K) where {K}
 end
 
 function Base.setindex!(sc::SparseCoefficients{K}, val, key::K) where {K}
-    k = searchsortedfirst(sc.basis_elements, key; lt = comparable(K))
+    k = searchsortedfirst(sc.basis_elements, key; lt = sc.isless)
     if k in eachindex(sc.basis_elements) && sc.basis_elements[k] == key
         sc.values[k] = val
     else
@@ -100,7 +101,7 @@ _first_sparse_coeffs(c::SparseCoefficients, args...) = c
 _first_sparse_coeffs(_, args...) = _first_sparse_coeffs(args...)
 
 function Base.zero(sc::SparseCoefficients)
-    return SparseCoefficients(empty(keys(sc)), empty(values(sc)))
+    return SparseCoefficients(empty(keys(sc)), empty(values(sc)), sc.isless)
 end
 
 _similar(x::Tuple) = _similar(x, typeof(x[1]))
@@ -111,16 +112,16 @@ _similar(x, ::Type{T}) where {T} = similar(x, T)
 _similar_type(::Type{<:Tuple}, ::Type{T}) where {T} = Vector{T}
 _similar_type(::Type{V}, ::Type{T}) where {V,T} = similar_type(V, T)
 
-function similar_type(::Type{SparseCoefficients{K,V,Vk,Vv}}, ::Type{T}) where {K,V,Vk,Vv,T}
-    return SparseCoefficients{K,T,_similar_type(Vk, K),_similar_type(Vv, T)}
+function similar_type(::Type{SparseCoefficients{K,V,Vk,Vv,L}}, ::Type{T}) where {K,V,Vk,Vv,T,L}
+    return SparseCoefficients{K,T,_similar_type(Vk, K),_similar_type(Vv, T),L}
 end
 
 function Base.similar(s::SparseCoefficients, ::Type{T} = value_type(s)) where {T}
-    return SparseCoefficients(collect(s.basis_elements), _similar(s.values, T))
+    return SparseCoefficients(collect(s.basis_elements), _similar(s.values, T), s.isless)
 end
 
 function map_keys(f::Function, s::SparseCoefficients)
-    return SparseCoefficients(map(f, s.basis_elements), s.values)
+    return SparseCoefficients(map(f, s.basis_elements), s.values, s.isless)
 end
 
 function MA.mutability(
@@ -144,29 +145,24 @@ function __prealloc(X::SparseCoefficients, Y::SparseCoefficients, op)
     return similar(X, T)
 end
 
-comparable(::Type) = isless
-function MA.operate!(::typeof(canonical), res::SparseCoefficients)
-    return MA.operate!(canonical, res, comparable(key_type(res)))
-end
-
 function unsafe_push!(res::SparseCoefficients, key, value)
     push!(res.basis_elements, key)
     push!(res.values, value)
     return res
 end
 
-# `::C` is needed to force Julia specialize on the function type
+# `{...,L}` is needed to force Julia specialize on the function type
 # Otherwise, we get one allocation when we call `issorted`
 # See https://docs.julialang.org/en/v1/manual/performance-tips/#Be-aware-of-when-Julia-avoids-specializing
-function MA.operate!(::typeof(canonical), res::SparseCoefficients, cmp::C) where {C}
-    sorted = issorted(res.basis_elements; lt = cmp)
+function MA.operate!(::typeof(canonical), res::SparseCoefficients{K,V,Vk,Vv,L}) where {K,V,Vk,Vv,L}
+    sorted = issorted(res.basis_elements; lt = res.isless)
     distinct = allunique(res.basis_elements)
     if sorted && distinct && !any(iszero, res.values)
         return res
     end
 
     if !sorted
-        p = sortperm(res.basis_elements; lt = cmp)
+        p = sortperm(res.basis_elements; lt = res.isless)
         permute!(res.basis_elements, p)
         permute!(res.values, p)
     end
