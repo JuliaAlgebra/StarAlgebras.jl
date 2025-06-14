@@ -106,6 +106,8 @@ struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
     end
 end
 
+Base.copy(b::SubBasis) = SubBasis(copy(parent(b)), copy(b.keys))
+
 Base.parent(sub::SubBasis) = sub.parent_basis
 
 Base.length(b::SubBasis) = length(b.keys)

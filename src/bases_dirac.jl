@@ -101,6 +101,8 @@ function MappedBasis(itr, map, inverse_map)
     return MappedBasis{typeof(map(first(itr)))}(itr, map, inverse_map)
 end
 
+Base.copy(b::MappedBasis) = b
+
 object(db::MappedBasis) = db.object
 
 function Base.IteratorSize(::Type{<:MappedBasis{T,I,S}}) where {T,I,S}
