@@ -138,6 +138,8 @@ end
 Base.in(x::T, b::SubBasis{T}) where T = !isnothing(get(b, x, nothing))
 Base.haskey(b::SubBasis, i::Integer) = i in eachindex(b.keys)
 
+Base.firstindex(b::SubBasis) = firstindex(b.keys)
+Base.lastindex(b::SubBasis) = lastindex(b.keys)
 Base.getindex(b::SubBasis, i::Integer) = parent(b)[b.keys[i]]
 function Base.getindex(b::SubBasis{T,I}, x::T) where {T,I}
     i = get(b, x, nothing)
