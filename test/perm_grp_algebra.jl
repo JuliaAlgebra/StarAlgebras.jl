@@ -125,6 +125,9 @@ import StarAlgebras as SA
         S1 = unique!(rand(G, 7))
         S = unique!([S1; [a * b for a in S1 for b in S1]])
         subb = SA.SubBasis(db, S)
+        @test length(subb) == length(S)
+        @test firstindex(subb) == 1
+        @test lastindex(subb) == length(S)
         a = S1[1]
         @test subb[a] == 1
         @test a in subb
