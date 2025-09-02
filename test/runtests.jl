@@ -28,6 +28,21 @@ for file in readdir(joinpath(@__DIR__, "..", "examples"))
     end
 end
 
+# Test that `basis` implements the vector interface
+# returns the same as `vector`
+function vector_interface(basis, vector)
+    @test eachindex(basis) == eachindex(vector)
+    @test length(basis) == length(vector)
+    @test size(basis) == size(vector)
+    @test eltype(basis) == eltype(vector)
+    @test eltype(basis) == eltype(typeof(basis))
+    @test firstindex(basis) == firstindex(vector)
+    @test lastindex(basis) == lastindex(vector)
+    i = firstindex(basis)
+    el = getindex(basis, i)
+    @test getindex(basis, i) == getindex(vector, i)
+end
+
 @testset "StarAlgebras" begin
     include("basic.jl")
     # proof of concept
