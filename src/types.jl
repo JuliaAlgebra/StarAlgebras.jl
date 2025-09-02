@@ -3,14 +3,19 @@
 
 abstract type AbstractStarAlgebra{O,T} end
 
-function _sanity_checks(coeffs, A::AbstractStarAlgebra)
+function _key_type_check(coeffs, ::AbstractStarAlgebra)
     KC = key_type(coeffs)
     KA = key_type(basis(A))
     if KC != KA
-        error("Key types `$KC` and `$KA` do not match")
+        error("The key type `$KC` of the coefficients does not match the key type `$KA` of the algebra")
     end
 end
+
+function _sanity_checks(coeffs, A::AbstractStarAlgebra)
+    _key_type_check(coeffs, A)
+end
 function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
+    _key_type_check(coeffs, A)
     @assert Base.haslength(basis(A))
     @assert length(coeffs) == length(basis(A))
 end
