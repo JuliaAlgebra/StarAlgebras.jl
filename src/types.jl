@@ -3,7 +3,7 @@
 
 abstract type AbstractStarAlgebra{O,T} end
 
-function _key_type_check(coeffs, ::AbstractStarAlgebra)
+function _key_type_check(coeffs, A::AbstractStarAlgebra)
     KC = key_type(coeffs)
     KA = key_type(basis(A))
     if KC != KA
