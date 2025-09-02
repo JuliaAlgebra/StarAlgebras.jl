@@ -30,17 +30,19 @@ end
 
 # Test that `basis` implements the vector interface
 # returns the same as `vector`
-function vector_interface(basis, vector)
-    @test eachindex(basis) == eachindex(vector)
+function test_vector_interface(basis, vector = collect(basis))
     @test length(basis) == length(vector)
     @test size(basis) == size(vector)
     @test eltype(basis) == eltype(vector)
     @test eltype(basis) == eltype(typeof(basis))
-    @test firstindex(basis) == firstindex(vector)
-    @test lastindex(basis) == lastindex(vector)
+    @test last(basis) == last(vector)
+    i = lastindex(basis)
+    @test i == lastindex(vector)
+    @test getindex(basis, i) == last(vector)
+    @test first(basis) == first(vector)
     i = firstindex(basis)
-    el = getindex(basis, i)
-    @test getindex(basis, i) == getindex(vector, i)
+    @test i == firstindex(vector)
+    @test getindex(basis, i) == first(vector)
 end
 
 @testset "StarAlgebras" begin
