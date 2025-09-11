@@ -1,6 +1,15 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+# Without these two function barriers, we get allocations on Julia v1.12.0-rc2
+function minus_allocated_test(a, d)
+    @test @allocated(MA.operate_to!(d, -, a)) == 0
+end
+
+function prod_2_allocated_test(a, d)
+    @test @allocated(MA.operate_to!(d, *, 2, a)) == 0
+end
+
 @testset "Free monoid algebra" begin
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
@@ -104,7 +113,7 @@
             @test @allocated(MA.operate!(zero, d)) == 0
             @test iszero(d)
 
-            @test @allocated(MA.operate_to!(d, -, a)) == 0
+            minus_allocated_test(a, d)
             @test d == -a
         end
 
@@ -130,10 +139,10 @@
 
             d = deepcopy(a)
             MA.operate_to!(d, *, 2, a) # preallocates memory in coefficients
-            @test @allocated(MA.operate_to!(d, *, 2, a)) == 0
+            prod_2_allocated_test(a, d)
             @test d == 2a
 
-            @test @allocated(MA.operate_to!(d, *, 2, d)) == 0
+            prod_2_allocated_test(d, d)
             @test d == 4a
 
             MA.operate_to!(d, *, a, b)
