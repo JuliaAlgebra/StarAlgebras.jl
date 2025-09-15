@@ -38,8 +38,8 @@ function Base.IteratorSize(::Type{<:DiracBasis{T,S}}) where {T,S}
 end
 
 function Base.size(db::DiracBasis)
-    @assert Base.haslength(object(db))
-    return size(object(db))
+    # Some object such as `PermGroup` do not define `size`
+    return (length(db),)
 end
 
 function Base.length(db::DiracBasis)
@@ -53,6 +53,7 @@ Base.iterate(db::DiracBasis, st) = iterate(object(db), st)
 Base.in(g, db::DiracBasis) = g in object(db)
 Base.haskey(db::DiracBasis, g) = in(g, db)
 
+Base.firstindex(db::DiracBasis) = Base.first(object(db))
 function Base.getindex(db::DiracBasis{T}, x::T) where {T}
     @assert x in object(db)
     return x

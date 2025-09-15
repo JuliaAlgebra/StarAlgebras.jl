@@ -75,6 +75,8 @@ end
 FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} = FixedBasis{T,typeof(n)}(basis; n)
 
 Base.in(x, b::FixedBasis) = haskey(b.relts, x)
+Base.firstindex(b::FixedBasis) = firstindex(b.elts)
+Base.lastindex(b::FixedBasis) = lastindex(b.elts)
 Base.getindex(b::FixedBasis{T}, x::T) where {T} = b.relts[x]
 Base.getindex(b::FixedBasis, i::Integer) = b.elts[i]
 
@@ -138,6 +140,8 @@ end
 Base.in(x::T, b::SubBasis{T}) where T = !isnothing(get(b, x, nothing))
 Base.haskey(b::SubBasis, i::Integer) = i in eachindex(b.keys)
 
+Base.firstindex(b::SubBasis) = firstindex(b.keys)
+Base.lastindex(b::SubBasis) = lastindex(b.keys)
 Base.getindex(b::SubBasis, i::Integer) = parent(b)[b.keys[i]]
 function Base.getindex(b::SubBasis{T,I}, x::T) where {T,I}
     i = get(b, x, nothing)
