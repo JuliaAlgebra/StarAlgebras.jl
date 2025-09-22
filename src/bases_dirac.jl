@@ -102,6 +102,10 @@ function MappedBasis(itr, map, inverse_map)
     return MappedBasis{typeof(map(first(itr)))}(itr, map, inverse_map)
 end
 
+function Base.:(==)(a::MappedBasis, b::MappedBasis)
+    return object(a) == object(b) && a.map == b.map && a.inverse_map == b.inverse_map
+end
+
 object(db::MappedBasis) = db.object
 
 function Base.IteratorSize(::Type{<:MappedBasis{T,I,S}}) where {T,I,S}

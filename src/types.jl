@@ -34,6 +34,9 @@ function MA.promote_operation(::typeof(basis), ::Type{StarAlgebra{O,T,M}}) where
 end
 object(A::StarAlgebra) = A.object
 Base.isempty(A::StarAlgebra) = isempty(basis(A))
+function Base.:(==)(a::StarAlgebra, b::StarAlgebra)
+    return a.object == b.object && a.mstructure == b.mstructure
+end
 
 struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     coeffs::V
