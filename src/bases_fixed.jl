@@ -110,6 +110,10 @@ end
 
 Base.parent(sub::SubBasis) = sub.parent_basis
 
+function Base.:(==)(a::SubBasis, b::SubBasis)
+    return a.parent_basis == b.parent_basis && a.keys == b.keys
+end
+
 Base.length(b::SubBasis) = length(b.keys)
 function _iterate(b::SubBasis, elem_state)
     if isnothing(elem_state)

@@ -124,6 +124,10 @@ struct DiracMStructure{T,I,B<:AbstractBasis{T,I},Op} <: MultiplicativeStructure{
     op::Op
 end
 
+function Base.:(==)(a::DiracMStructure, b::DiracMStructure)
+    return a.op == b.op && a.basis == b.basis
+end
+
 function MA.promote_operation(::typeof(basis), ::Type{<:DiracMStructure{T,I,B}}) where {T,I,B}
     return B
 end
