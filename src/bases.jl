@@ -44,9 +44,10 @@ abstract type ImplicitBasis{T,I} <: AbstractBasis{T,I} end
 
 comparable(::Type) = isless
 comparable(object) = comparable(eltype(object))
+comparable(b::ImplicitBasis) = comparable(object(b))
 
 function zero_coeffs(::Type{S}, basis::ImplicitBasis{T,I}) where {S,T,I}
-    return SparseCoefficients(I[], S[], comparable(object(basis)))
+    return SparseCoefficients(I[], S[], comparable(basis))
 end
 
 """
