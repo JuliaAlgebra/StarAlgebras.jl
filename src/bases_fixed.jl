@@ -104,7 +104,7 @@ struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
     keys::V
     is_sorted::Bool
     function SubBasis(parent_basis::AbstractBasis{T,K}, keys::AbstractVector{K}) where {T,K}
-        return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(parent_basis, keys, issorted(keys))
+        return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(parent_basis, keys, issorted(keys, lt=comparable(parent_basis)))
     end
 end
 
@@ -125,10 +125,16 @@ end
 Base.iterate(b::SubBasis) = _iterate(b, iterate(b.keys))
 Base.iterate(b::SubBasis, st) = _iterate(b, iterate(b.keys, st))
 
-function Base.get(b::SubBasis{T,I}, x::T, default) where {T,I}
-    key = b.parent_basis[x]
+"""
+    key_index(b::SubBasis, key, default = nothing)
+
+Given a key `key` of the basis `parent(b)`, if the key is in `SubBasis` `b` then
+it returns the index of the key, otherwise, it returns `default`.
+This is a shortcut for `get(b, parent(b)[key], default)`.
+"""
+function key_index(b::SubBasis{T,I}, key, default = nothing) where {T,I}
     if b.is_sorted
-        i = searchsortedfirst(b.keys, key)
+        i = searchsortedfirst(b.keys, key, lt = comparable(parent(b)))
         if i in eachindex(b.keys) && b.keys[i] == key
             return convert(I, i)
         end
@@ -139,6 +145,10 @@ function Base.get(b::SubBasis{T,I}, x::T, default) where {T,I}
         end
     end
     return default
+end
+
+function Base.get(b::SubBasis{T}, x::T, default) where {T}
+    return key_index(b, b.parent_basis[x], default)
 end
 
 Base.in(x::T, b::SubBasis{T}) where T = !isnothing(get(b, x, nothing))
