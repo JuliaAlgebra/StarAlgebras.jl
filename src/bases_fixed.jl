@@ -104,7 +104,7 @@ struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
     keys::V
     is_sorted::Bool
     function SubBasis(parent_basis::AbstractBasis{T,K}, keys::AbstractVector{K}) where {T,K}
-        return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(parent_basis, keys, issorted(keys))
+        return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(parent_basis, keys, issorted(keys, lt=comparable(parent_basis)))
     end
 end
 
@@ -128,7 +128,7 @@ Base.iterate(b::SubBasis, st) = _iterate(b, iterate(b.keys, st))
 function Base.get(b::SubBasis{T,I}, x::T, default) where {T,I}
     key = b.parent_basis[x]
     if b.is_sorted
-        i = searchsortedfirst(b.keys, key)
+        i = searchsortedfirst(b.keys, key, lt = comparable(b))
         if i in eachindex(b.keys) && b.keys[i] == key
             return convert(I, i)
         end
