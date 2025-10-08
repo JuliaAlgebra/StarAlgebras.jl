@@ -85,7 +85,7 @@ function coeffs!(res, cfs, source::AbstractBasis, target::AbstractBasis)
     MA.operate!(zero, res)
     for (k, v) in nonzero_pairs(cfs)
         x = source[k]
-        res[target[x]] += v
+        res[target[x]] = v
     end
     return res
 end
