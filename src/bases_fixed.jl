@@ -103,9 +103,17 @@ struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
     parent_basis::B
     keys::V
     is_sorted::Bool
-    function SubBasis(parent_basis::AbstractBasis{T,K}, keys::AbstractVector{K}) where {T,K}
+    function SubBasis(parent_basis::ImplicitBasis{T,K}, keys::AbstractVector{K}) where {T,K}
         return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(parent_basis, keys, issorted(keys, lt=comparable(parent_basis)))
     end
+end
+
+function SubBasis(basis::SubBasis{T,I}, indices::Vector{I}) where {T,I}
+    # If `basis.is_sorted` is `true` and `indices` is not sorted,
+    # maybe we should sort it automatically ?
+    # Or maybe it's best to just error so that the user has to sort it explicitly
+    @assert issorted(indices)
+    return SubBasis(parent(basis), basis.keys[indices])
 end
 
 Base.parent(sub::SubBasis) = sub.parent_basis
