@@ -4,7 +4,7 @@
 Base.hash(a::AlgebraElement, h::UInt) = hash(coeffs(a), hash(parent(a), h))
 
 function Base.:(==)(X::AlgebraElement, Y::AlgebraElement)
-    parent(X) === parent(Y) || return false
+    parent(X) == parent(Y) || return false
     return coeffs(X) == coeffs(Y)
 end
 
