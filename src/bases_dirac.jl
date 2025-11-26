@@ -142,3 +142,15 @@ end
 function Base.getindex(b::MappedBasis{T,I}, x::I) where {T,I}
     return b.map(x)
 end
+
+function promote_basis_with_maps(a::ImplicitBasis, b::ImplicitBasis)
+    if a == b
+        return (a, nothing), (b, nothing)
+    end
+    error("Bases $a and $b are different and do not support promotion.")
+end
+
+function promote_basis(a, b)
+    _a, _b = promote_basis_with_maps(a, b)
+    return _a[1], _b[1]
+end
