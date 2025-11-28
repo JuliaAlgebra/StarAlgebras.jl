@@ -87,6 +87,12 @@ end
         (1,),
     )
     Z = AlgebraElement(z, fRG)
+
+    @test convert(typeof(Y), Y) === Y
+    @test convert(typeof(Y), Z) !== Z
+    @test convert(typeof(Y), Z) isa typeof(Y)
+    @test convert(typeof(Y), Z) == Z
+
     @test _test_op(+, Z, Z) == _test_op(*, 2, Z)
     @test _test_op(+, Z, Z) == _test_op(+, Y, Y)
     @test _test_op(+, Y, Z) == _test_op(+, Y, Y)
