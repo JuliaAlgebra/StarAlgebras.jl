@@ -43,3 +43,31 @@ function LinearAlgebra.dot(a::AlgebraElement, w::AbstractVector)
     @assert key_type(basis(parent(a))) <: Integer
     return LinearAlgebra.dot(coeffs(a), w)
 end
+
+function promote_object end
+
+maybe_promote(a, _, ::Nothing) = a, nothing
+maybe_promote(a, b, map) = promote_with_map(a, b, map)
+
+function promote_with_map(a::StarAlgebra, mstr, map)
+    new_obj = promote_object(object(a), mstr, map)
+    return StarAlgebra(new_obj, mstr), map
+end
+
+function promote_basis_with_maps(a::AbstractBasis, b::StarAlgebra)
+    _a, _b = promote_basis_with_maps(a, mstructure(b))
+    return _a, maybe_promote(b, _b...)
+end
+
+function promote_with_map(a::AlgebraElement, alg, map)
+    c = coeffs(a)
+    if map !== identity
+        c = map_keys(map, c)
+    end
+    return AlgebraElement(c, alg), map
+end
+
+function promote_basis_with_maps(a::AbstractBasis, b::AlgebraElement)
+    _a, _b = promote_basis_with_maps(a, parent(b))
+    return _a, maybe_promote(b, _b...)
+end

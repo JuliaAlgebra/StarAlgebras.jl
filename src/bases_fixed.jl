@@ -164,3 +164,19 @@ function Base.getindex(b::SubBasis{T,I}, x::T) where {T,I}
     end
     return i::I
 end
+
+function promote_with_map(a::SubBasis, basis, m)
+    keys_a = map(m, a.keys)
+    # The key of basis `a` is a `Integer` so no key mapper needed
+    return SubBasis(basis, keys_a), identity
+end
+
+function promote_basis_with_maps(a::SubBasis, b::ImplicitBasis)
+    _a, _b = promote_basis_with_maps(parent(a), b)
+    return maybe_promote(a, _a...), _b
+end
+
+function promote_basis_with_maps(a::SubBasis, b::SubBasis)
+    _a, _b = promote_basis_with_maps(parent(a), parent(b))
+    return maybe_promote(a, _a...), maybe_promote(b, _b...)
+end
