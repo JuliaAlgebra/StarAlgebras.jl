@@ -120,6 +120,27 @@ function Base.similar(s::SparseCoefficients, ::Type{T} = value_type(s)) where {T
     return SparseCoefficients(collect(s.basis_elements), _similar(s.values, T), s.isless)
 end
 
+function Base.convert(
+    ::Type{SparseCoefficients{K,V,Vh,Vv,L}},
+    s::SparseCoefficients{K,V,Vh,Vv,L},
+) where {K,V,Vh,Vv,L}
+    return s
+end
+
+_collect_if_needed(::Type, v) = v
+_collect_if_needed(::Type{<:AbstractVector}, t::Tuple) = collect(t)
+
+function Base.convert(
+    ::Type{SparseCoefficients{K,V,Vh,Vv,L}},
+    s::SparseCoefficients,
+) where {K,V,Vh,Vv,L}
+    return SparseCoefficients{K,V,Vh,Vv,L}(
+        _collect_if_needed(Vh, s.basis_elements),
+        _collect_if_needed(Vv, s.values),
+        s.isless,
+    )
+end
+
 function map_keys(f::Function, s::SparseCoefficients)
     return SparseCoefficients(map(f, s.basis_elements), s.values, s.isless)
 end

@@ -146,3 +146,13 @@ function AlgebraElement{T}(X::AlgebraElement) where {T}
     end
     return AlgebraElement(w, parent(X))
 end
+
+function Base.convert(::Type{AlgebraElement{A,T,V}}, a::AlgebraElement{A,T,V}) where {A,T,V}
+    return a
+end
+
+# Useful for instance if `V` is `SparseCoefficients` with `Tuple`
+# and `U` is `SparseCoefficients` with `Vector`
+function Base.convert(::Type{AlgebraElement{A,T,U}}, a::AlgebraElement{A,T,V}) where {A,T,U,V}
+    return AlgebraElement(convert(U, coeffs(a)), parent(a))
+end
