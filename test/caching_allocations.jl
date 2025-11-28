@@ -3,6 +3,7 @@
 
 function _alloc_test(output, op, a, b, allocs)
     MA.operate_to!(output, op, a, b)
+    MA.operate_to!(output, op, a, b)
     expected = op(a, b)
     @test @allocations(MA.operate_to!(output, op, a, b)) <= allocs
     @test output == expected
