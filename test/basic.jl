@@ -19,6 +19,7 @@ struct DummyBasis{T} <: SA.ExplicitBasis{T,Int}
     elements::Vector{T}
 end
 
+Base.:(==)(b1::DummyBasis, b2::DummyBasis) = b1.elements == b2.elements
 Base.length(b::DummyBasis) = length(b.elements)
 Base.getindex(b::DummyBasis, i::Int) = b.elements[i]
 Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
@@ -29,7 +30,10 @@ Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
     s(i) = sprint(show, MIME"text/plain"(), i)
     @test sprint(show, AlgebraElement([2, -1], a)) == "2·$(s(π)) - 1·$(s(ℯ))"
     @test a == a
-    @test a == StarAlgebra(PlaceholderObject(), b)
+    @test a !== StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ]))
+    @test a == StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ]))
+    @test AlgebraElement([2, -1], a) !== AlgebraElement([2, -1], StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ])))
+    @test AlgebraElement([2, -1], a) == AlgebraElement([2, -1], StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ])))
     @test a != StarAlgebra(1, b)
     b2 = DummyBasis(Irrational[π, Irrational{:γ}()])
     @test a != StarAlgebra(PlaceholderObject(), b2)
