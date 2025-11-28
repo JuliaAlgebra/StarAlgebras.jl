@@ -88,6 +88,7 @@ end
     )
     Z = AlgebraElement(z, fRG)
 
+    @test convert(typeof(SA.coeffs(Y)), SA.coeffs(Y)) === SA.coeffs(Y)
     @test convert(typeof(Y), Y) === Y
     @test convert(typeof(Y), Z) !== Z
     @test convert(typeof(Y), Z) isa typeof(Y)
