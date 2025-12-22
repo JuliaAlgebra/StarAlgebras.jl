@@ -85,6 +85,11 @@ Base.iterate(b::FixedBasis) = iterate(b.elts)
 Base.iterate(b::FixedBasis, state) = iterate(b.elts, state)
 Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V} = Base.IndexStyle(V)
 
+function promote_basis_with_maps(a::FixedBasis, b::FixedBasis)
+    @assert a == b # Promotion not supported, they need to be equal
+    return (a, nothing), (b, nothing)
+end
+
 """
     struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
         ExplicitBasis{T,I}
