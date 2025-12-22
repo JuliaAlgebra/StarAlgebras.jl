@@ -54,9 +54,20 @@ function promote_with_map(a::StarAlgebra, mstr, map)
     return StarAlgebra(new_obj, mstr), map
 end
 
-function promote_basis_with_maps(a::AbstractBasis, b::StarAlgebra)
-    _a, _b = promote_basis_with_maps(a, mstructure(b))
-    return _a, maybe_promote(b, _b...)
+function promote_basis_with_maps(
+    a::StarAlgebra,
+    b::StarAlgebra,
+)
+    _a, _b = promote_basis_with_maps(mstructure(a), mstructure(b))
+    return maybe_promote(a, _a...), maybe_promote(b, _b...)
+end
+
+function promote_basis_with_maps(
+    a::StarAlgebra,
+    b::Union{MultiplicativeStructure,AbstractBasis},
+)
+    _a, _b = promote_basis_with_maps(mstructure(a), b)
+    return maybe_promote(a, _a...), _b
 end
 
 function promote_with_map(a::AlgebraElement, alg, map)
@@ -67,7 +78,22 @@ function promote_with_map(a::AlgebraElement, alg, map)
     return AlgebraElement(c, alg), map
 end
 
-function promote_basis_with_maps(a::AbstractBasis, b::AlgebraElement)
-    _a, _b = promote_basis_with_maps(a, parent(b))
-    return _a, maybe_promote(b, _b...)
+function promote_basis_with_maps(
+    a::AlgebraElement,
+    b::AlgebraElement,
+)
+    _a, _b = promote_basis_with_maps(parent(a), parent(b))
+    return maybe_promote(a, _a...), maybe_promote(b, _b...)
+end
+
+function promote_basis_with_maps(
+    a::AlgebraElement,
+    b::Union{
+        StarAlgebra,
+        MultiplicativeStructure,
+        AbstractBasis,
+    },
+)
+    _a, _b = promote_basis_with_maps(parent(a), b)
+    return maybe_promote(a, _a...), _b
 end
