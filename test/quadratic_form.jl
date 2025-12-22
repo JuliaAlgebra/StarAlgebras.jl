@@ -108,7 +108,7 @@ end
 @testset "Chebyshev basis" begin
     implicit = cheby_basis()
     mstr = ChebyMStruct(implicit)
-    mt = SA.MTable(implicit, mstr, (0, 0))
+    mt = SA.MTable(mstr, (0, 0))
     sub = SA.SubBasis(implicit, 1:3)
     test_vector_interface(sub)
     fixed = SA.FixedBasis(implicit; n = 3)
