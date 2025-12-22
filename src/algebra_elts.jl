@@ -44,15 +44,80 @@ function LinearAlgebra.dot(a::AlgebraElement, w::AbstractVector)
     return LinearAlgebra.dot(coeffs(a), w)
 end
 
+"""
+    promote_object(object, mstructure, map)
+
+Promote the `object` field of a `StarAlgebra` to the new
+multiplicative structure `mstructure` and the key map `map`.
+"""
 function promote_object end
+
+"""
+    maybe_promote(a, parent, map)
+
+Promote `a` given the promoted parent `parent` and the key map
+`map. Call this function as follows:
+
+    maybe_promote(a, ::Nothing)
+
+Just return `a` in case there is no promotion to do.
+
+To be used as follows
+```julia
+function promote_basis_with_maps(a::..., b::...)
+    _a, _b = promote_basis_with_maps(parent(a), parent(b))
+    return maybe_promote(a, _a...), maybe_promote(b, _b...)
+end
+```
+"""
+function maybe_promote end
 
 maybe_promote(a, _, ::Nothing) = a, nothing
 maybe_promote(a, b, map) = promote_with_map(a, b, map)
+
+"""
+    promote_with_map(a, parent, map)
+
+Promote `a` given the promoted parent `parent` and the key map
+`map. Implement this function but call `maybe_promote`.
+"""
+function promote_with_map end
 
 function promote_with_map(a::StarAlgebra, mstr, map)
     new_obj = promote_object(object(a), mstr, map)
     return StarAlgebra(new_obj, mstr), map
 end
+
+"""
+    promote_basis_with_map(a, b)
+
+Return `(new_a, map_a), (new_b, map_b)` where `new_a` and `new_b`
+are the promoted version of `a` and `b` so that they now have the same basis.
+The function `map_a` (resp. `map_b`) maps the key of `a` (resp. `b`) to the
+corresponding key of `new_a` (resp. `new_b`).
+
+The convention for implementing this interface for a type `A` with parent type `B`
+and function `parent` that obtains the parent type is as follows:
+```julia
+import StarAlgebras as SA
+
+function SA.promote_with_map(a::A, b::B, map)
+    # Promote other fields of `a` using `b` and `map`...
+    return A(b, ...)
+end
+
+function SA.promote_basis_with_maps(a::A, b::A)
+    _a, _b = SA.promote_basis_with_maps(parent(a), parent(b))
+    return SA.maybe_promote(a, _a...), SA.maybe_promote(b, _b...)
+end
+
+function SA.promote_basis_with_maps(a::A, b::B)
+    _a, _b = SA.promote_basis_with_maps(parent(a), b)
+    return SA.maybe_promote(a, _a...), _b
+end
+```
+"""
+function promote_basis_with_maps end
 
 function promote_basis_with_maps(
     a::StarAlgebra,
@@ -96,4 +161,14 @@ function promote_basis_with_maps(
 )
     _a, _b = promote_basis_with_maps(parent(a), b)
     return maybe_promote(a, _a...), _b
+end
+
+"""
+    promote_basis(a, b)
+
+Same as `promote_basis_with_maps` but without the key maps.
+"""
+function promote_basis(a, b)
+    _a, _b = promote_basis_with_maps(a, b)
+    return _a[1], _b[1]
 end

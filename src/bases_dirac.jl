@@ -149,8 +149,3 @@ function promote_basis_with_maps(a::ImplicitBasis, b::ImplicitBasis)
     end
     error("Bases $a and $b are different and do not support promotion.")
 end
-
-function promote_basis(a, b)
-    _a, _b = promote_basis_with_maps(a, b)
-    return _a[1], _b[1]
-end
