@@ -12,40 +12,39 @@ Multiplicative table, stored explicitly as an AbstractMatrix{I}.
     mt(-i, j) == b[star(b[i])*b[j]]
     ```
 """
-struct MTable{T,I<:Integer,B<:AbstractBasis{T,I},Ms,M<:AbstractMatrix} <:
+struct MTable{T,I<:Integer,Ms<:MultiplicativeStructure{T,I},M<:AbstractMatrix} <:
        MultiplicativeStructure{T,I}
-    basis::B
     mstr::Ms
     table::M
     lock::Base.Threads.SpinLock
 end
 
 function MTable(
-    basis::AbstractBasis{T,I},
-    mstr::MultiplicativeStructure,
+    mstr::MultiplicativeStructure{T,I},
     dims::NTuple{2,I},
 ) where {T,I<:Integer}
-    Base.require_one_based_indexing(basis)
+    bas = basis(mstr)
+    Base.require_one_based_indexing(bas)
 
-    if Base.haslength(basis)
-        @assert length(basis) ≥ first(dims)
-        @assert length(basis) ≥ last(dims)
+    if Base.haslength(bas)
+        @assert length(bas) ≥ first(dims)
+        @assert length(bas) ≥ last(dims)
     end
 
-    C = typeof(mstr(first(basis), first(basis)))
+    C = typeof(mstr(first(bas), first(bas)))
     table = Matrix{C}(undef, dims)
     # this is to avoid situation with allocated garbage in table
     # we want table to consist of #undefs as "sentiel values"
     @assert !isbitstype(C) || dims == (0, 0)
 
-    return MTable(basis, mstr, table, Base.Threads.SpinLock())
+    return MTable(mstr, table, Base.Threads.SpinLock())
 end
 
 function MTable(
     basis::AbstractBasis{T,I},
     dims::NTuple{2,I},
 ) where {T,I<:Integer}
-    return MTable(basis, DiracMStructure(basis, *), dims)
+    return MTable(DiracMStructure(basis, *), dims)
 end
 
 Base.@propagate_inbounds function __absindex(mt::MTable, i::Integer)
@@ -53,7 +52,8 @@ Base.@propagate_inbounds function __absindex(mt::MTable, i::Integer)
 end
 
 Base.size(mt::MTable, i::Vararg) = size(mt.table, i...)
-Base.getindex(mt::MTable, i::Integer) = mt.basis[__absindex(mt, i)]
+Base.getindex(mt::MTable, i::Integer) = mt.mstr[__absindex(mt, i)]
+basis(mstr::MTable) = basis(mstr.mstr)
 
 function __iscomputed(mt::MTable, i, j)
     return isassigned(mt.table, i, j)
