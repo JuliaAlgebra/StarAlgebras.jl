@@ -150,3 +150,28 @@ function (mstr::DiracMStructure{T,T})(x::T, y::T, ::Type{T}) where {T}
     xy = mstr.op(x, y)
     return SparseCoefficients((xy,), (1,))
 end
+
+function promote_with_map(
+    a::DiracMStructure,
+    b::AbstractBasis,
+    map,
+)
+    # We assume `a.op` doesn't need to be mapped
+    return DiracMStructure(b, a.op), map
+end
+
+function promote_basis_with_maps(
+    a::DiracMStructure,
+    b::DiracMStructure,
+)
+    _a, _b = promote_basis_with_maps(basis(a), basis(b))
+    return maybe_promote(a, _a...), maybe_promote(b, _b...)
+end
+
+function promote_basis_with_maps(
+    a::DiracMStructure,
+    b::AbstractBasis,
+)
+    _a, _b = promote_basis_with_maps(basis(a), b)
+    return maybe_promote(a, _a...), _b
+end

@@ -60,6 +60,7 @@ end
     include("quadratic_form.jl")
 
     include("caching_allocations.jl")
+    include("graded_lex.jl")
 
     # some applications:
     using Groups

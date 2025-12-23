@@ -58,7 +58,8 @@ for op in [:+, :-, :*]
             return algebra_promote_operation($op, X, Y)
         end
         function Base.$op(X::AlgebraElement, Y::AlgebraElement)
-            return MA.operate_to!(_preallocate_output($op, X, Y), $op, X, Y)
+            _X, _Y = promote_basis(X, Y)
+            return MA.operate_to!(_preallocate_output($op, _X, _Y), $op, _X, _Y)
         end
     end
 end
