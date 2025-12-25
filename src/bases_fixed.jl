@@ -103,17 +103,39 @@ struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
     parent_basis::B
     keys::V
     is_sorted::Bool
-    function SubBasis(parent_basis::ImplicitBasis{T,K}, keys::AbstractVector{K}) where {T,K}
+    function SubBasis(parent_basis::AbstractBasis{T,K}, keys::AbstractVector{K}) where {T,K}
         return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(parent_basis, keys, issorted(keys, lt=comparable(parent_basis)))
     end
 end
 
-function SubBasis(basis::SubBasis{T,I}, indices::Vector{I}) where {T,I}
+"""
+    sub_basis(basis::SubBasis, indices::Vector)
+
+Return a `SubBasis` of the same `parent` but the subset of keys
+`basis.keys[indices]`.
+"""
+function sub_basis(basis::SubBasis, indices::AbstractVector)
     # If `basis.is_sorted` is `true` and `indices` is not sorted,
     # maybe we should sort it automatically ?
     # Or maybe it's best to just error so that the user has to sort it explicitly
     @assert issorted(indices)
     return SubBasis(parent(basis), basis.keys[indices])
+end
+
+"""
+    sub_basis(basis::ImplicitBasis, keys::AbstractVector)
+
+Return a `SubBasis` of `basis` but the subset of keys `keys`.
+
+## Note
+
+Even though the constructor `SubBasis(basis, keys)` allows `basis`
+to be a `ExplicitBasis`, this function restricts it to be
+an `ImplicitBasis` in order to provide an interface that would
+help catch common mistakes.
+"""
+function sub_basis(basis::ImplicitBasis, keys::AbstractVector)
+    return SubBasis(basis, keys)
 end
 
 Base.parent(sub::SubBasis) = sub.parent_basis
