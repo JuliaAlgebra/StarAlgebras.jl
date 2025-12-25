@@ -124,7 +124,7 @@ import StarAlgebras as SA
         Random.seed!(0)
         S1 = unique!(rand(G, 7))
         S = unique!([S1; [a * b for a in S1 for b in S1]])
-        subb = SA.SubBasis(db, S)
+        subb = SA.sub_basis(db, S)
         a = S1[1]
         @test subb[a] == 1
         @test a in subb
@@ -160,7 +160,7 @@ import StarAlgebras as SA
         end
 
         S2 = unique([S; one(G)])
-        subb2 = SA.SubBasis(db, S2)
+        subb2 = SA.sub_basis(db, S2)
         let sRG = SA.StarAlgebra(G, subb2)
             x = let z = spzeros(Int, length(SA.basis(sRG)))
                 z[rand(1:length(S2), 10)] += rand(-1:1, 10)
