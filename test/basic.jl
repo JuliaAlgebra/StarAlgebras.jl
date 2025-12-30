@@ -24,7 +24,7 @@ Base.length(b::DummyBasis) = length(b.elements)
 Base.getindex(b::DummyBasis, i::Int) = b.elements[i]
 Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
 
-#@testset "Basic tests" begin
+@testset "Basic tests" begin
     b = DummyBasis(Irrational[π, ℯ])
     a = StarAlgebra(PlaceholderObject(), b)
     s(i) = sprint(show, MIME"text/plain"(), i)
@@ -52,7 +52,6 @@ Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
     @test B == StarAlgebra(1.0, SA.sub_basis(m, Irrational[π]))
     @test B != StarAlgebra(1.0, SA.sub_basis(m, Irrational[ℯ]))
     @test B != StarAlgebra(1.0, SA.sub_basis(m2, Irrational[π]))
-    @edit SA.sub_basis(m, Irrational[π, ℯ])[1:1]
     @test B == StarAlgebra(1.0, SA.sub_basis(m, Irrational[π, ℯ])[1:1])
     @test B != StarAlgebra(1.0, SA.sub_basis(m, Irrational[π, ℯ])[1:2])
     @test B != StarAlgebra(1.0, SA.sub_basis(m, Irrational[π, ℯ])[2:2])
