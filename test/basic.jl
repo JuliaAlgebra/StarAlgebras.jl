@@ -52,9 +52,9 @@ Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
     @test B == StarAlgebra(1.0, SA.sub_basis(m, Irrational[π]))
     @test B != StarAlgebra(1.0, SA.sub_basis(m, Irrational[ℯ]))
     @test B != StarAlgebra(1.0, SA.sub_basis(m2, Irrational[π]))
-    @test B == StarAlgebra(1.0, SA.sub_basis(m, Irrational[π, ℯ])[1:1])
-    @test B != StarAlgebra(1.0, SA.sub_basis(m, Irrational[π, ℯ])[1:2])
-    @test B != StarAlgebra(1.0, SA.sub_basis(m, Irrational[π, ℯ])[2:2])
+    @test B == StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 1:1))
+    @test B != StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 1:2))
+    @test B != StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 2:2))
 
     el = SA.AlgebraElement(
         [Variable()],
