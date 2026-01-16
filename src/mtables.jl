@@ -136,3 +136,13 @@ function MA.operate!(
     res .+= sparsevec(idcs, vals, length(res))
     return res
 end
+
+# TODO promote_with_map
+
+function promote_basis_with_maps(
+    a::MTable,
+    b::MTable,
+)
+    _a, _b = promote_basis_with_maps(a.mstr, b.mstr)
+    return maybe_promote(a, _a...), maybe_promote(b, _b...)
+end
