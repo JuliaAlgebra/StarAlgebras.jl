@@ -46,12 +46,15 @@ Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
     @test A == StarAlgebra(1.0, SA.MappedBasis(b, float, error))
     @test A != StarAlgebra(1.0, m2)
 
-    sub = SA.SubBasis(m, Irrational[π])
+    sub = SA.sub_basis(m, Irrational[π])
     B = StarAlgebra(1.0, sub)
     @test B == B
-    @test B == StarAlgebra(1.0, SA.SubBasis(m, Irrational[π]))
-    @test B != StarAlgebra(1.0, SA.SubBasis(m, Irrational[ℯ]))
-    @test B != StarAlgebra(1.0, SA.SubBasis(m2, Irrational[π]))
+    @test B == StarAlgebra(1.0, SA.sub_basis(m, Irrational[π]))
+    @test B != StarAlgebra(1.0, SA.sub_basis(m, Irrational[ℯ]))
+    @test B != StarAlgebra(1.0, SA.sub_basis(m2, Irrational[π]))
+    @test B == StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 1:1))
+    @test B != StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 1:2))
+    @test B != StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 2:2))
 
     el = SA.AlgebraElement(
         [Variable()],
