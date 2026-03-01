@@ -72,7 +72,8 @@ import StarAlgebras as SA
 #        @test Set(ad) == Set(SA.Augmented(g) for g in db if !isone(g))
 #    end
 
-    @testset "Random elements" begin
+    @testset "Random elements (seed=$seed)" for seed in 0:5
+        Random.seed!(seed)
         rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
         r = SA.AlgebraElement(rcfs, RG)
         scfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
@@ -88,27 +89,35 @@ import StarAlgebras as SA
 
         fRG = SA.StarAlgebra(G, SA.MTable(fb, (m, m)))
 
-        rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
-        r = SA.AlgebraElement(rcfs, RG)
-        scfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
-        s = SA.AlgebraElement(scfs, RG)
+        @testset "seed=$seed" for seed in 0:5
+            Random.seed!(seed)
+            rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+            r = SA.AlgebraElement(rcfs, RG)
+            scfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+            s = SA.AlgebraElement(scfs, RG)
 
-        @test coeffs(r, basis(fRG)) isa SparseVector
+            @test coeffs(r, basis(fRG)) isa SparseVector
 
-        fr = SA.AlgebraElement(coeffs(r, basis(fRG)), fRG)
-        fs = SA.AlgebraElement(coeffs(s, basis(fRG)), fRG)
+            fr = SA.AlgebraElement(coeffs(r, basis(fRG)), fRG)
+            fs = SA.AlgebraElement(coeffs(s, basis(fRG)), fRG)
 
-        @test SA.aug(fr) == SA.aug(r)
-        @test SA.aug(fs) == SA.aug(s)
-        @test SA.aug(fr * fs) == SA.aug(fr) * SA.aug(fs)
+            @test SA.aug(fr) == SA.aug(r)
+            @test SA.aug(fs) == SA.aug(s)
+            @test SA.aug(fr * fs) == SA.aug(fr) * SA.aug(fs)
 
-        @test coeffs(r * s, basis(fRG)) isa AbstractVector
-        @test fr * fs == SA.AlgebraElement(coeffs(r * s, basis(fRG)), fRG)
+            @test coeffs(r * s, basis(fRG)) isa AbstractVector
+            @test fr * fs == SA.AlgebraElement(coeffs(r * s, basis(fRG)), fRG)
+        end
 
         a, b = let mt = SA.mstructure(fRG).table
             count(i -> isassigned(mt, i), eachindex(mt)), length(mt)
         end
         @test a ≤ b
+
+        @test Random.seed!(0) isa Any
+        rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+        r = SA.AlgebraElement(rcfs, RG)
+        fr = SA.AlgebraElement(coeffs(r, basis(fRG)), fRG)
 
         @test isone(one(fRG))
         @test fr * one(fRG) == fr
