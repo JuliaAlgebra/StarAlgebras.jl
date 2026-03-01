@@ -72,7 +72,7 @@ import StarAlgebras as SA
 #        @test Set(ad) == Set(SA.Augmented(g) for g in db if !isone(g))
 #    end
 
-    @testset "Random elements (seed=$seed)" for seed in 0:5
+    @testset "Random elements (seed=$seed)" for seed in 0:50
         Random.seed!(seed)
         rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
         r = SA.AlgebraElement(rcfs, RG)
