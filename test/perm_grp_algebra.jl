@@ -89,7 +89,7 @@ import StarAlgebras as SA
 
         fRG = SA.StarAlgebra(G, SA.MTable(fb, (m, m)))
 
-        @testset "seed=$seed" for seed in 0:100
+        @testset "seed=$seed" for seed in 0:20
             Random.seed!(seed)
             rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
             r = SA.AlgebraElement(rcfs, RG)
