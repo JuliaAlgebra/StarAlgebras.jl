@@ -55,7 +55,7 @@ function MA.operate!(
     end
 end
 
-function MA.operate!(op::UnsafeAddMul, res::AlgebraElement{A}, b1::T, b2::T, a) where {O,T,A<:AbstractStarAlgebra{O,T}}
+function MA.operate!(op::UnsafeAddMul, res::AlgebraElement{C,A}, b1::T, b2::T, a) where {C,O,T,A<:AbstractStarAlgebra{O,T}}
     mstr = mstructure(res)
     return MA.operate!(op, coeffs(res), mstr(mstr[b1], mstr[b2]), a)
 end
