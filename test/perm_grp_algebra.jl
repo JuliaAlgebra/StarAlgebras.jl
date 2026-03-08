@@ -92,9 +92,9 @@ import StarAlgebras as SA
         @testset "seed=$seed" for seed in 0:20
             Random.seed!(seed)
             rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
-            r = SA.AlgebraElement(rcfs, RG)
+            r = SA.algebra_element(rcfs, RG)
             scfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
-            s = SA.AlgebraElement(scfs, RG)
+            s = SA.algebra_element(scfs, RG)
 
             @test coeffs(r, basis(fRG)) isa SparseVector
 
