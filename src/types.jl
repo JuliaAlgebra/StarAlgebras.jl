@@ -65,15 +65,13 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
 end
 
 """
-    algebra_element(coeffs, parent::AbstractStarAlgebra; is_canonical = false)
+    algebra_element(coeffs, parent::AbstractStarAlgebra)
 
-Same as `AlgebraElement(coeffs, parent)` but also canonicalize of `is_canonical` is `false`.
+Same as `AlgebraElement(coeffs, parent)` but also canonicalizes `coeffs`.
 """
-function algebra_element(coeffs, parent::AbstractStarAlgebra; is_canonical = false)
+function algebra_element(coeffs, parent::AbstractStarAlgebra)
     a = AlgebraElement(coeffs, parent)
-    if !is_canonical
-        MA.operate!(canonical, a)
-    end
+    MA.operate!(canonical, a)
     return a
 end
 
