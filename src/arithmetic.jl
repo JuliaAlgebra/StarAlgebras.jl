@@ -41,14 +41,14 @@ function Base.:div(X::AlgebraElement, a::Number)
 end
 function Base.:*(
     a::T,
-    X::AlgebraElement{A},
-) where {T,O,A<:AbstractStarAlgebra{O,T}}
+    X::AlgebraElement{C,A},
+) where {T,C,O,A<:AbstractStarAlgebra{O,T}}
     return MA.operate_to!(similar(X), __lmul, a, X)
 end
 function Base.:*(
-    X::AlgebraElement{A},
+    X::AlgebraElement{C,A},
     a::T,
-) where {T,O,A<:AbstractStarAlgebra{O,T}}
+) where {C,T,O,A<:AbstractStarAlgebra{O,T}}
     return MA.operate_to!(similar(X), __rmul, a, X)
 end
 
