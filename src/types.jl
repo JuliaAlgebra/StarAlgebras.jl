@@ -38,9 +38,43 @@ function Base.:(==)(a::StarAlgebra, b::StarAlgebra)
     return a.object == b.object && a.mstructure == b.mstructure
 end
 
+"""
+    struct AlgebraElement{A,T,V} <: MA.AbstractMutable
+        coeffs::V
+        parent::A
+    end
+
+Represent an element of the algebra `parent` with coefficients `coeffs`.
+The coefficients is a mapping from `keys(coeffs)` to `values(coeffs)`.
+The basis element correponding to a key `key` can be obtained via `parent[key]`.
+
+The coefficients are **always** in canonicalized state, meaning the coefficients are
+sorted in increasing key order without duplicate keys.
+Don't call this constructor with a value of `coeffs` that is in canonical form.
+If unsure whether `coeffs` is in canonical form, call [`algebra_element`](@ref) instead of the `AlgebraElement` constructor.
+
+The [`UnsafeAddMul`] and [`UnsafeAdd`] operations may break the canonicalized state of
+`AlgebraElement`, hence the `Unsafe` prefix in their name,
+the algebra element, say `a`, should be canonicalized with
+`MA.operate!(canonical, a)` after using these unsafe operations and
+before using other operations which assumes the canonicalized state.
+"""
 struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     coeffs::V
     parent::A
+end
+
+"""
+    algebra_element(coeffs, parent::AbstractStarAlgebra; is_canonical = false)
+
+Same as `AlgebraElement(coeffs, parent)` but also canonicalize of `is_canonical` is `false`.
+"""
+function algebra_element(coeffs, parent::AbstractStarAlgebra; is_canonical = false)
+    a = AlgebraElement(coeffs, parent)
+    if !is_canonical
+        MA.operate!(canonical, a)
+    end
+    return a
 end
 
 Base.parent(a::AlgebraElement) = a.parent
