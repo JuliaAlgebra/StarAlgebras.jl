@@ -64,6 +64,7 @@ struct AlgebraElement{A,T,V} <: MA.AbstractMutable
     parent::A
 end
 
+# TODO we could add an additional argument with SortedUniqState etc... from MultivariatePolynomials
 """
     algebra_element(coeffs, parent::AbstractStarAlgebra)
 
