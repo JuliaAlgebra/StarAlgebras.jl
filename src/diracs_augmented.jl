@@ -5,7 +5,7 @@ aug(cfs::Any) = sum(values(cfs))
 aug(a::AlgebraElement) = aug(coeffs(a), basis(a))
 
 function aug(cfs, b::AbstractBasis)
-    isempty(keys(cfs)) && return zero(value_type(cfs))
+    iszero(cfs) && return zero(value_type(cfs))
     return sum(c * aug(b[x]) for (x, c) in nonzero_pairs(cfs))
 end
 
