@@ -5,7 +5,7 @@ DocMeta.setdocmeta!(StarAlgebras, :DocTestSetup, :(using StarAlgebras); recursiv
 
 makedocs(;
     modules=[StarAlgebras],
-    authors="Marek Kaluba <kalmar@mailbox.org>",
+    authors="Marek Kaluba and Benoît Legat",
     repo="https://github.com/kalmar@amu.edu.pl/StarAlgebras.jl/blob/{commit}{path}#{line}",
     sitename="StarAlgebras.jl",
     format=Documenter.HTML(;
@@ -19,5 +19,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/kalmar@amu.edu.pl/StarAlgebras.jl",
+    repo="github.com/kalmar@amu.edu.pl/StarAlgebras.jl", push_preview=true, devbranch="main"
 )

@@ -59,6 +59,12 @@ end
 
 Base.getindex(mstr::MultiplicativeStructure, x) = basis(mstr)[x]
 
+Base.iterate(b::MultiplicativeStructure) = iterate(basis(b))
+Base.iterate(b::MultiplicativeStructure, st) = iterate(basis(b), st)
+
+Base.size(b::MultiplicativeStructure) = size(basis(b))
+Base.length(b::MultiplicativeStructure) = length(basis(b))
+
 basis(mstr::MultiplicativeStructure) = mstr.basis
 
 struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
