@@ -39,7 +39,7 @@ function Base.:(==)(a::StarAlgebra, b::StarAlgebra)
 end
 
 """
-    struct AlgebraElement{A,T,V} <: MA.AbstractMutable
+    struct AlgebraElement{T,A<:AbstractStarAlgebra,V} <: MA.AbstractMutable
         coeffs::V
         parent::A
     end
@@ -59,7 +59,7 @@ the algebra element, say `a`, should be canonicalized with
 `MA.operate!(canonical, a)` after using these unsafe operations and
 before using other operations which assumes the canonicalized state.
 """
-struct AlgebraElement{A,T,V} <: MA.AbstractMutable
+struct AlgebraElement{T,A<:AbstractStarAlgebra,V} <: MA.AbstractMutable
     coeffs::V
     parent::A
 end
@@ -82,7 +82,7 @@ Base.in(x::AlgebraElement, A::AbstractStarAlgebra) = parent(x) == A
 mstructure(a::AlgebraElement) = mstructure(parent(a))
 Base.eltype(::Type{A}) where {A<:AlgebraElement} = value_type(MA.promote_operation(coeffs, A))
 Base.eltype(a::AlgebraElement) = eltype(typeof(a))
-function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{A,T,V}}) where {A,T,V}
+function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{T,A,V}}) where {T,A,V}
     return V
 end
 coeffs(a::AlgebraElement) = a.coeffs
@@ -97,21 +97,21 @@ end
 function adjoint_coeffs(a::AlgebraElement, target::AbstractBasis)
     return adjoint_coeffs(coeffs(a), target, basis(a))
 end
-function MA.promote_operation(::typeof(basis), ::Type{<:AlgebraElement{A}}) where {A}
+function MA.promote_operation(::typeof(basis), ::Type{<:AlgebraElement{T,A}}) where {T,A}
     return MA.promote_operation(basis, A)
 end
 basis(a::AlgebraElement) = basis(parent(a))
 
 function AlgebraElement(coeffs, A::AbstractStarAlgebra)
     _sanity_checks(coeffs, A)
-    return AlgebraElement{typeof(A),value_type(coeffs),typeof(coeffs)}(coeffs, A)
+    return AlgebraElement{value_type(coeffs),typeof(A),typeof(coeffs)}(coeffs, A)
 end
 
 function AlgebraElement(
     coeffs::SparseCoefficients{T},
     A::AbstractStarAlgebra{O,T},
 ) where {O,T}
-    return AlgebraElement{typeof(A),value_type(coeffs),typeof(coeffs)}(coeffs, A)
+    return AlgebraElement{value_type(coeffs),typeof(A),typeof(coeffs)}(coeffs, A)
 end
 
 ### constructing elements
@@ -162,8 +162,8 @@ end
 (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T} = __coerce(A, (elt => 1))
 (A::AbstractStarAlgebra)(x::Number) = __coerce(A, (one(object(A)) => x))
 
-function similar_type(::Type{AlgebraElement{A,T,V}}, ::Type{C}) where {A,T,V,C}
-    return AlgebraElement{A,C,similar_type(V, C)}
+function similar_type(::Type{AlgebraElement{T,A,V}}, ::Type{C}) where {A,T,V,C}
+    return AlgebraElement{C,A,similar_type(V, C)}
 end
 
 function Base.similar(X::AlgebraElement, T = eltype(X))
@@ -180,12 +180,12 @@ function AlgebraElement{T}(X::AlgebraElement) where {T}
     return AlgebraElement(w, parent(X))
 end
 
-function Base.convert(::Type{AlgebraElement{A,T,V}}, a::AlgebraElement{A,T,V}) where {A,T,V}
+function Base.convert(::Type{AlgebraElement{T,A,V}}, a::AlgebraElement{T,A,V}) where {T,A,V}
     return a
 end
 
 # Useful for instance if `V` is `SparseCoefficients` with `Tuple`
 # and `U` is `SparseCoefficients` with `Vector`
-function Base.convert(::Type{AlgebraElement{A,T,U}}, a::AlgebraElement{A,T,V}) where {A,T,U,V}
+function Base.convert(::Type{AlgebraElement{T,A,U}}, a::AlgebraElement{T,A,V}) where {A,T,U,V}
     return AlgebraElement(convert(U, coeffs(a)), parent(a))
 end
