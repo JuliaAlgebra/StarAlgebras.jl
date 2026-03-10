@@ -183,7 +183,8 @@ import StarAlgebras as SA
             @test coeffs(one(x)) == coeffs(one(sRG))
         end
     end
-    @testset "Algebra Elements Basis" begin
+    @testset "Algebra Elements Basis (seed = $seed)" for seed in 0:200
+        Random.seed!(seed)
         S1 = unique!(collect(Iterators.take(G, 10)))
         S = unique!([a * b for a in S1 for b in S1])
 
