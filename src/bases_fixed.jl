@@ -103,12 +103,12 @@ representing the sub-basis elements, `parent_basis` is the parent basis from
 which the sub-basis is derived, and `is_sorted` indicates whether the keys are
 sorted.
 """
-struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
+struct SubBasis{T,I,K,B<:ImplicitBasis{T,K},V<:AbstractVector{K}} <:
        ExplicitBasis{T,I}
     parent_basis::B
     keys::V
     is_sorted::Bool
-    function SubBasis(parent_basis::AbstractBasis{T,K}, keys::AbstractVector{K}) where {T,K}
+    function SubBasis(parent_basis::ImplicitBasis{T,K}, keys::AbstractVector{K}) where {T,K}
         return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(parent_basis, keys, issorted(keys, lt=comparable(parent_basis)))
     end
 end
