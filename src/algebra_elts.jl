@@ -56,7 +56,7 @@ function promote_object end
     maybe_promote(a, parent, map)
 
 Promote `a` given the promoted parent `parent` and the key map
-`map. Call this function as follows:
+`map`. Call this function as follows:
 
     maybe_promote(a, ::Nothing)
 
