@@ -15,7 +15,6 @@ function _sanity_checks(coeffs, A::AbstractStarAlgebra)
     _key_type_check(coeffs, A)
 end
 function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
-    _key_type_check(coeffs, A)
     @assert Base.haslength(basis(A))
     @assert length(coeffs) == length(basis(A))
 end
