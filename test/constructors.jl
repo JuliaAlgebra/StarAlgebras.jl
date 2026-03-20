@@ -47,7 +47,7 @@ end
         MA.operate!(SA.canonical, coeffs)
     end
 
-    err = ArgumentError("The key type `Int64` of the coefficients does not match the key type `Word{Symbol}` of the algebra")
+    err = ArgumentError("The key type `Int64` of the coefficients does not match the key type `Word{Symbol}` of the algebra `*-algebra of FreeWords{Symbol}([:a, :b, :c])`")
     bad_coeffs = SA.SparseCoefficients([1], [2])
     @test_throws err AlgebraElement(bad_coeffs, RG)
 

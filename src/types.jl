@@ -7,7 +7,7 @@ function _key_type_check(coeffs, A::AbstractStarAlgebra)
     KC = key_type(coeffs)
     KA = key_type(basis(A))
     if KC != KA
-        error("The key type `$KC` of the coefficients does not match the key type `$KA` of the algebra")
+        throw(ArgumentError("The key type `$KC` of the coefficients does not match the key type `$KA` of the algebra `$A`"))
     end
 end
 
