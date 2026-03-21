@@ -143,7 +143,7 @@ end
 
 Base.zero(A::AbstractStarAlgebra) = zero(Int, A)
 Base.zero(T::Type, A::AbstractStarAlgebra) =
-    __coerce(A, (one(object(A)) => zero(T)))
+    AlgebraElement(zero_coeffs(T, basis(A)), A)
 Base.zero(a::AlgebraElement) = (b = similar(a); return MA.operate!(zero, b))
 Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
 
