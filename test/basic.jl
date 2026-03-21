@@ -62,4 +62,9 @@ Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
     )
     coeffs23 = SA.coeffs(el, SA.FixedBasis([2.0, 3.0]))
     @test coeffs23 == sparsevec([1], [Variable()], 2)
+
+    z = zero(Variable, A)
+    # `zero(Variable} isa Int` but it shouldn't affect the type of `AlgebraElement`
+    @test z isa SA.AlgebraElement{Variable}
+    @test iszero(z)
 end
