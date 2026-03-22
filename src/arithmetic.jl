@@ -150,13 +150,15 @@ function MA.operate_to!(
 end
 
 function MA.operate!(
-    mul::UnsafeAddMul,
+    ::UnsafeAddMul{typeof(*)},
     res::AlgebraElement,
     A::AlgebraElement,
     B::AlgebraElement,
     α = true,
 )
-    MA.operate!(mul, coeffs(res), coeffs(A), coeffs(B), α)
+    mstr = mstructure(res)
+    op = UnsafeAddMul(mstr)
+    MA.operate!(op, coeffs(res), coeffs(A), coeffs(B), α)
     return res
 end
 

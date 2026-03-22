@@ -46,7 +46,7 @@ function MA.operate!(
     res::AlgebraElement,
     Q::QuadraticForm{T,ε},
 ) where {T,ε}
-    op = UnsafeAddMul(mstructure(res))
+    op = UnsafeAddMul(*)
     for (i, b1) in pairs(basis(Q))
         b1★ = ε(b1)
         for (j, b2) in pairs(basis(Q))

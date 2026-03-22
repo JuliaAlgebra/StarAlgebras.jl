@@ -147,13 +147,13 @@ end
 
             MA.operate_to!(d, *, a, b)
             @test d == a * b
-            MA.operate!(SA.UnsafeAddMul(SA.mstructure(RG)), d, a, b)
+            MA.operate!(SA.UnsafeAddMul(*), d, a, b)
             @test d == 2 * a * b
 
             MA.operate_to!(d, *, a, b)
             @test d == a * b
             d = a + b
-            MA.operate!(SA.UnsafeAddMul(SA.mstructure(RG)), d, a, b, 3)
+            MA.operate!(SA.UnsafeAddMul(*), d, a, b, 3)
             @test d == a + b + 3 * a * b
         end
     end
