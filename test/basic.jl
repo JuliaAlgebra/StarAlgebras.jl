@@ -52,9 +52,14 @@ Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
     @test B == StarAlgebra(1.0, SA.sub_basis(m, Irrational[π]))
     @test B != StarAlgebra(1.0, SA.sub_basis(m, Irrational[ℯ]))
     @test B != StarAlgebra(1.0, SA.sub_basis(m2, Irrational[π]))
-    @test B == StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 1:1))
-    @test B != StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 1:2))
-    @test B != StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 2:2))
+    π_ℯ = SA.sub_basis(m, Irrational[π, ℯ])
+    @test B == StarAlgebra(1.0, SA.sub_basis(π_ℯ, 1:1))
+    @test B == StarAlgebra(1.0, SA.sub_basis(π_ℯ, 1:1))
+    @test B == StarAlgebra(1.0, SA.sub_basis(π_ℯ, [true, false]))
+    @test B != StarAlgebra(1.0, SA.sub_basis(π_ℯ, 1:2))
+    @test B != StarAlgebra(1.0, SA.sub_basis(π_ℯ, 2:2))
+    err = ArgumentError("`sub_basis` expects indices to be sorted but the given incices `$([2, 1])` are not sorted")
+    @test_throws err StarAlgebra(1.0, SA.sub_basis(π_ℯ, [2, 1]))
 
     el = SA.AlgebraElement(
         [Variable()],
