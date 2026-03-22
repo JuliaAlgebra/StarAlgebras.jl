@@ -113,6 +113,18 @@ struct SubBasis{T,I,K,B<:ImplicitBasis{T,K},V<:AbstractVector{K}} <:
     end
 end
 
+# If `basis.is_sorted` is `true` and `indices` is not sorted,
+# maybe we should sort it automatically ?
+# Or maybe it's best to just error so that the user has to sort it explicitly
+function _check_sorted(indices::AbstractVector)
+    if !issorted(indices)
+        throw(ArgumentError("`sub_basis` expects indices to be sorted but the given incices `$indices` are not sorted"))
+    end
+end
+
+# No need to check if it's sorted in this case
+_check_sorted(::AbstractVector{Bool}) = nothing
+
 """
     sub_basis(basis::SubBasis, indices::Vector)
 
@@ -120,10 +132,7 @@ Return a `SubBasis` of the same `parent` but the subset of keys
 `basis.keys[indices]`.
 """
 function sub_basis(basis::SubBasis, indices::AbstractVector)
-    # If `basis.is_sorted` is `true` and `indices` is not sorted,
-    # maybe we should sort it automatically ?
-    # Or maybe it's best to just error so that the user has to sort it explicitly
-    @assert issorted(indices)
+    _check_sorted(indices)
     return SubBasis(parent(basis), basis.keys[indices])
 end
 
