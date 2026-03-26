@@ -141,6 +141,7 @@
         @test length(merged2) == 5
         @test all(==(0), I3[3:5])
         @test all(==(0), I4[1:2])
+        @test merged2 == SA.merge_bases(b3, b4)
 
         # Identical bases
         merged3, I5, I6 = SA.merge_bases_with_maps(b1, b1)

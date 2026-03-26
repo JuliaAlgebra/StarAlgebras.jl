@@ -155,3 +155,13 @@ function merge_bases_with_maps(basis1::SB, basis2::SB) where {SB<:SubBasis}
     I2 = multi_findsorted(keys, basis2.keys; lt)
     return SubBasis(basis1.parent_basis, keys), I1, I2
 end
+
+"""
+    merge_bases(basis1::SubBasis, basis2::SubBasis)
+
+Merge two sorted `SubBasis` with the same parent basis into a single `SubBasis`.
+See also [`merge_bases_with_maps`](@ref).
+"""
+function merge_bases(basis1::SB, basis2::SB) where {SB<:SubBasis}
+    return first(merge_bases_with_maps(basis1, basis2))
+end
