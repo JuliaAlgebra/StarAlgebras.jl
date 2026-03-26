@@ -98,7 +98,7 @@
             @test star(RG(g)) == RG(inv(g))
             @test (one(RG) - RG(g)) * star(one(RG) - RG(g)) ==
                   2 * one(RG) - RG(g) - RG(inv(g))
-            @test SA.aug(one(RG) - RG(g)) == 0
+            @test aug(one(RG) - RG(g)) == 0
         end
 
         g, h = PermutationGroups.gens(G)
@@ -111,12 +111,12 @@
 
         @test a * b == MA.operate_to!(similar(a), *, a, b)
 
-        @test SA.aug(a) == 3
-        @test SA.aug(b) == -1
-        @test SA.aug(a) * SA.aug(b) == SA.aug(a * b) == SA.aug(b * a)
+        @test aug(a) == 3
+        @test aug(b) == -1
+        @test aug(a) * aug(b) == aug(a * b) == aug(b * a)
 
         z = sum((one(RG) - RG(g)) * star(one(RG) - RG(g)) for g in G)
-        @test SA.aug(z) == 0
+        @test aug(z) == 0
 
         @test SA.supp(z) == sort(collect(basis(z)))
         @test SA.supp(RG(1) + RG(g)) == [one(G), g]

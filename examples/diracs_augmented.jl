@@ -1,15 +1,17 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-aug(cfs::Any) = sum(values(cfs))
-aug(a::AlgebraElement) = aug(coeffs(a), basis(a))
+import MutableArithmetics as MA
 
-function aug(cfs, b::AbstractBasis)
-    iszero(cfs) && return zero(value_type(cfs))
-    return sum(c * aug(b[x]) for (x, c) in nonzero_pairs(cfs))
+aug(cfs::Any) = sum(values(cfs))
+aug(a::SA.AlgebraElement) = aug(SA.coeffs(a), SA.basis(a))
+
+function aug(cfs, b::SA.AbstractBasis)
+    SA.iszero(cfs) && return zero(SA.value_type(cfs))
+    return sum(c * aug(b[x]) for (x, c) in SA.nonzero_pairs(cfs))
 end
 
-struct Augmented{K} <: AbstractCoefficients{K,Int}
+struct Augmented{K} <: SA.AbstractCoefficients{K,Int}
     elt::K
 end # corresponds to (elt - 1)
 
@@ -21,7 +23,7 @@ function Base.getindex(aδ::Augmented{K}, i::K) where {K}
     return zero(w)
 end
 
-MA.operate!(::typeof(canonical), aδ::Augmented) = aδ
+MA.operate!(::typeof(SA.canonical), aδ::Augmented) = aδ
 
 Base.keys(aδ::Augmented) = (k = keys(aδ.elt); (one(first(k)), first(k)))
 function Base.values(aδ::Augmented)
@@ -29,8 +31,8 @@ function Base.values(aδ::Augmented)
     return (aδ[e], aδ[x])
 end
 
-function star(basis::AbstractBasis, ad::Augmented)
-    return Augmented(star(basis, ad.elt))
+function SA.star(basis::SA.AbstractBasis, ad::Augmented)
+    return Augmented(SA.star(basis, ad.elt))
 end
 
 function Base.show(io::IO, aδ::Augmented)
@@ -48,17 +50,17 @@ Base.isless(ad1::Augmented, ad2::Augmented) = isless(ad1.elt, ad2.elt)
 
 aug(::Augmented) = 0
 
-struct AugmentedBasis{T,I,A<:Augmented{T},B<:AbstractBasis{T,I}} <:
-       ImplicitBasis{A,I}
+struct AugmentedBasis{T,I,A<:Augmented{T},B<:SA.AbstractBasis{T,I}} <:
+       SA.ImplicitBasis{A,I}
     basis::B
 end
 
-function AugmentedBasis(basis::DiracBasis{T}) where {T}
-    @assert one(object(basis)) in basis
+function AugmentedBasis(basis::SA.DiracBasis{T}) where {T}
+    @assert one(SA.object(basis)) in basis
     return AugmentedBasis{T,T,Augmented{T},typeof(basis)}(basis)
 end
 
-object(ab::AugmentedBasis) = object(ab.basis)
+SA.object(ab::AugmentedBasis) = SA.object(ab.basis)
 
 function Base.IteratorSize(::Type{<:AugmentedBasis{T,I,A,B}}) where {T,I,A,B}
     return Base.IteratorSize(B)
@@ -71,13 +73,13 @@ function Base.length(ab::AugmentedBasis)
 end
 
 function Base.iterate(ab::AugmentedBasis)
-    (v, st) = iterate(object(ab))
+    (v, st) = iterate(SA.object(ab))
     isone(v) && return iterate(ab, st)
     return Augmented(v), st
 end
 
 function Base.iterate(ab::AugmentedBasis, st)
-    (v, st) = let k = iterate(object(ab), st)
+    (v, st) = let k = iterate(SA.object(ab), st)
         isnothing(k) && return nothing
         k
     end
@@ -89,31 +91,31 @@ Base.in(g, ab::AugmentedBasis) = false
 Base.in(ad::Augmented, ab::AugmentedBasis) = ad.elt in ab.basis
 
 function Base.getindex(ab::AugmentedBasis{T,I,A}, x::A) where {T,I,A}
-    @assert x.elt in object(ab)
+    @assert x.elt in SA.object(ab)
     return x
 end
 
-mstructure(db::AugmentedBasis) = AugmentedMStructure(mstructure(db.basis))
+SA.mstructure(db::AugmentedBasis) = AugmentedMStructure(SA.mstructure(db.basis))
 
-struct AugmentedMStructure{T,I,M<:DiracMStructure{T,I}} <: MultiplicativeStructure{T,I}
+struct AugmentedMStructure{T,I,M<:SA.DiracMStructure{T,I}} <: SA.MultiplicativeStructure{T,I}
     op::M
 end
 
 function (mstr::AugmentedMStructure)(aδx::Augmented, aδy::Augmented)
     δxy = first(keys(mstr.op(aδx.elt, aδy.elt)))
     if isone(δxy)
-        return SparseCoefficients((aδx, aδy), (-1, -1))
+        return SA.SparseCoefficients((aδx, aδy), (-1, -1))
     else
         aδxy = Augmented(δxy)
         #(x-1)*(y-1) = 1 - x - y + xy = -1·(x-1) - 1·(y-1) + 1·(xy-1)
-        return SparseCoefficients((aδx, aδy, aδxy), (-1, -1, 1))
+        return SA.SparseCoefficients((aδx, aδy, aδxy), (-1, -1, 1))
     end
 end
 
-function coeffs!(
-    res::AbstractCoefficients,
-    cfs::AbstractCoefficients,
-    source::DiracBasis,
+function SA.coeffs!(
+    res::SA.AbstractCoefficients,
+    cfs::SA.AbstractCoefficients,
+    source::SA.DiracBasis,
     target::AugmentedBasis,
 )
     s = aug(cfs)
@@ -122,15 +124,15 @@ function coeffs!(
             "Conversion to $target not possible due to non-zero augmentation: $s",
         )
     end
-    for (k, v) in nonzero_pairs(cfs)
+    for (k, v) in SA.nonzero_pairs(cfs)
         isone(k) && continue
         x = source[k]
         MA.operate!(
-            UnsafeAddMul(*),
+            SA.UnsafeAddMul(*),
             res,
-            SparseCoefficients((target[Augmented(x)],), (v,)),
+            SA.SparseCoefficients((target[Augmented(x)],), (v,)),
         )
     end
-    MA.operate!(canonical, res)
+    MA.operate!(SA.canonical, res)
     return res
 end
