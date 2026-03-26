@@ -1,5 +1,5 @@
 @testset "merge_sorted" begin
-    dedup_kw = (; combine = (a, _) -> a, filter = _ -> true)
+    dedup_kw = (; combine = SA.first_of, filter = _ -> true)
     @testset "Vector dedup merge" begin
         # Disjoint sorted vectors
         @test SA.merge_sorted([1, 3, 5], [2, 4, 6]; lt = isless, dedup_kw...) ==

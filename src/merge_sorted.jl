@@ -62,9 +62,14 @@ function merge_sorted!(
     return result
 end
 
-# TODO add this promote_operation in MA, we cannot here as it would be type piracy
-_promote_op(::typeof(first), ::Type{T}, ::Type) where {T} = T
-_promote_op(op, ::Type{T}, ::Type{U}) where {T,U} = MA.promote_operation(op, T, U)
+"""
+    first_of(a, b)
+
+Return the first argument. Useful as a `combine` function for [`merge_sorted`](@ref)
+to deduplicate without combining values.
+"""
+first_of(a, _) = a
+MA.promote_operation(::typeof(first_of), ::Type{T}, ::Type) where {T} = T
 
 """
     merge_sorted(v1::AbstractVector, v2::AbstractVector; lt, combine, filter)
@@ -82,7 +87,7 @@ function merge_sorted(
     combine,
     filter,
 )
-    T = _promote_op(combine, eltype(v1), eltype(v2))
+    T = MA.promote_operation(combine, eltype(v1), eltype(v2))
     result = Vector{T}(undef, length(v1) + length(v2))
     return merge_sorted!(result, v1, v2; lt, combine, filter)
 end
@@ -147,7 +152,7 @@ function merge_bases_with_maps(basis1::SB, basis2::SB) where {SB<:SubBasis}
     @assert basis1.is_sorted
     @assert basis2.is_sorted
     lt = comparable(parent(basis1))
-    keys = merge_sorted(basis1.keys, basis2.keys; lt, combine = first, filter = _ -> true)
+    keys = merge_sorted(basis1.keys, basis2.keys; lt, combine = first_of, filter = _ -> true)
     I1 = multi_findsorted(keys, basis1.keys; lt)
     I2 = multi_findsorted(keys, basis2.keys; lt)
     return SubBasis(basis1.parent_basis, keys), I1, I2
