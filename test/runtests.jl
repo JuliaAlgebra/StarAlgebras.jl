@@ -49,6 +49,7 @@ end
     include("basic.jl")
     # proof of concept
     using PermutationGroups
+    include("merge_sorted.jl")
     include("perm_grp_algebra.jl")
 
     include("constructors.jl")
