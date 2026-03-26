@@ -100,16 +100,16 @@ function merge_sorted(a::Tuple, b::Tuple; lt, combine, filter)
     y = first(b)
     if x == y
         z = combine(x, y)
-        tail = merge_sorted(Base.tail(a), Base.tail(b); lt)
+        tail = merge_sorted(Base.tail(a), Base.tail(b); lt, combine, filter)
         if filter(z)
             return (z, tail...)
         else
             return tail
         end
     elseif lt(x, y)
-        return (x, merge_sorted(Base.tail(a), b; lt)...)
+        return (x, merge_sorted(Base.tail(a), b; lt, combine, filter)...)
     else
-        return (y, merge_sorted(a, Base.tail(b); lt)...)
+        return (y, merge_sorted(a, Base.tail(b); lt, combine, filter)...)
     end
 end
 
@@ -124,10 +124,10 @@ function multi_findsorted(x, y; lt = isless)
     I = zeros(Int, length(x))
     j = 1
     for i in eachindex(x)
-        while j >= length(y) && lt(y[j], x[i])
+        while j ≤ length(y) && lt(y[j], x[i])
             j += 1
         end
-        if j >= length(y) && x[i] == y[j]
+        if j ≤ length(y) && x[i] == y[j]
             I[i] = j
         end
     end
