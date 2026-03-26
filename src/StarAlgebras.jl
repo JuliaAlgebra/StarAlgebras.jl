@@ -39,4 +39,6 @@ include("arithmetic.jl")
 include("quadratic_form.jl")
 include("show.jl")
 
+include("merge_sorted.jl")
+
 end
