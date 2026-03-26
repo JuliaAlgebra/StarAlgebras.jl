@@ -39,7 +39,4 @@ include("arithmetic.jl")
 include("quadratic_form.jl")
 include("show.jl")
 
-# augmented basis implementation
-include("diracs_augmented.jl")
-
 end

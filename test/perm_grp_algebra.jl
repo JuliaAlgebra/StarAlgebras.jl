@@ -46,13 +46,13 @@ import StarAlgebras as SA
 
     # FIXME Broken
 #    @testset "Augmented basis" begin
-#        ad = SA.AugmentedBasis(db)
-#        @test SA.mstructure(ad) == SA.AugmentedMStructure(SA.mstructure(db))
-#        @test ad[SA.Augmented(h)] isa SA.Augmented
-#        @test sprint(show, ad[SA.Augmented(h)]) == "(-1·()+1·(1,2,4,5))"
+#        ad = AugmentedBasis(db)
+#        @test SA.mstructure(ad) == AugmentedMStructure(SA.mstructure(db))
+#        @test ad[Augmented(h)] isa Augmented
+#        @test sprint(show, ad[Augmented(h)]) == "(-1·()+1·(1,2,4,5))"
 #
 #        @test !(h in ad)
-#        @test SA.Augmented(h) in ad
+#        @test Augmented(h) in ad
 #
 #        IG = SA.StarAlgebra(G, ad)
 #
@@ -65,11 +65,11 @@ import StarAlgebras as SA
 #
 #        @test coeffs(ax * ay) == SA.coeffs(x * y, basis(IG))
 #        @test coeffs(ax * az) == SA.coeffs(x * z, basis(IG))
-#        @test SA.aug(ax) == 0
+#        @test aug(ax) == 0
 #        @test star(ax) * star(ay) == star(ay) * star(ax)
 #
 #        @test length(ad) == length(db) - 1
-#        @test Set(ad) == Set(SA.Augmented(g) for g in db if !isone(g))
+#        @test Set(ad) == Set(Augmented(g) for g in db if !isone(g))
 #    end
 
     @testset "Random elements (seed=$seed)" for seed in 0:20
@@ -79,7 +79,7 @@ import StarAlgebras as SA
         scfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
         s = SA.AlgebraElement(scfs, RG)
 
-        @test SA.aug(r * s) == SA.aug(r) * SA.aug(s)
+        @test aug(r * s) == aug(r) * aug(s)
     end
     @testset "Fixed Basis" begin
         m = PermutationGroups.order(UInt16, G)
@@ -101,9 +101,9 @@ import StarAlgebras as SA
             fr = SA.AlgebraElement(coeffs(r, basis(fRG)), fRG)
             fs = SA.AlgebraElement(coeffs(s, basis(fRG)), fRG)
 
-            @test SA.aug(fr) == SA.aug(r)
-            @test SA.aug(fs) == SA.aug(s)
-            @test SA.aug(fr * fs) == SA.aug(fr) * SA.aug(fs)
+            @test aug(fr) == aug(r)
+            @test aug(fs) == aug(s)
+            @test aug(fr * fs) == aug(fr) * aug(fs)
 
             @test coeffs(r * s, basis(fRG)) isa AbstractVector
             @test fr * fs == SA.AlgebraElement(coeffs(r * s, basis(fRG)), fRG)
@@ -206,9 +206,9 @@ import StarAlgebras as SA
         ar = SA.AlgebraElement(coeffs(rcfs, SA.DiracBasis(elts), basis(aRG)), aRG)
         as = SA.AlgebraElement(coeffs(scfs, SA.DiracBasis(elts), basis(aRG)), aRG)
 
-        @test SA.aug(ar) == 2*ar(first(ab)) # one(RG)
-        @test SA.aug(as) == 2as(first(ab)) # one(RG)
-        @test SA.aug(ar + as) == SA.aug(ar) + SA.aug(as)
+        @test aug(ar) == 2*ar(first(ab)) # one(RG)
+        @test aug(as) == 2as(first(ab)) # one(RG)
+        @test aug(ar + as) == aug(ar) + aug(as)
 
         @test coeffs(ar + as, basis(aRG)) isa AbstractVector
 
