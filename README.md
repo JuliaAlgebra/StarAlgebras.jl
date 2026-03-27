@@ -1,7 +1,7 @@
 # StarAlgebras
 
-<!-- [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://kalmarek.github.io/StarAlgebras.jl/stable) -->
-<!-- [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://kalmarek.github.io/StarAlgebras.jl/dev) -->
+<!-- [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaalgebra.github.io/StarAlgebras.jl/stable) -->
+<!-- [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaalgebra.github.io/StarAlgebras.jl/dev) -->
 [![CI](https://github.com/JuliaAlgebra/StarAlgebras.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/JuliaAlgebra/StarAlgebras.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/JuliaAlgebra/StarAlgebras.jl/branch/main/graph/badge.svg?token=jpHVdYRx8G)](https://codecov.io/gh/JuliaAlgebra/StarAlgebras.jl)
 
