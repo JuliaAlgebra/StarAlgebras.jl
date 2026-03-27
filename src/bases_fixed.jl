@@ -85,7 +85,7 @@ Base.iterate(b::FixedBasis) = iterate(b.elts)
 Base.iterate(b::FixedBasis, state) = iterate(b.elts, state)
 Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V} = Base.IndexStyle(V)
 
-function promote_basis_with_maps(a::FixedBasis, b::FixedBasis)
+function promote_bases_with_maps(a::FixedBasis, b::FixedBasis)
     @assert a == b # Promotion not supported, they need to be equal
     return (a, nothing), (b, nothing)
 end
@@ -215,12 +215,12 @@ function promote_with_map(a::SubBasis, basis, m)
     return SubBasis(basis, keys_a), identity
 end
 
-function promote_basis_with_maps(a::SubBasis, b::SubBasis)
-    _a, _b = promote_basis_with_maps(parent(a), parent(b))
+function promote_bases_with_maps(a::SubBasis, b::SubBasis)
+    _a, _b = promote_bases_with_maps(parent(a), parent(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 
-function promote_basis_with_maps(a::SubBasis, b::ImplicitBasis)
-    _a, _b = promote_basis_with_maps(parent(a), b)
+function promote_bases_with_maps(a::SubBasis, b::ImplicitBasis)
+    _a, _b = promote_bases_with_maps(parent(a), b)
     return maybe_promote(a, _a...), _b
 end
