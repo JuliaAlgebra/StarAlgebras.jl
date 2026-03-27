@@ -98,12 +98,45 @@
               (5, 3, 2, 1)
     end
 
+    @testset "Vector rev keyword" begin
+        # rev=true with default isless reverses the order
+        @test SA.merge_sorted([5, 3, 1], [4, 2]; lt = isless, rev = true, dedup_kw...) ==
+              [5, 4, 3, 2, 1]
+        @test SA.merge_sorted([5, 3, 1], [5, 2]; lt = isless, rev = true, dedup_kw...) ==
+              [5, 3, 2, 1]
+
+        # rev=true with combine
+        result = SA.merge_sorted([5, 3, 1], [3, 1]; lt = isless, rev = true, combine = +, filter = _ -> true)
+        @test result == [5, 6, 2]
+
+        # rev=false is the default behavior
+        @test SA.merge_sorted([1, 3, 5], [2, 4, 6]; lt = isless, rev = false, dedup_kw...) ==
+              [1, 2, 3, 4, 5, 6]
+    end
+
+    @testset "In-place rev keyword" begin
+        result = Vector{Int}(undef, 5)
+        SA.merge_sorted!(result, [5, 3, 1], [4, 2]; lt = isless, rev = true, combine = SA.first_of, filter = _ -> true)
+        @test result == [5, 4, 3, 2, 1]
+    end
+
     @testset "Tuple combine merge" begin
         @test SA.merge_sorted((1, 3, 5), (3, 5, 7); lt = isless, combine = +, filter = _ -> true) ==
               (1, 6, 10, 7)
         # Filter
         @test SA.merge_sorted((1, 3, 5), (3, 5, 7); lt = isless, combine = +, filter = x -> x < 10) ==
               (1, 6, 7)
+    end
+
+    @testset "Tuple rev keyword" begin
+        @test SA.merge_sorted((5, 3, 1), (4, 2); lt = isless, rev = true, dedup_kw...) ==
+              (5, 4, 3, 2, 1)
+        @test SA.merge_sorted((5, 3, 1), (5, 2); lt = isless, rev = true, dedup_kw...) ==
+              (5, 3, 2, 1)
+
+        # rev=true with combine
+        @test SA.merge_sorted((5, 3, 1), (3, 1); lt = isless, rev = true, combine = +, filter = _ -> true) ==
+              (5, 6, 2)
     end
 
     @testset "multi_findsorted" begin
