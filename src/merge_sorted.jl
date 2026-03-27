@@ -20,22 +20,19 @@ function merge_sorted!(
     filter,
     rev = false,
 )
-    if rev
-        lt = (a, b) -> lt(b, a)
-    end
     i = firstindex(result)
     i1 = firstindex(v1)
     i2 = firstindex(v2)
     while i1 <= lastindex(v1) && i2 <= lastindex(v2)
         x1 = v1[i1]
         x2 = v2[i2]
-        if lt(x1, x2)
+        if xor(lt(x1, x2), rev)
             if filter(x1)
                 result[i] = x1
                 i += 1
             end
             i1 += 1
-        elseif lt(x2, x1)
+        elseif xor(lt(x2, x1), rev)
             if filter(x2)
                 result[i] = x2
                 i += 1
@@ -109,30 +106,20 @@ merge_sorted(::Tuple{}, ::Tuple{}; lt, combine, filter, rev = false) = ()
 merge_sorted(a::Tuple, ::Tuple{}; lt, combine, filter, rev = false) = a
 merge_sorted(::Tuple{}, b::Tuple; lt, combine, filter, rev = false) = b
 function merge_sorted(a::Tuple, b::Tuple; lt, combine, filter, rev = false)
-    if rev
-        lt = (a, b) -> lt(b, a)
-    end
-    return _merge_sorted_tuple(a, b; lt, combine, filter)
-end
-
-_merge_sorted_tuple(::Tuple{}, ::Tuple{}; lt, combine, filter) = ()
-_merge_sorted_tuple(a::Tuple, ::Tuple{}; lt, combine, filter) = a
-_merge_sorted_tuple(::Tuple{}, b::Tuple; lt, combine, filter) = b
-function _merge_sorted_tuple(a::Tuple, b::Tuple; lt, combine, filter)
     x = first(a)
     y = first(b)
     if x == y
         z = combine(x, y)
-        tail = _merge_sorted_tuple(Base.tail(a), Base.tail(b); lt, combine, filter)
+        tail = merge_sorted(Base.tail(a), Base.tail(b); lt, combine, filter, rev)
         if filter(z)
             return (z, tail...)
         else
             return tail
         end
-    elseif lt(x, y)
-        return (x, _merge_sorted_tuple(Base.tail(a), b; lt, combine, filter)...)
+    elseif xor(lt(x, y), rev)
+        return (x, merge_sorted(Base.tail(a), b; lt, combine, filter, rev)...)
     else
-        return (y, _merge_sorted_tuple(a, Base.tail(b); lt, combine, filter)...)
+        return (y, merge_sorted(a, Base.tail(b); lt, combine, filter, rev)...)
     end
 end
 
