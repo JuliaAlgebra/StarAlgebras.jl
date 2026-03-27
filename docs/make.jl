@@ -6,11 +6,9 @@ DocMeta.setdocmeta!(StarAlgebras, :DocTestSetup, :(using StarAlgebras); recursiv
 makedocs(;
     modules=[StarAlgebras],
     authors="Marek Kaluba and Benoît Legat",
-    repo="https://github.com/kalmar@amu.edu.pl/StarAlgebras.jl/blob/{commit}{path}#{line}",
     sitename="StarAlgebras.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://kalmar@amu.edu.pl.github.io/StarAlgebras.jl",
         assets=String[],
     ),
     pages=[
@@ -19,5 +17,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/kalmar@amu.edu.pl/StarAlgebras.jl", push_preview=true, devbranch="main"
+    repo="github.com/JuliaAlgebra/StarAlgebras.jl.git", push_preview=true, devbranch="main"
 )

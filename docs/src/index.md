@@ -4,7 +4,7 @@ CurrentModule = StarAlgebras
 
 # StarAlgebras
 
-Documentation for [StarAlgebras](https://github.com/kalmar@amu.edu.pl/StarAlgebras.jl).
+Documentation for [StarAlgebras](https://juliaalgebra.github.com/StarAlgebras.jl).
 
 ```@index
 ```
