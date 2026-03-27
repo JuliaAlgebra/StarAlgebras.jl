@@ -64,8 +64,8 @@ Just return `a` in case there is no promotion to do.
 
 To be used as follows
 ```julia
-function promote_basis_with_maps(a::..., b::...)
-    _a, _b = promote_basis_with_maps(parent(a), parent(b))
+function promote_bases_with_maps(a::..., b::...)
+    _a, _b = promote_bases_with_maps(parent(a), parent(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 ```
@@ -89,7 +89,7 @@ function promote_with_map(a::StarAlgebra, mstr, map)
 end
 
 """
-    promote_basis_with_map(a, b)
+    promote_bases_with_map(a, b)
 
 Return `(new_a, map_a), (new_b, map_b)` where `new_a` and `new_b`
 are the promoted version of `a` and `b` so that they now have the same basis.
@@ -106,32 +106,32 @@ function SA.promote_with_map(a::A, b::B, map)
     return A(b, ...)
 end
 
-function SA.promote_basis_with_maps(a::A, b::A)
-    _a, _b = SA.promote_basis_with_maps(parent(a), parent(b))
+function SA.promote_bases_with_maps(a::A, b::A)
+    _a, _b = SA.promote_bases_with_maps(parent(a), parent(b))
     return SA.maybe_promote(a, _a...), SA.maybe_promote(b, _b...)
 end
 
-function SA.promote_basis_with_maps(a::A, b::B)
-    _a, _b = SA.promote_basis_with_maps(parent(a), b)
+function SA.promote_bases_with_maps(a::A, b::B)
+    _a, _b = SA.promote_bases_with_maps(parent(a), b)
     return SA.maybe_promote(a, _a...), _b
 end
 ```
 """
-function promote_basis_with_maps end
+function promote_bases_with_maps end
 
-function promote_basis_with_maps(
+function promote_bases_with_maps(
     a::StarAlgebra,
     b::StarAlgebra,
 )
-    _a, _b = promote_basis_with_maps(mstructure(a), mstructure(b))
+    _a, _b = promote_bases_with_maps(mstructure(a), mstructure(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 
-function promote_basis_with_maps(
+function promote_bases_with_maps(
     a::StarAlgebra,
     b::Union{MultiplicativeStructure,AbstractBasis},
 )
-    _a, _b = promote_basis_with_maps(mstructure(a), b)
+    _a, _b = promote_bases_with_maps(mstructure(a), b)
     return maybe_promote(a, _a...), _b
 end
 
@@ -143,15 +143,15 @@ function promote_with_map(a::AlgebraElement, alg, map)
     return AlgebraElement(c, alg), map
 end
 
-function promote_basis_with_maps(
+function promote_bases_with_maps(
     a::AlgebraElement,
     b::AlgebraElement,
 )
-    _a, _b = promote_basis_with_maps(parent(a), parent(b))
+    _a, _b = promote_bases_with_maps(parent(a), parent(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 
-function promote_basis_with_maps(
+function promote_bases_with_maps(
     a::AlgebraElement,
     b::Union{
         StarAlgebra,
@@ -159,16 +159,16 @@ function promote_basis_with_maps(
         AbstractBasis,
     },
 )
-    _a, _b = promote_basis_with_maps(parent(a), b)
+    _a, _b = promote_bases_with_maps(parent(a), b)
     return maybe_promote(a, _a...), _b
 end
 
 """
-    promote_basis(a, b)
+    promote_bases(a, b)
 
-Same as `promote_basis_with_maps` but without the key maps.
+Same as `promote_bases_with_maps` but without the key maps.
 """
-function promote_basis(a, b)
-    _a, _b = promote_basis_with_maps(a, b)
+function promote_bases(a, b)
+    _a, _b = promote_bases_with_maps(a, b)
     return _a[1], _b[1]
 end

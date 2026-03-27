@@ -71,14 +71,14 @@ end
     bas_bi = SA.basis(bi_alg)
 
     err = ErrorException("Bases $bas_x and $bas_bi are different and do not support promotion.")
-    @test_throws err SA.promote_basis(bas_x, bas_bi)
+    @test_throws err SA.promote_bases(bas_x, bas_bi)
 
     @test c == a + b
 
-    bi_a, _b = SA.promote_basis(a, alg_y)
+    bi_a, _b = SA.promote_bases(a, alg_y)
     @test _b == bi_alg
     @test parent(bi_a) == _b
-    bi_b, _b = SA.promote_basis(b, SA.basis(alg_x))
+    bi_b, _b = SA.promote_bases(b, SA.basis(alg_x))
     @test parent(bi_b) == bi_alg
     @test SA.basis(bi_b) == _b
     @test parent(bi_a) == parent(bi_b)
@@ -88,12 +88,12 @@ end
     @testset "SubBasis" begin
         sub_x = SA.SubBasis(bas_x, [1, 3])
         sub_y = SA.SubBasis(bas_y, [2, 3])
-        _sub_x, _y = SA.promote_basis(sub_x, bas_y)
+        _sub_x, _y = SA.promote_bases(sub_x, bas_y)
         @test parent(_sub_x) == bas_bi
         @test _sub_x.keys == [(1, 0), (3, 0)]
         @test _sub_x.is_sorted
         @test _y == bas_bi
-        _sub_x, _sub_y = SA.promote_basis(sub_x, sub_y)
+        _sub_x, _sub_y = SA.promote_bases(sub_x, sub_y)
         @test parent(_sub_x) == bas_bi
         @test _sub_x.is_sorted
         @test _sub_x.keys == [(1, 0), (3, 0)]

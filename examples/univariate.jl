@@ -46,7 +46,7 @@ function bivariate_lift(first, deg)
 end
 
 UniType = typeof(SA.MappedBasis(UnivariateIterator(), Base.Fix1(unimono, true), exponent))
-function SA.promote_basis_with_maps(a::UniType, b::UniType)
+function SA.promote_bases_with_maps(a::UniType, b::UniType)
     if a.map.x == b.map.x
         return (a, nothing), (b, nothing)
     end

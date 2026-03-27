@@ -143,7 +143,7 @@ function Base.getindex(b::MappedBasis{T,I}, x::I) where {T,I}
     return b.map(x)
 end
 
-function promote_basis_with_maps(a::ImplicitBasis, b::ImplicitBasis)
+function promote_bases_with_maps(a::ImplicitBasis, b::ImplicitBasis)
     if a == b
         return (a, nothing), (b, nothing)
     end

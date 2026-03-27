@@ -160,18 +160,18 @@ function promote_with_map(
     return DiracMStructure(b, a.op), map
 end
 
-function promote_basis_with_maps(
+function promote_bases_with_maps(
     a::DiracMStructure,
     b::DiracMStructure,
 )
-    _a, _b = promote_basis_with_maps(basis(a), basis(b))
+    _a, _b = promote_bases_with_maps(basis(a), basis(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 
-function promote_basis_with_maps(
+function promote_bases_with_maps(
     a::DiracMStructure,
     b::AbstractBasis,
 )
-    _a, _b = promote_basis_with_maps(basis(a), b)
+    _a, _b = promote_bases_with_maps(basis(a), b)
     return maybe_promote(a, _a...), _b
 end
