@@ -15,8 +15,14 @@ unwrap(w::Wrap) = w.x
     wRG = StarAlgebra(G, SA.MappedBasis(G, wrap, unwrap))
 
     for basis in [RG, wRG]
-        A = SA.AlgebraElement(SA.SparseCoefficients(collect(G), Float64.(1:6)), basis)
-        B = SA.AlgebraElement(SA.SparseCoefficients(collect(G)[2:2], [-1]), basis)
+        A = SA.AlgebraElement(
+            SA.SparseCoefficients(collect(G), Float64.(1:6)),
+            basis,
+        )
+        B = SA.AlgebraElement(
+            SA.SparseCoefficients(collect(G)[2:2], [-1]),
+            basis,
+        )
         @test (A - B)^2 == A^2 - A * B - B * A + B^2
     end
 

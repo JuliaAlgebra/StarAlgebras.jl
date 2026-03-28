@@ -94,7 +94,11 @@ mutable struct MappedBasis{T,I,S,F,U} <: ImplicitBasis{T,I}
         @assert !isempty(itr)
         I = eltype(itr)
         @assert T != I || (map == inverse_map == identity)
-        return new{T,I,typeof(itr),typeof(map),typeof(inverse_map)}(itr, map, inverse_map)
+        return new{T,I,typeof(itr),typeof(map),typeof(inverse_map)}(
+            itr,
+            map,
+            inverse_map,
+        )
     end
 end
 
@@ -103,7 +107,9 @@ function MappedBasis(itr, map, inverse_map)
 end
 
 function Base.:(==)(a::MappedBasis, b::MappedBasis)
-    return object(a) == object(b) && a.map == b.map && a.inverse_map == b.inverse_map
+    return object(a) == object(b) &&
+           a.map == b.map &&
+           a.inverse_map == b.inverse_map
 end
 
 object(db::MappedBasis) = db.object
@@ -147,5 +153,5 @@ function promote_bases_with_maps(a::ImplicitBasis, b::ImplicitBasis)
     if a == b
         return (a, nothing), (b, nothing)
     end
-    error("Bases $a and $b are different and do not support promotion.")
+    return error("Bases $a and $b are different and do not support promotion.")
 end

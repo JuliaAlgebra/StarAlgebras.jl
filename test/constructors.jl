@@ -24,9 +24,17 @@ end
     alph = [:a, :b, :c]
     A★ = FreeWords(alph)
     # If the map does not change the type then it should be `Base.identity`
-    @test_throws AssertionError SA.MappedBasis(A★, i -> i * one(A★), i -> i * inv(one(A★)))
+    @test_throws AssertionError SA.MappedBasis(
+        A★,
+        i -> i * one(A★),
+        i -> i * inv(one(A★)),
+    )
     @test_throws AssertionError SA.MappedBasis(A★, i -> i * one(A★), identity)
-    @test_throws AssertionError SA.MappedBasis(A★, identity, i -> i * inv(one(A★)))
+    @test_throws AssertionError SA.MappedBasis(
+        A★,
+        identity,
+        i -> i * inv(one(A★)),
+    )
     B = SA.DiracBasis(A★)
     RG = StarAlgebra(A★, B)
     @test typeof(@inferred basis(RG)) == MA.promote_operation(basis, typeof(RG))
@@ -47,7 +55,9 @@ end
         MA.operate!(SA.canonical, coeffs)
     end
 
-    err = ArgumentError("The key type `Int64` of the coefficients does not match the key type `Word{Symbol}` of the algebra `*-algebra of FreeWords{Symbol}([:a, :b, :c])`")
+    err = ArgumentError(
+        "The key type `Int64` of the coefficients does not match the key type `Word{Symbol}` of the algebra `*-algebra of FreeWords{Symbol}([:a, :b, :c])`",
+    )
     bad_coeffs = SA.SparseCoefficients([1], [2])
     @test_throws err AlgebraElement(bad_coeffs, RG)
 
@@ -113,11 +123,14 @@ end
     @test Z == a
     @test sprint(show, Z) == "2.0·(id) + 1.0·b·c"
     @test sprint(show, 2one(RG) - RG(p)) == "2·(id) - 1·b·c"
-    @test sprint(show, (2 + im) * one(RG) - (3im) * RG(p)) == "(2 + 1im)·(id) + (0 - 3im)·b·c"
+    @test sprint(show, (2 + im) * one(RG) - (3im) * RG(p)) ==
+          "(2 + 1im)·(id) + (0 - 3im)·b·c"
 
-    @test sprint(print, (2 + im) * one(RG) - (3im) * RG(p)) == "(2 + 1im)·(id) + (0 - 3im)·b·c"
+    @test sprint(print, (2 + im) * one(RG) - (3im) * RG(p)) ==
+          "(2 + 1im)·(id) + (0 - 3im)·b·c"
     @test sprint(show, 1e-9 * one(RG)) == "1.0e-9·(id)"
-    @test sprint((io, x) -> show(io, "text/latex", x), 1e-9 * one(RG)) == "\$\$ 1.0 \\cdot 10^{-9} \\cdot (id) \$\$"
+    @test sprint((io, x) -> show(io, "text/latex", x), 1e-9 * one(RG)) ==
+          "\$\$ 1.0 \\cdot 10^{-9} \\cdot (id) \$\$"
 
     @test LinearAlgebra.norm(a, 1) == 3
 
@@ -139,8 +152,8 @@ end
           "\$\$ (α_β∀) \\cdot b·c \$\$"
     # Test that the check for `\\)` handles unicode well
     latex = CustomLaTeXPrint("\\(β∀")
-    @test sprint((io, x) -> show(io, "text/latex", x),
-        SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG)) ==
-          "\$\$ (\\(β∀) \\cdot b·c \$\$"
-
+    @test sprint(
+        (io, x) -> show(io, "text/latex", x),
+        SA.AlgebraElement(SA.SparseCoefficients([p], [latex]), RG),
+    ) == "\$\$ (\\(β∀) \\cdot b·c \$\$"
 end

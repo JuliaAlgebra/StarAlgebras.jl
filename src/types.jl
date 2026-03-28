@@ -7,12 +7,16 @@ function _key_type_check(coeffs, A::AbstractStarAlgebra)
     KC = key_type(coeffs)
     KA = key_type(basis(A))
     if KC != KA
-        throw(ArgumentError("The key type `$KC` of the coefficients does not match the key type `$KA` of the algebra `$A`"))
+        throw(
+            ArgumentError(
+                "The key type `$KC` of the coefficients does not match the key type `$KA` of the algebra `$A`",
+            ),
+        )
     end
 end
 
 function _sanity_checks(coeffs, A::AbstractStarAlgebra)
-    _key_type_check(coeffs, A)
+    return _key_type_check(coeffs, A)
 end
 function _sanity_checks(coeffs::AbstractVector, A::AbstractStarAlgebra)
     @assert Base.haslength(basis(A))
@@ -28,16 +32,22 @@ end
 Star algebra implementation with an `object` that should implement `one(::O)` and
 a [`MultiplicativeStructure`](@ref) `mstructure`.
 """
-struct StarAlgebra{O,T,M<:MultiplicativeStructure{T}} <: AbstractStarAlgebra{O,T}
+struct StarAlgebra{O,T,M<:MultiplicativeStructure{T}} <:
+       AbstractStarAlgebra{O,T}
     object::O
     mstructure::M
 end
 
-StarAlgebra(object, basis::AbstractBasis) = StarAlgebra(object, DiracMStructure(basis, *))
+function StarAlgebra(object, basis::AbstractBasis)
+    return StarAlgebra(object, DiracMStructure(basis, *))
+end
 
 mstructure(A::StarAlgebra) = A.mstructure
 basis(A::StarAlgebra) = basis(mstructure(A))
-function MA.promote_operation(::typeof(basis), ::Type{StarAlgebra{O,T,M}}) where {O,T,M}
+function MA.promote_operation(
+    ::typeof(basis),
+    ::Type{StarAlgebra{O,T,M}},
+) where {O,T,M}
     return MA.promote_operation(basis, M)
 end
 object(A::StarAlgebra) = A.object
@@ -88,9 +98,14 @@ Base.parent(a::AlgebraElement) = a.parent
 Base.in(x::AlgebraElement, A::AbstractStarAlgebra) = parent(x) == A
 
 mstructure(a::AlgebraElement) = mstructure(parent(a))
-Base.eltype(::Type{A}) where {A<:AlgebraElement} = value_type(MA.promote_operation(coeffs, A))
+function Base.eltype(::Type{A}) where {A<:AlgebraElement}
+    return value_type(MA.promote_operation(coeffs, A))
+end
 Base.eltype(a::AlgebraElement) = eltype(typeof(a))
-function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{T,A,V}}) where {T,A,V}
+function MA.promote_operation(
+    ::typeof(coeffs),
+    ::Type{AlgebraElement{T,A,V}},
+) where {T,A,V}
     return V
 end
 coeffs(a::AlgebraElement) = a.coeffs
@@ -105,51 +120,62 @@ end
 function adjoint_coeffs(a::AlgebraElement, target::AbstractBasis)
     return adjoint_coeffs(coeffs(a), target, basis(a))
 end
-function MA.promote_operation(::typeof(basis), ::Type{<:AlgebraElement{T,A}}) where {T,A}
+function MA.promote_operation(
+    ::typeof(basis),
+    ::Type{<:AlgebraElement{T,A}},
+) where {T,A}
     return MA.promote_operation(basis, A)
 end
 basis(a::AlgebraElement) = basis(parent(a))
 
 function AlgebraElement(coeffs, A::AbstractStarAlgebra)
     _sanity_checks(coeffs, A)
-    return AlgebraElement{value_type(coeffs),typeof(A),typeof(coeffs)}(coeffs, A)
+    return AlgebraElement{value_type(coeffs),typeof(A),typeof(coeffs)}(
+        coeffs,
+        A,
+    )
 end
 
 function AlgebraElement(
     coeffs::SparseCoefficients{T},
     A::AbstractStarAlgebra{O,T},
 ) where {O,T}
-    return AlgebraElement{value_type(coeffs),typeof(A),typeof(coeffs)}(coeffs, A)
+    return AlgebraElement{value_type(coeffs),typeof(A),typeof(coeffs)}(
+        coeffs,
+        A,
+    )
 end
 
 ### constructing elements
-function __coerce(A::AbstractStarAlgebra, (x,v)::Pair{K, V}) where {K,V}
+function __coerce(A::AbstractStarAlgebra, (x, v)::Pair{K,V}) where {K,V}
     if iszero(v)
         return AlgebraElement(zero_coeffs(V, basis(A)), A)
     elseif x in basis(A)
         cfs = zero_coeffs(V, basis(A))
         cfs[basis(A)[x]] = v
         return AlgebraElement(cfs, A)
-    # elseif x in object(A)
-    #     sc = SparseCoefficients([x], [v])
-    #     return AlgebraElement(
-    #         coeffs(sc, DiracBasis(object(A)), basis(A)),
-    #         A,
-    #     )
+        # elseif x in object(A)
+        #     sc = SparseCoefficients([x], [v])
+        #     return AlgebraElement(
+        #         coeffs(sc, DiracBasis(object(A)), basis(A)),
+        #         A,
+        #     )
     else
         throw(ArgumentError("cannot coerce $x to $A"))
     end
 end
 
 Base.zero(A::AbstractStarAlgebra) = zero(Int, A)
-Base.zero(T::Type, A::AbstractStarAlgebra) =
-    AlgebraElement(zero_coeffs(T, basis(A)), A)
+function Base.zero(T::Type, A::AbstractStarAlgebra)
+    return AlgebraElement(zero_coeffs(T, basis(A)), A)
+end
 Base.zero(a::AlgebraElement) = (b = similar(a); return MA.operate!(zero, b))
 Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
 
 Base.one(A::AbstractStarAlgebra) = one(Int, A)
-Base.one(T::Type, A::AbstractStarAlgebra) =
-    __coerce(A, (one(object(A)) => one(T)))
+function Base.one(T::Type, A::AbstractStarAlgebra)
+    return __coerce(A, (one(object(A)) => one(T)))
+end
 Base.one(a::AlgebraElement) = one(eltype(a), parent(a))
 
 function Base.isone(a::AlgebraElement)
@@ -162,7 +188,11 @@ function Base.isone(a::AlgebraElement)
         end
         return true
     else
-        throw(ArgumentError("basis of $A does not contain $id; `one` and `isone` are unsupported"))
+        throw(
+            ArgumentError(
+                "basis of $A does not contain $id; `one` and `isone` are unsupported",
+            ),
+        )
         # return a == one(a)
     end
 end
@@ -188,12 +218,18 @@ function AlgebraElement{T}(X::AlgebraElement) where {T}
     return AlgebraElement(w, parent(X))
 end
 
-function Base.convert(::Type{AlgebraElement{T,A,V}}, a::AlgebraElement{T,A,V}) where {T,A,V}
+function Base.convert(
+    ::Type{AlgebraElement{T,A,V}},
+    a::AlgebraElement{T,A,V},
+) where {T,A,V}
     return a
 end
 
 # Useful for instance if `V` is `SparseCoefficients` with `Tuple`
 # and `U` is `SparseCoefficients` with `Vector`
-function Base.convert(::Type{AlgebraElement{T,A,U}}, a::AlgebraElement{T,A,V}) where {A,T,U,V}
+function Base.convert(
+    ::Type{AlgebraElement{T,A,U}},
+    a::AlgebraElement{T,A,V},
+) where {A,T,U,V}
     return AlgebraElement(convert(U, coeffs(a)), parent(a))
 end

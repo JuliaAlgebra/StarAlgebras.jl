@@ -28,7 +28,7 @@ function supp(a::AlgebraElement)
     return [b[i] for (i, _) in nonzero_pairs(coeffs(a))]
 end
 
-function LinearAlgebra.norm(a::AlgebraElement, p::Real=2)
+function LinearAlgebra.norm(a::AlgebraElement, p::Real = 2)
     return LinearAlgebra.norm(coeffs(a), p)
 end
 
@@ -119,10 +119,7 @@ end
 """
 function promote_bases_with_maps end
 
-function promote_bases_with_maps(
-    a::StarAlgebra,
-    b::StarAlgebra,
-)
+function promote_bases_with_maps(a::StarAlgebra, b::StarAlgebra)
     _a, _b = promote_bases_with_maps(mstructure(a), mstructure(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
@@ -143,21 +140,14 @@ function promote_with_map(a::AlgebraElement, alg, map)
     return AlgebraElement(c, alg), map
 end
 
-function promote_bases_with_maps(
-    a::AlgebraElement,
-    b::AlgebraElement,
-)
+function promote_bases_with_maps(a::AlgebraElement, b::AlgebraElement)
     _a, _b = promote_bases_with_maps(parent(a), parent(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 
 function promote_bases_with_maps(
     a::AlgebraElement,
-    b::Union{
-        StarAlgebra,
-        MultiplicativeStructure,
-        AbstractBasis,
-    },
+    b::Union{StarAlgebra,MultiplicativeStructure,AbstractBasis},
 )
     _a, _b = promote_bases_with_maps(parent(a), b)
     return maybe_promote(a, _a...), _b
