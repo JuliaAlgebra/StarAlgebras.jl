@@ -44,33 +44,32 @@ import StarAlgebras as SA
     @test isone(one(x))
     @test coeffs(one(x)) == coeffs(one(RG))
 
-    # FIXME Broken
-    #    @testset "Augmented basis" begin
-    #        ad = AugmentedBasis(db)
-    #        @test SA.mstructure(ad) == AugmentedMStructure(SA.mstructure(db))
-    #        @test ad[Augmented(h)] isa Augmented
-    #        @test sprint(show, ad[Augmented(h)]) == "(-1·()+1·(1,2,4,5))"
-    #
-    #        @test !(h in ad)
-    #        @test Augmented(h) in ad
-    #
-    #        IG = SA.StarAlgebra(G, ad)
-    #
-    #        axcfs = SA.coeffs(x, basis(IG))
-    #        aycfs = SA.coeffs(y, basis(IG))
-    #        azcfs = SA.coeffs(z, basis(IG))
-    #        ax = SA.AlgebraElement(axcfs, IG)
-    #        ay = SA.AlgebraElement(aycfs, IG)
-    #        az = SA.AlgebraElement(azcfs, IG)
-    #
-    #        @test coeffs(ax * ay) == SA.coeffs(x * y, basis(IG))
-    #        @test coeffs(ax * az) == SA.coeffs(x * z, basis(IG))
-    #        @test aug(ax) == 0
-    #        @test star(ax) * star(ay) == star(ay) * star(ax)
-    #
-    #        @test length(ad) == length(db) - 1
-    #        @test Set(ad) == Set(Augmented(g) for g in db if !isone(g))
-    #    end
+    @testset "Augmented basis" begin
+        ad = AugmentedBasis(db)
+        @test SA.mstructure(ad) == AugmentedMStructure(ad)
+        @test ad[Augmented(h)] isa Augmented
+        @test sprint(show, ad[Augmented(h)]) == "(-1·()+1·(1,2,4,5))"
+
+        @test !(h in ad)
+        @test Augmented(h) in ad
+
+        IG = SA.StarAlgebra(G, ad)
+
+        axcfs = SA.coeffs(x, basis(IG))
+        aycfs = SA.coeffs(y, basis(IG))
+        azcfs = SA.coeffs(z, basis(IG))
+        ax = SA.AlgebraElement(axcfs, IG)
+        ay = SA.AlgebraElement(aycfs, IG)
+        az = SA.AlgebraElement(azcfs, IG)
+
+        @test coeffs(ax * ay) == SA.coeffs(x * y, basis(IG))
+        @test coeffs(ax * az) == SA.coeffs(x * z, basis(IG))
+        @test aug(ax) == 0
+        @test star(ax) * star(ay) == star(ay) * star(ax)
+
+        @test length(ad) == length(db) - 1
+        @test Set(ad) == Set(Augmented(g) for g in db if !isone(g))
+    end
 
     @testset "Random elements (seed=$seed)" for seed in 0:20
         Random.seed!(seed)
