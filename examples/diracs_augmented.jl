@@ -51,7 +51,7 @@ Base.isless(ad1::Augmented, ad2::Augmented) = isless(ad1.elt, ad2.elt)
 aug(::Augmented) = 0
 
 struct AugmentedBasis{T,I,A<:Augmented{T},B<:SA.AbstractBasis{T,I}} <:
-       SA.ImplicitBasis{A,I}
+       SA.ImplicitBasis{A,A}
     basis::B
 end
 
@@ -95,13 +95,47 @@ function Base.getindex(ab::AugmentedBasis{T,I,A}, x::A) where {T,I,A}
     return x
 end
 
-SA.mstructure(db::AugmentedBasis) = AugmentedMStructure(SA.mstructure(db.basis))
+function Base.:(==)(a::AugmentedBasis, b::AugmentedBasis)
+    return a.basis == b.basis
+end
 
-struct AugmentedMStructure{T,I,M<:SA.DiracMStructure{T,I}} <: SA.MultiplicativeStructure{T,I}
+struct AugmentedMStructure{A,B<:AugmentedBasis,M<:SA.DiracMStructure} <:
+       SA.MultiplicativeStructure{A,A}
+    basis::B
     op::M
 end
 
-function (mstr::AugmentedMStructure)(aδx::Augmented, aδy::Augmented)
+function AugmentedMStructure(ab::AugmentedBasis{T,I,A}) where {T,I,A}
+    op = SA.DiracMStructure(ab.basis, *)
+    return AugmentedMStructure{A,typeof(ab),typeof(op)}(ab, op)
+end
+
+SA.mstructure(ab::AugmentedBasis) = AugmentedMStructure(ab)
+
+function MA.promote_operation(
+    ::typeof(SA.basis),
+    ::Type{<:AugmentedMStructure{A,B}},
+) where {A,B}
+    return B
+end
+
+function Base.:(==)(a::AugmentedMStructure, b::AugmentedMStructure)
+    return a.basis == b.basis && a.op == b.op
+end
+
+function SA.StarAlgebra(object, ab::AugmentedBasis)
+    return SA.StarAlgebra(object, SA.mstructure(ab))
+end
+
+function SA.promote_bases_with_maps(
+    a::AugmentedMStructure,
+    b::AugmentedMStructure,
+)
+    _a, _b = SA.promote_bases_with_maps(SA.basis(a), SA.basis(b))
+    return SA.maybe_promote(a, _a...), SA.maybe_promote(b, _b...)
+end
+
+function (mstr::AugmentedMStructure)(aδx::A, aδy::A, ::Type{A}) where {A<:Augmented}
     δxy = first(keys(mstr.op(aδx.elt, aδy.elt)))
     if isone(δxy)
         return SA.SparseCoefficients((aδx, aδy), (-1, -1))
@@ -127,11 +161,7 @@ function SA.coeffs!(
     for (k, v) in SA.nonzero_pairs(cfs)
         isone(k) && continue
         x = source[k]
-        MA.operate!(
-            SA.UnsafeAddMul(*),
-            res,
-            SA.SparseCoefficients((target[Augmented(x)],), (v,)),
-        )
+        SA.unsafe_push!(res, target[Augmented(x)], v)
     end
     MA.operate!(SA.canonical, res)
     return res
