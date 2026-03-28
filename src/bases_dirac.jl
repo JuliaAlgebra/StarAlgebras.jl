@@ -2,7 +2,7 @@
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
 """
-    mutable struct DiracBasis{T,F} <: ImplicitBasis{T,T}
+    struct DiracBasis{T,S} <: ImplicitBasis{T,T}
         object::S
     end
 
