@@ -26,9 +26,7 @@ function merge_sorted!(
     while i1 <= lastindex(v1) && i2 <= lastindex(v2)
         x1 = v1[i1]
         x2 = v2[i2]
-        l12 = lt(x1, x2)
-        l21 = lt(x2, x1)
-        if !l12 && !l21
+        if x1 == x2
             c = combine(x1, x2)
             if filter(c)
                 result[i] = c
@@ -36,7 +34,7 @@ function merge_sorted!(
             end
             i1 += 1
             i2 += 1
-        elseif xor(l12, rev)
+        elseif xor(lt(x1, x2), rev)
             if filter(x1)
                 result[i] = x1
                 i += 1
@@ -110,9 +108,7 @@ merge_sorted(::Tuple{}, b::Tuple; lt, combine, filter, rev = false) = b
 function merge_sorted(a::Tuple, b::Tuple; lt, combine, filter, rev = false)
     x = first(a)
     y = first(b)
-    lxy = lt(x, y)
-    lyx = lt(y, x)
-    if !lxy && !lyx
+    if x == y
         z = combine(x, y)
         tail =
             merge_sorted(Base.tail(a), Base.tail(b); lt, combine, filter, rev)
@@ -121,7 +117,7 @@ function merge_sorted(a::Tuple, b::Tuple; lt, combine, filter, rev = false)
         else
             return tail
         end
-    elseif xor(lxy, rev)
+    elseif xor(lt(x, y), rev)
         return (x, merge_sorted(Base.tail(a), b; lt, combine, filter, rev)...)
     else
         return (y, merge_sorted(a, Base.tail(b); lt, combine, filter, rev)...)
