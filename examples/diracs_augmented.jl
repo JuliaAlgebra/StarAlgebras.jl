@@ -127,6 +127,14 @@ function SA.StarAlgebra(object, ab::AugmentedBasis)
     return SA.StarAlgebra(object, SA.mstructure(ab))
 end
 
+function SA.promote_bases_with_maps(
+    a::AugmentedMStructure,
+    b::AugmentedMStructure,
+)
+    _a, _b = SA.promote_bases_with_maps(SA.basis(a), SA.basis(b))
+    return SA.maybe_promote(a, _a...), SA.maybe_promote(b, _b...)
+end
+
 function (mstr::AugmentedMStructure)(aδx::A, aδy::A, ::Type{A}) where {A<:Augmented}
     δxy = first(keys(mstr.op(aδx.elt, aδy.elt)))
     if isone(δxy)
