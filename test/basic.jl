@@ -32,8 +32,14 @@ Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
     @test a == a
     @test a !== StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ]))
     @test a == StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ]))
-    @test AlgebraElement([2, -1], a) !== AlgebraElement([2, -1], StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ])))
-    @test AlgebraElement([2, -1], a) == AlgebraElement([2, -1], StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ])))
+    @test AlgebraElement([2, -1], a) !== AlgebraElement(
+        [2, -1],
+        StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ])),
+    )
+    @test AlgebraElement([2, -1], a) == AlgebraElement(
+        [2, -1],
+        StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ])),
+    )
     @test a != StarAlgebra(1, b)
     b2 = DummyBasis(Irrational[π, Irrational{:γ}()])
     @test a != StarAlgebra(PlaceholderObject(), b2)
@@ -58,13 +64,12 @@ Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
     @test B == StarAlgebra(1.0, SA.sub_basis(π_ℯ, [true, false]))
     @test B != StarAlgebra(1.0, SA.sub_basis(π_ℯ, 1:2))
     @test B != StarAlgebra(1.0, SA.sub_basis(π_ℯ, 2:2))
-    err = ArgumentError("`sub_basis` expects indices to be sorted but the given incices `$([2, 1])` are not sorted")
+    err = ArgumentError(
+        "`sub_basis` expects indices to be sorted but the given indices `$([2, 1])` are not sorted",
+    )
     @test_throws err StarAlgebra(1.0, SA.sub_basis(π_ℯ, [2, 1]))
 
-    el = SA.AlgebraElement(
-        [Variable()],
-        StarAlgebra(1.0, SA.FixedBasis([2.0])),
-    )
+    el = SA.AlgebraElement([Variable()], StarAlgebra(1.0, SA.FixedBasis([2.0])))
     coeffs23 = SA.coeffs(el, SA.FixedBasis([2.0, 3.0]))
     @test coeffs23 == sparsevec([1], [Variable()], 2)
 

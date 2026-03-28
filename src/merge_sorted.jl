@@ -50,13 +50,13 @@ function merge_sorted!(
             i2 += 1
         end
     end
-    for j = i1:lastindex(v1)
+    for j in i1:lastindex(v1)
         if filter(v1[j])
             result[i] = v1[j]
             i += 1
         end
     end
-    for j = i2:lastindex(v2)
+    for j in i2:lastindex(v2)
         if filter(v2[j])
             result[i] = v2[j]
             i += 1
@@ -161,7 +161,13 @@ function merge_bases_with_maps(basis1::SB, basis2::SB) where {SB<:SubBasis}
     @assert basis1.is_sorted
     @assert basis2.is_sorted
     lt = comparable(parent(basis1))
-    keys = merge_sorted(basis1.keys, basis2.keys; lt, combine = first_of, filter = _ -> true)
+    keys = merge_sorted(
+        basis1.keys,
+        basis2.keys;
+        lt,
+        combine = first_of,
+        filter = _ -> true,
+    )
     I1 = multi_findsorted(keys, basis1.keys; lt)
     I2 = multi_findsorted(keys, basis2.keys; lt)
     return SubBasis(basis1.parent_basis, keys), I1, I2

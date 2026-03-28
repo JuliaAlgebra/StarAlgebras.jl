@@ -1,8 +1,7 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
-               ExplicitBasis{T,I}
+mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <: ExplicitBasis{T,I}
     elts::V
     relts::Dict{T,I}
     starof::Vector{I}
@@ -60,7 +59,9 @@ julia> SA.coeffs(c*c)
   [7]  =  1
 ```
 """
-FixedBasis(elts::AbstractVector{T}) where {T} = FixedBasis{T,keytype(elts)}(elts)
+function FixedBasis(elts::AbstractVector{T}) where {T}
+    return FixedBasis{T,keytype(elts)}(elts)
+end
 
 function FixedBasis{T,I}(elts::AbstractVector{T}) where {T,I}
     relts = Dict(b => I(idx) for (idx, b) in pairs(elts))
@@ -72,7 +73,9 @@ function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
     return FixedBasis{T,I}(collect(Iterators.take(basis, n)))
 end
 
-FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} = FixedBasis{T,typeof(n)}(basis; n)
+function FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T}
+    return FixedBasis{T,typeof(n)}(basis; n)
+end
 
 Base.in(x, b::FixedBasis) = haskey(b.relts, x)
 Base.firstindex(b::FixedBasis) = firstindex(b.elts)
@@ -91,7 +94,7 @@ function promote_bases_with_maps(a::FixedBasis, b::FixedBasis)
 end
 
 """
-    struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
+    struct SubBasis{T,I,K,B<:ImplicitBasis{T,K},V<:AbstractVector{K}} <:
         ExplicitBasis{T,I}
         parent_basis::B
         keys::V
@@ -108,8 +111,15 @@ struct SubBasis{T,I,K,B<:ImplicitBasis{T,K},V<:AbstractVector{K}} <:
     parent_basis::B
     keys::V
     is_sorted::Bool
-    function SubBasis(parent_basis::ImplicitBasis{T,K}, keys::AbstractVector{K}) where {T,K}
-        return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(parent_basis, keys, issorted(keys, lt=comparable(parent_basis)))
+    function SubBasis(
+        parent_basis::ImplicitBasis{T,K},
+        keys::AbstractVector{K},
+    ) where {T,K}
+        return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(
+            parent_basis,
+            keys,
+            issorted(keys, lt = comparable(parent_basis)),
+        )
     end
 end
 
@@ -118,7 +128,11 @@ end
 # Or maybe it's best to just error so that the user has to sort it explicitly
 function _check_sorted(indices::AbstractVector)
     if !issorted(indices)
-        throw(ArgumentError("`sub_basis` expects indices to be sorted but the given incices `$indices` are not sorted"))
+        throw(
+            ArgumentError(
+                "`sub_basis` expects indices to be sorted but the given indices `$indices` are not sorted",
+            ),
+        )
     end
 end
 
@@ -195,7 +209,7 @@ function Base.get(b::SubBasis{T}, x::T, default) where {T}
     return key_index(b, b.parent_basis[x], default)
 end
 
-Base.in(x::T, b::SubBasis{T}) where T = !isnothing(get(b, x, nothing))
+Base.in(x::T, b::SubBasis{T}) where {T} = !isnothing(get(b, x, nothing))
 Base.haskey(b::SubBasis, i::Integer) = i in eachindex(b.keys)
 
 Base.firstindex(b::SubBasis) = firstindex(b.keys)
