@@ -114,7 +114,14 @@ function merge_sorted(a::Tuple, b::Tuple; lt, combine, filter, rev = false)
     lyx = lt(y, x)
     if !lxy && !lyx
         z = combine(x, y)
-        tail = merge_sorted(Base.tail(a), Base.tail(b); lt, combine, filter, rev)
+        tail = merge_sorted(
+            Base.tail(a),
+            Base.tail(b);
+            lt,
+            combine,
+            filter,
+            rev,
+        )
         if filter(z)
             return (z, tail...)
         else
