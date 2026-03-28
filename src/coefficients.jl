@@ -2,7 +2,7 @@
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
 """
-    abstract type AbstractCoefficients{V,K} end
+    abstract type AbstractCoefficients{K,V} end
 Everything that implements a fixed set of methods can be used as
 `SparseCoefficients` without subtyping it.
 

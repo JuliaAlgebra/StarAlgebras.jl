@@ -91,7 +91,7 @@ function promote_bases_with_maps(a::FixedBasis, b::FixedBasis)
 end
 
 """
-    struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
+    struct SubBasis{T,I,K,B<:ImplicitBasis{T,K},V<:AbstractVector{K}} <:
         ExplicitBasis{T,I}
         parent_basis::B
         keys::V
@@ -118,7 +118,7 @@ end
 # Or maybe it's best to just error so that the user has to sort it explicitly
 function _check_sorted(indices::AbstractVector)
     if !issorted(indices)
-        throw(ArgumentError("`sub_basis` expects indices to be sorted but the given incices `$indices` are not sorted"))
+        throw(ArgumentError("`sub_basis` expects indices to be sorted but the given indices `$indices` are not sorted"))
     end
 end
 
