@@ -4,11 +4,12 @@
 # Adapted from TypedPolynomials via MultivariatePolynomials
 
 """
-    merge_sorted!(result, v1::AbstractVector, v2::AbstractVector, lt, combine, filter)
+    merge_sorted!(result, v1::AbstractVector, v2::AbstractVector; lt, combine, filter, rev=false)
 
 In-place version of [`merge_sorted`](@ref) that writes the result into `result`.
 `result` must be large enough to hold the merged output (at most `length(v1) + length(v2)`).
 It is resized to the actual output length before returning.
+If `rev=true`, the comparison `lt` is reversed.
 """
 function merge_sorted!(
     result,
@@ -17,6 +18,7 @@ function merge_sorted!(
     lt,
     combine,
     filter,
+    rev = false,
 )
     i = firstindex(result)
     i1 = firstindex(v1)
@@ -24,25 +26,25 @@ function merge_sorted!(
     while i1 <= lastindex(v1) && i2 <= lastindex(v2)
         x1 = v1[i1]
         x2 = v2[i2]
-        if lt(x1, x2)
-            if filter(x1)
-                result[i] = x1
-                i += 1
-            end
-            i1 += 1
-        elseif lt(x2, x1)
-            if filter(x2)
-                result[i] = x2
-                i += 1
-            end
-            i2 += 1
-        else
+        if x1 == x2
             c = combine(x1, x2)
             if filter(c)
                 result[i] = c
                 i += 1
             end
             i1 += 1
+            i2 += 1
+        elseif xor(lt(x1, x2), rev)
+            if filter(x1)
+                result[i] = x1
+                i += 1
+            end
+            i1 += 1
+        else
+            if filter(x2)
+                result[i] = x2
+                i += 1
+            end
             i2 += 1
         end
     end
@@ -72,13 +74,14 @@ first_of(a, _) = a
 MA.promote_operation(::typeof(first_of), ::Type{T}, ::Type) where {T} = T
 
 """
-    merge_sorted(v1::AbstractVector, v2::AbstractVector; lt, combine, filter)
+    merge_sorted(v1::AbstractVector, v2::AbstractVector; lt, combine, filter, rev=false)
 
 Merge two sorted vectors `v1` and `v2` into a single sorted vector.
 Elements are compared using `lt` (a less-than function).
 When two elements are equal (neither is less than the other),
 they are combined using `combine(x1, x2)`.
 Elements for which `filter` returns `false` are dropped.
+If `rev=true`, the comparison `lt` is reversed.
 """
 function merge_sorted(
     v1::AbstractVector,
@@ -86,35 +89,38 @@ function merge_sorted(
     lt,
     combine,
     filter,
+    rev = false,
 )
     T = MA.promote_operation(combine, eltype(v1), eltype(v2))
     result = Vector{T}(undef, length(v1) + length(v2))
-    return merge_sorted!(result, v1, v2; lt, combine, filter)
+    return merge_sorted!(result, v1, v2; lt, combine, filter, rev)
 end
 
 """
-    merge_sorted(a::Tuple, b::Tuple; lt = isless)
+    merge_sorted(a::Tuple, b::Tuple; lt, combine, filter, rev=false)
 
 Merge two sorted tuples, removing duplicates. Returns a tuple.
+If `rev=true`, the comparison `lt` is reversed.
 """
-merge_sorted(::Tuple{}, ::Tuple{}; lt, combine, filter) = ()
-merge_sorted(a::Tuple, ::Tuple{}; lt, combine, filter) = a
-merge_sorted(::Tuple{}, b::Tuple; lt, combine, filter) = b
-function merge_sorted(a::Tuple, b::Tuple; lt, combine, filter)
+merge_sorted(::Tuple{}, ::Tuple{}; lt, combine, filter, rev = false) = ()
+merge_sorted(a::Tuple, ::Tuple{}; lt, combine, filter, rev = false) = a
+merge_sorted(::Tuple{}, b::Tuple; lt, combine, filter, rev = false) = b
+function merge_sorted(a::Tuple, b::Tuple; lt, combine, filter, rev = false)
     x = first(a)
     y = first(b)
     if x == y
         z = combine(x, y)
-        tail = merge_sorted(Base.tail(a), Base.tail(b); lt, combine, filter)
+        tail =
+            merge_sorted(Base.tail(a), Base.tail(b); lt, combine, filter, rev)
         if filter(z)
             return (z, tail...)
         else
             return tail
         end
-    elseif lt(x, y)
-        return (x, merge_sorted(Base.tail(a), b; lt, combine, filter)...)
+    elseif xor(lt(x, y), rev)
+        return (x, merge_sorted(Base.tail(a), b; lt, combine, filter, rev)...)
     else
-        return (y, merge_sorted(a, Base.tail(b); lt, combine, filter)...)
+        return (y, merge_sorted(a, Base.tail(b); lt, combine, filter, rev)...)
     end
 end
 
