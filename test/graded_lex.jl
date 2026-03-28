@@ -70,7 +70,9 @@ end
     bas_y = SA.basis(alg_y)
     bas_bi = SA.basis(bi_alg)
 
-    err = ErrorException("Bases $bas_x and $bas_bi are different and do not support promotion.")
+    err = ErrorException(
+        "Bases $bas_x and $bas_bi are different and do not support promotion.",
+    )
     @test_throws err SA.promote_bases(bas_x, bas_bi)
 
     @test c == a + b

@@ -65,7 +65,10 @@ function zero_coeffs(::Type{S}, eb::ExplicitBasis{T,I}) where {S,T,I}
     return spzeros(S, I, length(eb))
 end
 
-function Base.getindex(eb::ExplicitBasis{T}, range::AbstractRange{<:Integer}) where {T}
+function Base.getindex(
+    eb::ExplicitBasis{T},
+    range::AbstractRange{<:Integer},
+) where {T}
     return T[eb[i] for i in range]
 end
 

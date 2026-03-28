@@ -8,7 +8,11 @@ struct SparseCoefficients{K,V,Vk,Vv,L} <: AbstractCoefficients{K,V}
 end
 
 function SparseCoefficients(elts::Ks, vals::Vs, isless = isless) where {Ks,Vs}
-    return SparseCoefficients{eltype(elts),eltype(vals),Ks,Vs,typeof(isless)}(elts, vals, isless)
+    return SparseCoefficients{eltype(elts),eltype(vals),Ks,Vs,typeof(isless)}(
+        elts,
+        vals,
+        isless,
+    )
 end
 
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
@@ -58,7 +62,9 @@ end
 struct BroadcastStyle{K} <: Broadcast.BroadcastStyle end
 
 Base.broadcastable(sc::SparseCoefficients) = sc
-Base.BroadcastStyle(::Type{<:SparseCoefficients{K}}) where {K} = BroadcastStyle{K}()
+function Base.BroadcastStyle(::Type{<:SparseCoefficients{K}}) where {K}
+    return BroadcastStyle{K}()
+end
 # Disallow mixing broadcasts.
 function Base.BroadcastStyle(::BroadcastStyle, ::Base.BroadcastStyle)
     return throw(
@@ -70,7 +76,10 @@ function Base.BroadcastStyle(::BroadcastStyle, ::Base.BroadcastStyle)
 end
 
 # Allow broadcasting over scalars.
-function Base.BroadcastStyle(style::BroadcastStyle, ::Base.Broadcast.DefaultArrayStyle{0})
+function Base.BroadcastStyle(
+    style::BroadcastStyle,
+    ::Base.Broadcast.DefaultArrayStyle{0},
+)
     return style
 end
 
@@ -93,7 +102,10 @@ function Base.getindex(bc::Broadcast.Broadcasted{<:BroadcastStyle}, index)
     return bc.f(_get_arg(bc.args, index)...)
 end
 
-function Base.similar(bc::Broadcast.Broadcasted{<:BroadcastStyle}, ::Type{T}) where {T}
+function Base.similar(
+    bc::Broadcast.Broadcasted{<:BroadcastStyle},
+    ::Type{T},
+) where {T}
     return similar(_first_sparse_coeffs(bc.args...), T)
 end
 
@@ -112,12 +124,22 @@ _similar(x, ::Type{T}) where {T} = similar(x, T)
 _similar_type(::Type{<:Tuple}, ::Type{T}) where {T} = Vector{T}
 _similar_type(::Type{V}, ::Type{T}) where {V,T} = similar_type(V, T)
 
-function similar_type(::Type{SparseCoefficients{K,V,Vk,Vv,L}}, ::Type{T}) where {K,V,Vk,Vv,T,L}
+function similar_type(
+    ::Type{SparseCoefficients{K,V,Vk,Vv,L}},
+    ::Type{T},
+) where {K,V,Vk,Vv,T,L}
     return SparseCoefficients{K,T,_similar_type(Vk, K),_similar_type(Vv, T),L}
 end
 
-function Base.similar(s::SparseCoefficients, ::Type{T} = value_type(s)) where {T}
-    return SparseCoefficients(collect(s.basis_elements), _similar(s.values, T), s.isless)
+function Base.similar(
+    s::SparseCoefficients,
+    ::Type{T} = value_type(s),
+) where {T}
+    return SparseCoefficients(
+        collect(s.basis_elements),
+        _similar(s.values, T),
+        s.isless,
+    )
 end
 
 function Base.convert(
@@ -175,7 +197,10 @@ end
 # `{...,L}` is needed to force Julia specialize on the function type
 # Otherwise, we get one allocation when we call `issorted`
 # See https://docs.julialang.org/en/v1/manual/performance-tips/#Be-aware-of-when-Julia-avoids-specializing
-function MA.operate!(::typeof(canonical), res::SparseCoefficients{K,V,Vk,Vv,L}) where {K,V,Vk,Vv,L}
+function MA.operate!(
+    ::typeof(canonical),
+    res::SparseCoefficients{K,V,Vk,Vv,L},
+) where {K,V,Vk,Vv,L}
     sorted = issorted(res.basis_elements; lt = res.isless)
     distinct = allunique(res.basis_elements)
     if sorted && distinct && !any(iszero, res.values)
@@ -189,7 +214,7 @@ function MA.operate!(::typeof(canonical), res::SparseCoefficients{K,V,Vk,Vv,L}) 
     end
 
     todelete = BitSet()
-    for i in firstindex(res.basis_elements):lastindex(res.basis_elements)-1
+    for i in firstindex(res.basis_elements):(lastindex(res.basis_elements)-1)
         if iszero(res.values[i])
             push!(todelete, i)
         elseif res.basis_elements[i] == res.basis_elements[i+1]

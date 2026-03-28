@@ -76,16 +76,10 @@ end
     mt = UInt32(nwords(A★, 2))
     fRG = StarAlgebra(A★, SA.MTable(fB, (mt, mt)))
 
-    y = SA.SparseCoefficients(
-        [first(fB)],
-        [1],
-    )
+    y = SA.SparseCoefficients([first(fB)], [1])
     Y = AlgebraElement(y, fRG)
 
-    z = SA.SparseCoefficients(
-        (first(fB),),
-        (1,),
-    )
+    z = SA.SparseCoefficients((first(fB),), (1,))
     Z = AlgebraElement(z, fRG)
 
     @test convert(typeof(SA.coeffs(Y)), SA.coeffs(Y)) === SA.coeffs(Y)
@@ -109,7 +103,9 @@ end
         @test 1 .+ c == res
         @test MA.Zero() .+ c == c
         @test c .+ MA.Zero() == c
-        err = ArgumentError("Cannot broadcast `StarAlgebras.SparseCoefficients` with another array of different type")
+        err = ArgumentError(
+            "Cannot broadcast `StarAlgebras.SparseCoefficients` with another array of different type",
+        )
         @test_throws err c .+ ones(3)
     end
 end

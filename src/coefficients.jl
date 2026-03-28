@@ -50,7 +50,12 @@ Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
 Base.similar(ac::AbstractCoefficients) = similar(ac, value_type(ac))
 
 similar_type(::Type{<:Vector}, ::Type{T}) where {T} = Vector{T}
-similar_type(::Type{<:SparseArrays.SparseVector{C,I}}, ::Type{T}) where {C,I,T} = SparseArrays.SparseVector{T,I}
+function similar_type(
+    ::Type{<:SparseArrays.SparseVector{C,I}},
+    ::Type{T},
+) where {C,I,T}
+    return SparseArrays.SparseVector{T,I}
+end
 
 """
     canonical(ac::AbstractCoefficients)

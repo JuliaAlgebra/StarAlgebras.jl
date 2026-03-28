@@ -48,7 +48,10 @@ function (mstr::MultiplicativeStructure{T,I})(x::I, y::I) where {T,I}
     return mstr(x, y, I)
 end
 
-function (mstr::MultiplicativeStructure{T,I})(x::Integer, y::Integer) where {T,I<:Integer}
+function (mstr::MultiplicativeStructure{T,I})(
+    x::Integer,
+    y::Integer,
+) where {T,I<:Integer}
     return mstr(convert(I, x), convert(I, y), I)
 end
 
@@ -108,18 +111,14 @@ end
 function MA.operate!(op::UnsafeAddMul, res, A, B, α)
     for (kA, vA) in nonzero_pairs(A)
         for (kB, vB) in nonzero_pairs(B)
-            MA.operate!(
-                op,
-                res,
-                op.structure(kA, kB),
-                MA.@rewrite(α * vA * vB),
-            )
+            MA.operate!(op, res, op.structure(kA, kB), MA.@rewrite(α * vA * vB))
         end
     end
     return res
 end
 
-struct DiracMStructure{T,I,B<:AbstractBasis{T,I},Op} <: MultiplicativeStructure{T,I}
+struct DiracMStructure{T,I,B<:AbstractBasis{T,I},Op} <:
+       MultiplicativeStructure{T,I}
     basis::B
     op::Op
 end
@@ -128,7 +127,10 @@ function Base.:(==)(a::DiracMStructure, b::DiracMStructure)
     return a.op == b.op && a.basis == b.basis
 end
 
-function MA.promote_operation(::typeof(basis), ::Type{<:DiracMStructure{T,I,B}}) where {T,I,B}
+function MA.promote_operation(
+    ::typeof(basis),
+    ::Type{<:DiracMStructure{T,I,B}},
+) where {T,I,B}
     return B
 end
 
@@ -151,27 +153,17 @@ function (mstr::DiracMStructure{T,T})(x::T, y::T, ::Type{T}) where {T}
     return SparseCoefficients((xy,), (1,))
 end
 
-function promote_with_map(
-    a::DiracMStructure,
-    b::AbstractBasis,
-    map,
-)
+function promote_with_map(a::DiracMStructure, b::AbstractBasis, map)
     # We assume `a.op` doesn't need to be mapped
     return DiracMStructure(b, a.op), map
 end
 
-function promote_bases_with_maps(
-    a::DiracMStructure,
-    b::DiracMStructure,
-)
+function promote_bases_with_maps(a::DiracMStructure, b::DiracMStructure)
     _a, _b = promote_bases_with_maps(basis(a), basis(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 
-function promote_bases_with_maps(
-    a::DiracMStructure,
-    b::AbstractBasis,
-)
+function promote_bases_with_maps(a::DiracMStructure, b::AbstractBasis)
     _a, _b = promote_bases_with_maps(basis(a), b)
     return maybe_promote(a, _a...), _b
 end

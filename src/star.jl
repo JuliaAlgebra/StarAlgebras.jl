@@ -23,7 +23,7 @@ function star(b::FixedBasis, i::Integer)
     return b.starof[i]
 end
 
-function star(b::FixedBasis{T}, el::T) where T
+function star(b::FixedBasis{T}, el::T) where {T}
     return b[star(b, b[el])]
 end
 

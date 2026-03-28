@@ -7,7 +7,8 @@ _coeff_type(a) = _coeff_type(typeof(a))
 
 function algebra_promote_operation(op, args::Vararg{Type,N}) where {N}
     T = MA.promote_operation(op, _coeff_type.(args)...)
-    if args[2] <: AlgebraElement && MA.promote_operation(coeffs, args[2]) <: DenseArray # what a hack :)
+    if args[2] <: AlgebraElement &&
+       MA.promote_operation(coeffs, args[2]) <: DenseArray # what a hack :)
         return similar_type(args[2], T)
     end
     return similar_type(args[1], T)
@@ -30,7 +31,11 @@ Base.:(//)(X::AlgebraElement, a::Number) = 1 // a * X
 function Base.:-(X::AlgebraElement)
     return MA.operate_to!(_preallocate_output(*, X, -1), -, X)
 end
-function MA.promote_operation(::typeof(*), ::Type{T}, ::Type{A}) where {T<:Number, A<:AlgebraElement}
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{T},
+    ::Type{A},
+) where {T<:Number,A<:AlgebraElement}
     return algebra_promote_operation(*, A, T)
 end
 function Base.:*(a::Any, X::AlgebraElement)
@@ -54,7 +59,11 @@ end
 
 for op in [:+, :-, :*]
     @eval begin
-        function MA.promote_operation(::typeof($op), ::Type{X}, ::Type{Y}) where {X<:AlgebraElement,Y<:AlgebraElement}
+        function MA.promote_operation(
+            ::typeof($op),
+            ::Type{X},
+            ::Type{Y},
+        ) where {X<:AlgebraElement,Y<:AlgebraElement}
             return algebra_promote_operation($op, X, Y)
         end
         function Base.$op(X::AlgebraElement, Y::AlgebraElement)
@@ -140,7 +149,7 @@ function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
     A::AlgebraElement,
-    B::AlgebraElement
+    B::AlgebraElement,
 )
     @assert parent(res) == parent(A)
     @assert parent(A) == parent(B)

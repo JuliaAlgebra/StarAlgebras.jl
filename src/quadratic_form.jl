@@ -30,11 +30,7 @@ Base.eltype(qf::QuadraticForm) = eltype(qf.Q)
 basis(qf::QuadraticForm) = basis(qf.Q)
 Base.getindex(qf::QuadraticForm, i::T, j::T) where {T} = qf.Q[i, j]
 
-function MA.operate_to!(
-    res::AlgebraElement,
-    ::typeof(+),
-    Q::QuadraticForm,
-)
+function MA.operate_to!(res::AlgebraElement, ::typeof(+), Q::QuadraticForm)
     MA.operate!(zero, res)
     MA.operate!(UnsafeAdd(), res, Q)
     MA.operate!(canonical, res)
@@ -55,7 +51,13 @@ function MA.operate!(
     end
 end
 
-function MA.operate!(op::UnsafeAddMul, res::AlgebraElement{C,A}, b1::T, b2::T, a) where {C,O,T,A<:AbstractStarAlgebra{O,T}}
+function MA.operate!(
+    op::UnsafeAddMul,
+    res::AlgebraElement{C,A},
+    b1::T,
+    b2::T,
+    a,
+) where {C,O,T,A<:AbstractStarAlgebra{O,T}}
     mstr = mstructure(res)
     return MA.operate!(op, coeffs(res), mstr(mstr[b1], mstr[b2]), a)
 end

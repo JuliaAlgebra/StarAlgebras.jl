@@ -12,8 +12,12 @@ Multiplicative table, stored explicitly as an AbstractMatrix{I}.
     mt(-i, j) == b[star(b[i])*b[j]]
     ```
 """
-struct MTable{T,I<:Integer,Ms<:MultiplicativeStructure{T,I},M<:AbstractMatrix} <:
-       MultiplicativeStructure{T,I}
+struct MTable{
+    T,
+    I<:Integer,
+    Ms<:MultiplicativeStructure{T,I},
+    M<:AbstractMatrix,
+} <: MultiplicativeStructure{T,I}
     mstr::Ms
     table::M
     lock::Base.Threads.SpinLock
@@ -139,10 +143,7 @@ end
 
 # TODO promote_with_map
 
-function promote_bases_with_maps(
-    a::MTable,
-    b::MTable,
-)
+function promote_bases_with_maps(a::MTable, b::MTable)
     _a, _b = promote_bases_with_maps(a.mstr, b.mstr)
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
