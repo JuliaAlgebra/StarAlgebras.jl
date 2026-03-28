@@ -104,15 +104,9 @@ end
 Merge two sorted tuples, removing duplicates. Returns a tuple.
 If `rev=true`, the comparison `lt` is reversed.
 """
-function merge_sorted(::Tuple{}, ::Tuple{}; lt, combine, filter, rev = false)
-    return ()
-end
-function merge_sorted(a::Tuple, ::Tuple{}; lt, combine, filter, rev = false)
-    return a
-end
-function merge_sorted(::Tuple{}, b::Tuple; lt, combine, filter, rev = false)
-    return b
-end
+merge_sorted(::Tuple{}, ::Tuple{}; lt, combine, filter, rev = false) = ()
+merge_sorted(a::Tuple, ::Tuple{}; lt, combine, filter, rev = false) = a
+merge_sorted(::Tuple{}, b::Tuple; lt, combine, filter, rev = false) = b
 function merge_sorted(a::Tuple, b::Tuple; lt, combine, filter, rev = false)
     x = first(a)
     y = first(b)
@@ -120,14 +114,8 @@ function merge_sorted(a::Tuple, b::Tuple; lt, combine, filter, rev = false)
     lyx = lt(y, x)
     if !lxy && !lyx
         z = combine(x, y)
-        tail = merge_sorted(
-            Base.tail(a),
-            Base.tail(b);
-            lt,
-            combine,
-            filter,
-            rev,
-        )
+        tail =
+            merge_sorted(Base.tail(a), Base.tail(b); lt, combine, filter, rev)
         if filter(z)
             return (z, tail...)
         else
