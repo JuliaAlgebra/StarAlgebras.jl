@@ -1,10 +1,9 @@
 # StarAlgebras
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaalgebra.github.io/StarAlgebras.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaalgebra.github.io/StarAlgebras.jl/dev)
-[![CI](https://github.com/JuliaAlgebra/StarAlgebras.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/JuliaAlgebra/StarAlgebras.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/JuliaAlgebra/StarAlgebras.jl/branch/main/graph/badge.svg?token=jpHVdYRx8G)](https://codecov.io/gh/JuliaAlgebra/StarAlgebras.jl)
-
+| **Documentation** | **Build Status** |
+|:-----------------:|:----------------:|
+| [![][docs-stable-img]][docs-stable-url] | [![Build Status][build-img]][build-url] |
+| [![][docs-latest-img]][docs-latest-url] | [![Codecov branch][codecov-img]][codecov-url] |
 ----
 
 The package implements `*`-algebras with basis. The prime example use are group
@@ -235,3 +234,13 @@ Test Passed
 
 -----
 If you happen to use this package please cite either [1712.07167](https://arxiv.org/abs/1712.07167) or [1812.03456](https://arxiv.org/abs/1812.03456). This package superseeds [GroupRings.jl](https://github.com/kalmarek/GroupRings.jl) which was developed and used there. It served its purpose well. Let it rest peacefully.
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-latest-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-stable-url]: https://JuliaAlgebra.github.io/StarAlgebras.jl/stable
+[docs-latest-url]: https://juliaalgebra.github.io/StarAlgebras.jl/dev
+
+[build-img]: https://github.com/JuliaAlgebra/StarAlgebras.jl/actions/workflows/CI.yml/badge.svg?branch=main
+[build-url]: https://github.com/JuliaAlgebra/StarAlgebras.jl/actions?query=workflow%3ACI
+[codecov-img]: http://codecov.io/gh/JuliaAlgebra/StarAlgebras.jl/branch/main/graph/badge.svg
+[codecov-url]: http://codecov.io/gh/JuliaAlgebra/StarAlgebras.jl
