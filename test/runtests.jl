@@ -46,6 +46,7 @@ function test_vector_interface(basis, vector = collect(basis))
 end
 
 @testset "StarAlgebras" begin
+    include("term.jl")
     include("basic.jl")
     # proof of concept
     using PermutationGroups
