@@ -109,7 +109,9 @@ end
 
 # dot for Term to avoid recursive fallback in LinearAlgebra.dot
 function LinearAlgebra.dot(t1::Term, t2::Term)
-    return coefficient(t1) * coefficient(t2) * (basis_element(t1) * basis_element(t2))
+    return coefficient(t1) *
+           coefficient(t2) *
+           (basis_element(t1) * basis_element(t2))
 end
 function LinearAlgebra.dot(x, t::Term)
     return x * t
@@ -118,12 +120,7 @@ function LinearAlgebra.dot(t::Term, x)
     return star(t) * x
 end
 
-function MA.operate_to!(
-    t::Term,
-    ::typeof(*),
-    t1::Term,
-    t2::Term,
-)
+function MA.operate_to!(t::Term, ::typeof(*), t1::Term, t2::Term)
     MA.operate_to!(t.coefficient, *, coefficient(t1), coefficient(t2))
     MA.operate_to!(t.basis_element, *, basis_element(t1), basis_element(t2))
     return t
