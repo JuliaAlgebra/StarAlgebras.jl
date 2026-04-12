@@ -13,7 +13,7 @@ This is the generic analog of a single term in an algebra: a scalar times a basi
 The `coefficient` does not need to be a `Number`. For instance, in multivariate
 polynomial GCD computations, the coefficient can itself be a polynomial.
 """
-struct Term{T,B}
+struct Term{T,B} <: MA.AbstractMutable
     coefficient::T
     basis_element::B
 end
