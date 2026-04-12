@@ -9,6 +9,7 @@ Base.zero(::MutableInt) = MutableInt(0)
 Base.zero(::Type{MutableInt}) = MutableInt(0)
 Base.one(::MutableInt) = MutableInt(1)
 Base.one(::Type{MutableInt}) = MutableInt(1)
+Base.isone(x::MutableInt) = isone(x.value)
 Base.iszero(x::MutableInt) = iszero(x.value)
 Base.:(==)(a::MutableInt, b::MutableInt) = a.value == b.value
 Base.:*(a::MutableInt, b::MutableInt) = MutableInt(a.value * b.value)
@@ -79,6 +80,13 @@ end
         @test coefficient(t_mut) == MutableInt(7)
     end
 
+    @testset "copy constructor" begin
+        t = Term(3, Monomial((1, 0)))
+        T = typeof(t)
+        t2 = T(t)
+        @test t2 === t
+    end
+
     @testset "mutability" begin
         # Int and Monomial (immutable struct) are both not mutable
         @test MA.mutability(Term{Int,Monomial}) isa MA.IsNotMutable
@@ -89,9 +97,32 @@ end
         @test MA.mutability(Term{Int,MutableInt}) isa MA.IsNotMutable
     end
 
-    # MA.operate_to!(*, ...), MA.operate!(*, ...) and MA.operate!(one, ...)
-    # are defined by downstream packages (e.g., MultivariatePolynomials)
-    # and tested there.
+    @testset "operate_to!(*, ...)" begin
+        t1 = Term(MutableInt(3), MutableInt(2))
+        t2 = Term(MutableInt(4), MutableInt(5))
+        res = Term(MutableInt(0), MutableInt(0))
+        MA.operate_to!(res, *, t1, t2)
+        @test coefficient(res) == MutableInt(12)
+        @test basis_element(res) == MutableInt(10)
+        # Original terms are unchanged
+        @test coefficient(t1) == MutableInt(3)
+        @test coefficient(t2) == MutableInt(4)
+    end
+
+    @testset "operate!(*, ...)" begin
+        t1 = Term(MutableInt(3), MutableInt(2))
+        t2 = Term(MutableInt(4), MutableInt(5))
+        MA.operate!(*, t1, t2)
+        @test coefficient(t1) == MutableInt(12)
+        @test basis_element(t1) == MutableInt(10)
+    end
+
+    @testset "operate!(one, ...)" begin
+        t = Term(MutableInt(5), MutableInt(7))
+        MA.operate!(one, t)
+        @test coefficient(t) == MutableInt(1)
+        @test basis_element(t) == MutableInt(1)
+    end
 
     @testset "one / isone" begin
         t = Term(3, Monomial((1, 0)))
@@ -99,6 +130,11 @@ end
         t1 = Term(1, Monomial((0, 0)))
         @test isone(t1)
         @test one(t1) == t1
+        # one from type (needs one(::Type{B}) for the basis element)
+        o = one(Term{Int,MutableInt})
+        @test isone(o)
+        @test coefficient(o) == 1
+        @test basis_element(o) == MutableInt(1)
     end
 
     @testset "== / isequal" begin
@@ -113,12 +149,19 @@ end
         @test !isequal(t1, t3)
         # zero terms are equal regardless of basis element
         @test Term(0.0, Monomial((1, 0))) == Term(0.0, Monomial((0, 1)))
+        # isequal for zero terms
+        @test isequal(Term(0.0, Monomial((1, 0))), Term(0.0, Monomial((0, 1))))
     end
 
     @testset "hash" begin
         t1 = Term(3, Monomial((1, 0)))
         t2 = Term(3, Monomial((1, 0)))
         @test hash(t1) == hash(t2)
+        # hash of zero term
+        @test hash(Term(0, Monomial((1, 0)))) == hash(0)
+        # hash of term with coefficient 1 matches hash of basis_element
+        t3 = Term(1, Monomial((2, 0)))
+        @test hash(t3) == hash(Monomial((2, 0)))
     end
 
     @testset "convert / promote_rule" begin
@@ -128,13 +171,30 @@ end
         @test basis_element(t2) == Monomial((1, 0))
         @test promote_type(Term{Int,Monomial}, Term{Float64,Monomial}) ==
               Term{Float64,Monomial}
+        # identity convert
+        t3 = convert(typeof(t), t)
+        @test t3 === t
     end
+
+    # ^(::Term, ::Integer) is defined in SA but requires Base.:*(::Term, ::Term)
+    # which is provided by downstream packages (e.g., MultivariatePolynomials).
+    # Tested there.
 
     @testset "broadcastable / ndims" begin
         t = Term(2, Monomial((1, 0)))
         @test ndims(t) == 0
         @test ndims(typeof(t)) == 0
         @test Base.broadcastable(t) isa Ref
+    end
+
+    @testset "dot" begin
+        # dot(::Term, ::Term) computes coeff*coeff * (basis*basis)
+        t1 = Term(MutableInt(2), MutableInt(3))
+        t2 = Term(MutableInt(4), MutableInt(5))
+        d = LinearAlgebra.dot(t1, t2)
+        @test d == MutableInt(2 * 4 * 3 * 5)
+        # dot(scalar, Term) and dot(Term, scalar) need *(scalar, Term)
+        # which is provided by downstream (MultivariatePolynomials).
     end
 
     @testset "various coefficient types" begin
