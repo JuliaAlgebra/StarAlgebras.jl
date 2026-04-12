@@ -13,7 +13,12 @@ Base.iszero(x::MutableInt) = iszero(x.value)
 Base.:(==)(a::MutableInt, b::MutableInt) = a.value == b.value
 Base.:*(a::MutableInt, b::MutableInt) = MutableInt(a.value * b.value)
 MA.mutability(::Type{MutableInt}) = MA.IsMutable()
-function MA.operate_to!(res::MutableInt, ::typeof(*), a::MutableInt, b::MutableInt)
+function MA.operate_to!(
+    res::MutableInt,
+    ::typeof(*),
+    a::MutableInt,
+    b::MutableInt,
+)
     res.value = a.value * b.value
     return res
 end
@@ -118,10 +123,11 @@ end
 
     @testset "convert / promote_rule" begin
         t = Term(3, Monomial((1, 0)))
-        t2 = convert(Term{Float64, Monomial}, t)
+        t2 = convert(Term{Float64,Monomial}, t)
         @test coefficient(t2) == 3.0
         @test basis_element(t2) == Monomial((1, 0))
-        @test promote_type(Term{Int, Monomial}, Term{Float64, Monomial}) == Term{Float64, Monomial}
+        @test promote_type(Term{Int,Monomial}, Term{Float64,Monomial}) ==
+              Term{Float64,Monomial}
     end
 
     @testset "broadcastable / ndims" begin
