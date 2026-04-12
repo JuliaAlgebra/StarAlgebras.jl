@@ -84,31 +84,51 @@ end
         @test MA.mutability(Term{Int,MutableInt}) isa MA.IsNotMutable
     end
 
-    @testset "operate_to!(*, ...)" begin
-        t1 = Term(MutableInt(3), MutableInt(2))
-        t2 = Term(MutableInt(4), MutableInt(5))
-        res = Term(MutableInt(0), MutableInt(0))
-        MA.operate_to!(res, *, t1, t2)
-        @test coefficient(res) == MutableInt(12)
-        @test basis_element(res) == MutableInt(10)
-        # Original terms are unchanged
-        @test coefficient(t1) == MutableInt(3)
-        @test coefficient(t2) == MutableInt(4)
+    # MA.operate_to!(*, ...), MA.operate!(*, ...) and MA.operate!(one, ...)
+    # are defined by downstream packages (e.g., MultivariatePolynomials)
+    # and tested there.
+
+    @testset "one / isone" begin
+        t = Term(3, Monomial((1, 0)))
+        @test !isone(t)
+        t1 = Term(1, Monomial((0, 0)))
+        @test isone(t1)
+        @test one(t1) == t1
     end
 
-    @testset "operate!(*, ...)" begin
-        t1 = Term(MutableInt(3), MutableInt(2))
-        t2 = Term(MutableInt(4), MutableInt(5))
-        MA.operate!(*, t1, t2)
-        @test coefficient(t1) == MutableInt(12)
-        @test basis_element(t1) == MutableInt(10)
+    @testset "== / isequal" begin
+        t1 = Term(3.0, Monomial((1, 0)))
+        t2 = Term(3.0, Monomial((1, 0)))
+        t3 = Term(4.0, Monomial((1, 0)))
+        t4 = Term(3.0, Monomial((0, 1)))
+        @test t1 == t2
+        @test t1 != t3
+        @test t1 != t4
+        @test isequal(t1, t2)
+        @test !isequal(t1, t3)
+        # zero terms are equal regardless of basis element
+        @test Term(0.0, Monomial((1, 0))) == Term(0.0, Monomial((0, 1)))
     end
 
-    @testset "operate!(one, ...)" begin
-        t = Term(MutableInt(5), MutableInt(7))
-        MA.operate!(one, t)
-        @test coefficient(t) == MutableInt(1)
-        @test basis_element(t) == MutableInt(1)
+    @testset "hash" begin
+        t1 = Term(3, Monomial((1, 0)))
+        t2 = Term(3, Monomial((1, 0)))
+        @test hash(t1) == hash(t2)
+    end
+
+    @testset "convert / promote_rule" begin
+        t = Term(3, Monomial((1, 0)))
+        t2 = convert(Term{Float64, Monomial}, t)
+        @test coefficient(t2) == 3.0
+        @test basis_element(t2) == Monomial((1, 0))
+        @test promote_type(Term{Int, Monomial}, Term{Float64, Monomial}) == Term{Float64, Monomial}
+    end
+
+    @testset "broadcastable / ndims" begin
+        t = Term(2, Monomial((1, 0)))
+        @test ndims(t) == 0
+        @test ndims(typeof(t)) == 0
+        @test Base.broadcastable(t) isa Ref
     end
 
     @testset "various coefficient types" begin
