@@ -38,6 +38,27 @@ function MA.mutable_copy(a::MutableInt)
     return MutableInt(a.value)
 end
 
+# Minimal arithmetic on Term{Int,Monomial} using the bivariate example
+# to test ^, dot, etc. within SA (no downstream needed).
+function Base.:*(t1::Term{Int,Monomial}, t2::Term{Int,Monomial})
+    return Term(
+        coefficient(t1) * coefficient(t2),
+        basis_element(t1) * basis_element(t2),
+    )
+end
+function Base.:*(α::Int, t::Term{Int,Monomial})
+    return Term(α * coefficient(t), basis_element(t))
+end
+function Base.:*(t::Term{Int,Monomial}, α::Int)
+    return Term(coefficient(t) * α, basis_element(t))
+end
+function Base.:*(α::Int, m::Monomial)
+    return Term(α, m)
+end
+SA.star(m::Monomial) = m
+SA.star(t::Term{Int,Monomial}) = Term(coefficient(t), star(basis_element(t)))
+Base.conj(t::Term{Int,Monomial}) = star(t)
+
 @testset "Term" begin
     @testset "Accessors" begin
         t = Term(3.0, Monomial((1, 2)))
@@ -176,9 +197,14 @@ end
         @test t3 === t
     end
 
-    # ^(::Term, ::Integer) is defined in SA but requires Base.:*(::Term, ::Term)
-    # which is provided by downstream packages (e.g., MultivariatePolynomials).
-    # Tested there.
+    @testset "^ (power)" begin
+        t = Term(2, Monomial((1, 0)))
+        @test t^1 == t
+        t2 = t^2
+        @test coefficient(t2) == 4
+        @test basis_element(t2) == Monomial((2, 0))
+        @test t^0 == one(t)
+    end
 
     @testset "broadcastable / ndims" begin
         t = Term(2, Monomial((1, 0)))
@@ -189,12 +215,14 @@ end
 
     @testset "dot" begin
         # dot(::Term, ::Term) computes coeff*coeff * (basis*basis)
-        t1 = Term(MutableInt(2), MutableInt(3))
-        t2 = Term(MutableInt(4), MutableInt(5))
+        t1 = Term(2, Monomial((1, 0)))
+        t2 = Term(3, Monomial((0, 1)))
         d = LinearAlgebra.dot(t1, t2)
-        @test d == MutableInt(2 * 4 * 3 * 5)
-        # dot(scalar, Term) and dot(Term, scalar) need *(scalar, Term)
-        # which is provided by downstream (MultivariatePolynomials).
+        @test d == 6 * Monomial((1, 1))
+        # dot(scalar, Term)
+        @test LinearAlgebra.dot(2, t1) == Term(4, Monomial((1, 0)))
+        # dot(Term, scalar) uses star(t) * x
+        @test LinearAlgebra.dot(t1, 3) == Term(6, Monomial((1, 0)))
     end
 
     @testset "various coefficient types" begin
