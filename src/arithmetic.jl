@@ -75,6 +75,20 @@ end
 
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
+# Informative error for the in-place operations below, which require their
+# operands to share a basis (they do not promote, unlike `*`, `+`, `-`).
+function _assert_same_basis(op, A::AlgebraElement, B::AlgebraElement)
+    parent(A) == parent(B) && return
+    throw(
+        ArgumentError(
+            "cannot `$op` two `AlgebraElement`s over different bases in place: their " *
+            "bases differ. Bring them to a common basis first, e.g. " *
+            "`_A, _B = StarAlgebras.promote_bases(A, B)`, or use the `*`, `+`, `-` " *
+            "operators which promote automatically.",
+        ),
+    )
+end
+
 # mutable API
 
 function MA.operate!(::typeof(zero), a::AlgebraElement)
@@ -127,8 +141,8 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
+    _assert_same_basis(+, X, Y)
     @assert parent(res) == parent(X)
-    @assert parent(X) == parent(Y)
     MA.operate_to!(coeffs(res), +, coeffs(X), coeffs(Y))
     return res
 end
@@ -139,8 +153,8 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
+    _assert_same_basis(-, X, Y)
     @assert parent(res) == parent(X)
-    @assert parent(X) == parent(Y)
     MA.operate_to!(coeffs(res), -, coeffs(X), coeffs(Y))
     return res
 end
@@ -151,8 +165,8 @@ function MA.operate_to!(
     A::AlgebraElement,
     B::AlgebraElement,
 )
+    _assert_same_basis(*, A, B)
     @assert parent(res) == parent(A)
-    @assert parent(A) == parent(B)
     mstr = mstructure(res)
     MA.operate_to!(coeffs(res), mstr, coeffs(A), coeffs(B), true)
     return res
