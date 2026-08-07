@@ -79,7 +79,7 @@ Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 # operands to share a basis (they do not promote, unlike `*`, `+`, `-`).
 function _assert_same_basis(op, A::AlgebraElement, B::AlgebraElement)
     parent(A) == parent(B) && return
-    throw(
+    return throw(
         ArgumentError(
             "cannot `$op` two `AlgebraElement`s over different bases in place: their " *
             "bases differ. Bring them to a common basis first, e.g. " *
