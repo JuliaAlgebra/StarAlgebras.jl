@@ -80,7 +80,8 @@ Base.parent(a::AlgebraElement) = a.parent
 Base.in(x::AlgebraElement, A::AbstractStarAlgebra) = parent(x) == A
 
 mstructure(a::AlgebraElement) = mstructure(parent(a))
-Base.eltype(::Type{A}) where {A<:AlgebraElement} = value_type(MA.promote_operation(coeffs, A))
+Base.eltype(::Type{A}) where {A<:AlgebraElement} =
+    value_type(MA.promote_operation(coeffs, A))
 Base.eltype(a::AlgebraElement) = eltype(typeof(a))
 function MA.promote_operation(::typeof(coeffs), ::Type{AlgebraElement{T,A,V}}) where {T,A,V}
     return V
@@ -115,33 +116,31 @@ function AlgebraElement(
 end
 
 ### constructing elements
-function __coerce(A::AbstractStarAlgebra, (x,v)::Pair{K, V}) where {K,V}
+function __coerce(A::AbstractStarAlgebra, (x, v)::Pair{K,V}) where {K,V}
     if iszero(v)
         return AlgebraElement(zero_coeffs(V, basis(A)), A)
     elseif x in basis(A)
         cfs = zero_coeffs(V, basis(A))
         cfs[basis(A)[x]] = v
         return AlgebraElement(cfs, A)
-    # elseif x in object(A)
-    #     sc = SparseCoefficients([x], [v])
-    #     return AlgebraElement(
-    #         coeffs(sc, DiracBasis(object(A)), basis(A)),
-    #         A,
-    #     )
+        # elseif x in object(A)
+        #     sc = SparseCoefficients([x], [v])
+        #     return AlgebraElement(
+        #         coeffs(sc, DiracBasis(object(A)), basis(A)),
+        #         A,
+        #     )
     else
         throw(ArgumentError("cannot coerce $x to $A"))
     end
 end
 
 Base.zero(A::AbstractStarAlgebra) = zero(Int, A)
-Base.zero(T::Type, A::AbstractStarAlgebra) =
-    __coerce(A, (one(object(A)) => zero(T)))
+Base.zero(T::Type, A::AbstractStarAlgebra) = __coerce(A, (one(object(A)) => zero(T)))
 Base.zero(a::AlgebraElement) = (b = similar(a); return MA.operate!(zero, b))
 Base.iszero(a::AlgebraElement) = iszero(coeffs(a))
 
 Base.one(A::AbstractStarAlgebra) = one(Int, A)
-Base.one(T::Type, A::AbstractStarAlgebra) =
-    __coerce(A, (one(object(A)) => one(T)))
+Base.one(T::Type, A::AbstractStarAlgebra) = __coerce(A, (one(object(A)) => one(T)))
 Base.one(a::AlgebraElement) = one(eltype(a), parent(a))
 
 function Base.isone(a::AlgebraElement)
@@ -154,7 +153,11 @@ function Base.isone(a::AlgebraElement)
         end
         return true
     else
-        throw(ArgumentError("basis of $A does not contain $id; `one` and `isone` are unsupported"))
+        throw(
+            ArgumentError(
+                "basis of $A does not contain $id; `one` and `isone` are unsupported",
+            ),
+        )
         # return a == one(a)
     end
 end
@@ -186,6 +189,9 @@ end
 
 # Useful for instance if `V` is `SparseCoefficients` with `Tuple`
 # and `U` is `SparseCoefficients` with `Vector`
-function Base.convert(::Type{AlgebraElement{T,A,U}}, a::AlgebraElement{T,A,V}) where {A,T,U,V}
+function Base.convert(
+    ::Type{AlgebraElement{T,A,U}},
+    a::AlgebraElement{T,A,V},
+) where {A,T,U,V}
     return AlgebraElement(convert(U, coeffs(a)), parent(a))
 end

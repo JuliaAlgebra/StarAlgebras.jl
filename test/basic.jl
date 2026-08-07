@@ -32,8 +32,14 @@ Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
     @test a == a
     @test a !== StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ]))
     @test a == StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ]))
-    @test AlgebraElement([2, -1], a) !== AlgebraElement([2, -1], StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ])))
-    @test AlgebraElement([2, -1], a) == AlgebraElement([2, -1], StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ])))
+    @test AlgebraElement([2, -1], a) !== AlgebraElement(
+        [2, -1],
+        StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ])),
+    )
+    @test AlgebraElement([2, -1], a) == AlgebraElement(
+        [2, -1],
+        StarAlgebra(PlaceholderObject(), DummyBasis(Irrational[π, ℯ])),
+    )
     @test a != StarAlgebra(1, b)
     b2 = DummyBasis(Irrational[π, Irrational{:γ}()])
     @test a != StarAlgebra(PlaceholderObject(), b2)
@@ -56,10 +62,7 @@ Base.iterate(b::DummyBasis, args...) = iterate(b.elements, args...)
     @test B != StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 1:2))
     @test B != StarAlgebra(1.0, SA.sub_basis(SA.sub_basis(m, Irrational[π, ℯ]), 2:2))
 
-    el = SA.AlgebraElement(
-        [Variable()],
-        StarAlgebra(1.0, SA.FixedBasis([2.0])),
-    )
+    el = SA.AlgebraElement([Variable()], StarAlgebra(1.0, SA.FixedBasis([2.0])))
     coeffs23 = SA.coeffs(el, SA.FixedBasis([2.0, 3.0]))
     @test coeffs23 == sparsevec([1], [Variable()], 2)
 end

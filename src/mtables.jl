@@ -19,10 +19,7 @@ struct MTable{T,I<:Integer,Ms<:MultiplicativeStructure{T,I},M<:AbstractMatrix} <
     lock::Base.Threads.SpinLock
 end
 
-function MTable(
-    mstr::MultiplicativeStructure{T,I},
-    dims::NTuple{2,I},
-) where {T,I<:Integer}
+function MTable(mstr::MultiplicativeStructure{T,I}, dims::NTuple{2,I}) where {T,I<:Integer}
     bas = basis(mstr)
     Base.require_one_based_indexing(bas)
 
@@ -40,10 +37,7 @@ function MTable(
     return MTable(mstr, table, Base.Threads.SpinLock())
 end
 
-function MTable(
-    basis::AbstractBasis{T,I},
-    dims::NTuple{2,I},
-) where {T,I<:Integer}
+function MTable(basis::AbstractBasis{T,I}, dims::NTuple{2,I}) where {T,I<:Integer}
     return MTable(DiracMStructure(basis, *), dims)
 end
 
@@ -139,10 +133,7 @@ end
 
 # TODO promote_with_map
 
-function promote_basis_with_maps(
-    a::MTable,
-    b::MTable,
-)
+function promote_basis_with_maps(a::MTable, b::MTable)
     _a, _b = promote_basis_with_maps(a.mstr, b.mstr)
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end

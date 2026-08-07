@@ -18,9 +18,7 @@
 
     G = (one(RG) - RG(g))
     @test G' == one(RG) - RG(inv(g))
-    @test G' * G ==
-          MA.operate_to!(zero(G), *, G', G) ==
-          2one(RG) - RG(g) - RG(g)'
+    @test G' * G == MA.operate_to!(zero(G), *, G', G) == 2one(RG) - RG(g) - RG(g)'
     @test star(G * G) == G' * G'
 
     @testset "Sums of hermitian squares" begin
@@ -38,8 +36,7 @@
 
         @test -(2𝕀 - RG(g * h) - RG(g * h)') + 2G' * G + 2H' * H == X' * X
         @test (2𝕀 - RG(g * h) - RG(g * h)') == GH' * GH
-        @test -(2𝕀 - RG(g * h * k) - RG(g * h * k)') + 2GH' * GH + 2K' * K ==
-              Y' * Y
+        @test -(2𝕀 - RG(g * h * k) - RG(g * h * k)') + 2GH' * GH + 2K' * K == Y' * Y
         @test -(2𝕀 - RG(g * h * k) - RG(g * h * k)') +
               2(GH' * GH - 2G' * G - 2H' * H) +
               4G' * G +
@@ -47,30 +44,19 @@
               2K' * K == Y' * Y
 
         @test GH' * GH - 2G' * G - 2H' * H == -X' * X
-        @test -(2𝕀 - RG(g * h * k) - RG(g * h * k)') +
-              4G' * G +
-              4H' * H +
-              2K' * K == 2X' * X + Y' * Y
+        @test -(2𝕀 - RG(g * h * k) - RG(g * h * k)') + 4G' * G + 4H' * H + 2K' * K ==
+              2X' * X + Y' * Y
 
-        @test GH' * GH ==
-              2G' * G + 2H' * H - (2𝕀 - RG(g)' - RG(h))' * (2𝕀 - RG(g)' - RG(h))
-        @test KL' * KL ==
-              2K' * K + 2L' * L - (2𝕀 - RG(k)' - RG(l))' * (2𝕀 - RG(k)' - RG(l))
+        @test GH' * GH == 2G' * G + 2H' * H - (2𝕀 - RG(g)' - RG(h))' * (2𝕀 - RG(g)' - RG(h))
+        @test KL' * KL == 2K' * K + 2L' * L - (2𝕀 - RG(k)' - RG(l))' * (2𝕀 - RG(k)' - RG(l))
 
         @test -(2𝕀 - RG(g * h * k * l)' - RG(g * h * k * l)) +
               2 * GH' * GH +
-              2 * KL' * KL ==
-              (2𝕀 - RG(g * h)' - RG(k * l))' * (2𝕀 - RG(g * h)' - RG(k * l))
+              2 * KL' * KL == (2𝕀 - RG(g * h)' - RG(k * l))' * (2𝕀 - RG(g * h)' - RG(k * l))
 
         @test -(2𝕀 - star(RG(g * h * k * l)) - RG(g * h * k * l)) +
-              2(
-                  2G' * G + 2H' * H -
-                  (2𝕀 - RG(g)' - RG(h))' * (2𝕀 - RG(g)' - RG(h))
-              ) +
-              2(
-                  2K' * K + 2L' * L -
-                  (2𝕀 - RG(k)' - RG(l))' * (2𝕀 - RG(k)' - RG(l))
-              ) ==
+              2(2G' * G + 2H' * H - (2𝕀 - RG(g)' - RG(h))' * (2𝕀 - RG(g)' - RG(h))) +
+              2(2K' * K + 2L' * L - (2𝕀 - RG(k)' - RG(l))' * (2𝕀 - RG(k)' - RG(l))) ==
               (2𝕀 - RG(g * h)' - RG(k * l))' * (2𝕀 - RG(g * h)' - RG(k * l))
 
         @test -(2𝕀 - star(RG(g * h * k * l)) - RG(g * h * k * l)) +
@@ -82,8 +68,7 @@
 
         @test -(2𝕀 - RG(g * h * k * l)' - RG(g * h * k * l)) +
               2(2𝕀 - RG(g * h * k)' - RG(g * h * k)) +
-              2L' * L ==
-              (2𝕀 - RG(g * h * k)' - RG(l))' * (2𝕀 - RG(g * h * k)' - RG(l))
+              2L' * L == (2𝕀 - RG(g * h * k)' - RG(l))' * (2𝕀 - RG(g * h * k)' - RG(l))
 
         @test 2𝕀 - RG(g * h * k)' - RG(g * h * k) ==
               2GH' * GH + 2K' * K -
@@ -94,8 +79,7 @@
                   2GH' * GH + 2K' * K -
                   (2𝕀 - RG(g * h)' - RG(k))' * (2𝕀 - RG(g * h)' - RG(k))
               ) +
-              2L' * L ==
-              (2𝕀 - RG(g * h * k)' - RG(l))' * (2𝕀 - RG(g * h * k)' - RG(l))
+              2L' * L == (2𝕀 - RG(g * h * k)' - RG(l))' * (2𝕀 - RG(g * h * k)' - RG(l))
 
         @test -(2𝕀 - RG(g * h * k * l)' - RG(g * h * k * l)) +
               2(2GH' * GH + 2K' * K) +
@@ -112,9 +96,7 @@
               2(2𝕀 - RG(g * h)' - RG(k))' * (2𝕀 - RG(g * h)' - RG(k)) +
               4(2𝕀 - RG(g)' - RG(h))' * (2𝕀 - RG(g)' - RG(h))
 
-        @test -(2𝕀 - RG(g * h * k * l)' - RG(g * h * k * l)) +
-              2GH' * GH +
-              2KL' * KL ==
+        @test -(2𝕀 - RG(g * h * k * l)' - RG(g * h * k * l)) + 2GH' * GH + 2KL' * KL ==
               (2𝕀 - RG(g * h)' - RG(k * l))' * (2𝕀 - RG(g * h)' - RG(k * l))
 
         @test -(2𝕀 - RG(g * h * k * l)' - RG(g * h * k * l)) +

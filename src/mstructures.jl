@@ -8,10 +8,7 @@ struct ProductNotWellDefined <: Exception
 end
 
 function Base.showerror(io::IO, ex::ProductNotWellDefined)
-    print(
-        io,
-        "Product of elements $(ex.i) and $(ex.j) is not defined on the basis",
-    )
+    print(io, "Product of elements $(ex.i) and $(ex.j) is not defined on the basis")
     print(io, " or the multiplicative structure could not be completed")
     if isdefined(ex, :msg)
         print(io, ": $(ex.msg)")
@@ -78,11 +75,7 @@ Canonicalization of the result happens only once at the end of the operation.
 """
 function MA.operate_to!(res, ms::MultiplicativeStructure, A, B, α = true)
     if any(Base.Fix1(===, res), (A, B))
-        throw(
-            ArgumentError(
-                "Aliasing arguments in multiplication is not supported",
-            ),
-        )
+        throw(ArgumentError("Aliasing arguments in multiplication is not supported"))
     end
     MA.operate!(zero, res)
     res = MA.operate!(UnsafeAddMul(ms), res, A, B, α)
@@ -108,12 +101,7 @@ end
 function MA.operate!(op::UnsafeAddMul, res, A, B, α)
     for (kA, vA) in nonzero_pairs(A)
         for (kB, vB) in nonzero_pairs(B)
-            MA.operate!(
-                op,
-                res,
-                op.structure(kA, kB),
-                MA.@rewrite(α * vA * vB),
-            )
+            MA.operate!(op, res, op.structure(kA, kB), MA.@rewrite(α * vA * vB))
         end
     end
     return res
@@ -128,7 +116,10 @@ function Base.:(==)(a::DiracMStructure, b::DiracMStructure)
     return a.op == b.op && a.basis == b.basis
 end
 
-function MA.promote_operation(::typeof(basis), ::Type{<:DiracMStructure{T,I,B}}) where {T,I,B}
+function MA.promote_operation(
+    ::typeof(basis),
+    ::Type{<:DiracMStructure{T,I,B}},
+) where {T,I,B}
     return B
 end
 
@@ -151,27 +142,17 @@ function (mstr::DiracMStructure{T,T})(x::T, y::T, ::Type{T}) where {T}
     return SparseCoefficients((xy,), (1,))
 end
 
-function promote_with_map(
-    a::DiracMStructure,
-    b::AbstractBasis,
-    map,
-)
+function promote_with_map(a::DiracMStructure, b::AbstractBasis, map)
     # We assume `a.op` doesn't need to be mapped
     return DiracMStructure(b, a.op), map
 end
 
-function promote_basis_with_maps(
-    a::DiracMStructure,
-    b::DiracMStructure,
-)
+function promote_basis_with_maps(a::DiracMStructure, b::DiracMStructure)
     _a, _b = promote_basis_with_maps(basis(a), basis(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 
-function promote_basis_with_maps(
-    a::DiracMStructure,
-    b::AbstractBasis,
-)
+function promote_basis_with_maps(a::DiracMStructure, b::AbstractBasis)
     _a, _b = promote_basis_with_maps(basis(a), b)
     return maybe_promote(a, _a...), _b
 end

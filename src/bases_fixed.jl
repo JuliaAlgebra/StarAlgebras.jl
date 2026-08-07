@@ -1,8 +1,7 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <:
-               ExplicitBasis{T,I}
+mutable struct FixedBasis{T,I,V<:AbstractVector{T}} <: ExplicitBasis{T,I}
     elts::V
     relts::Dict{T,I}
     starof::Vector{I}
@@ -72,7 +71,8 @@ function FixedBasis{T,I}(basis::AbstractBasis{T}; n::Integer) where {T,I}
     return FixedBasis{T,I}(collect(Iterators.take(basis, n)))
 end
 
-FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} = FixedBasis{T,typeof(n)}(basis; n)
+FixedBasis(basis::AbstractBasis{T}; n::Integer) where {T} =
+    FixedBasis{T,typeof(n)}(basis; n)
 
 Base.in(x, b::FixedBasis) = haskey(b.relts, x)
 Base.firstindex(b::FixedBasis) = firstindex(b.elts)
@@ -103,13 +103,16 @@ representing the sub-basis elements, `parent_basis` is the parent basis from
 which the sub-basis is derived, and `is_sorted` indicates whether the keys are
 sorted.
 """
-struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <:
-       ExplicitBasis{T,I}
+struct SubBasis{T,I,K,B<:AbstractBasis{T,K},V<:AbstractVector{K}} <: ExplicitBasis{T,I}
     parent_basis::B
     keys::V
     is_sorted::Bool
     function SubBasis(parent_basis::AbstractBasis{T,K}, keys::AbstractVector{K}) where {T,K}
-        return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(parent_basis, keys, issorted(keys, lt=comparable(parent_basis)))
+        return new{T,keytype(keys),K,typeof(parent_basis),typeof(keys)}(
+            parent_basis,
+            keys,
+            issorted(keys, lt = comparable(parent_basis)),
+        )
     end
 end
 
@@ -186,7 +189,7 @@ function Base.get(b::SubBasis{T}, x::T, default) where {T}
     return key_index(b, b.parent_basis[x], default)
 end
 
-Base.in(x::T, b::SubBasis{T}) where T = !isnothing(get(b, x, nothing))
+Base.in(x::T, b::SubBasis{T}) where {T} = !isnothing(get(b, x, nothing))
 Base.haskey(b::SubBasis, i::Integer) = i in eachindex(b.keys)
 
 Base.firstindex(b::SubBasis) = firstindex(b.keys)

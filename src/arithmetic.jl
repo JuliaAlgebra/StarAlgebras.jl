@@ -30,7 +30,11 @@ Base.:(//)(X::AlgebraElement, a::Number) = 1 // a * X
 function Base.:-(X::AlgebraElement)
     return MA.operate_to!(_preallocate_output(*, X, -1), -, X)
 end
-function MA.promote_operation(::typeof(*), ::Type{T}, ::Type{A}) where {T<:Number, A<:AlgebraElement}
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{T},
+    ::Type{A},
+) where {T<:Number,A<:AlgebraElement}
     return algebra_promote_operation(*, A, T)
 end
 function Base.:*(a::Any, X::AlgebraElement)
@@ -39,22 +43,20 @@ end
 function Base.:div(X::AlgebraElement, a::Number)
     return MA.operate_to!(_preallocate_output(div, X, a), div, X, a)
 end
-function Base.:*(
-    a::T,
-    X::AlgebraElement{C,A},
-) where {T,C,O,A<:AbstractStarAlgebra{O,T}}
+function Base.:*(a::T, X::AlgebraElement{C,A}) where {T,C,O,A<:AbstractStarAlgebra{O,T}}
     return MA.operate_to!(similar(X), __lmul, a, X)
 end
-function Base.:*(
-    X::AlgebraElement{C,A},
-    a::T,
-) where {C,T,O,A<:AbstractStarAlgebra{O,T}}
+function Base.:*(X::AlgebraElement{C,A}, a::T) where {C,T,O,A<:AbstractStarAlgebra{O,T}}
     return MA.operate_to!(similar(X), __rmul, a, X)
 end
 
 for op in [:+, :-, :*]
     @eval begin
-        function MA.promote_operation(::typeof($op), ::Type{X}, ::Type{Y}) where {X<:AlgebraElement,Y<:AlgebraElement}
+        function MA.promote_operation(
+            ::typeof($op),
+            ::Type{X},
+            ::Type{Y},
+        ) where {X<:AlgebraElement,Y<:AlgebraElement}
             return algebra_promote_operation($op, X, Y)
         end
         function Base.$op(X::AlgebraElement, Y::AlgebraElement)
@@ -73,23 +75,13 @@ function MA.operate!(::typeof(zero), a::AlgebraElement)
     return a
 end
 
-function MA.operate_to!(
-    res::AlgebraElement,
-    ::typeof(*),
-    a::Any,
-    X::AlgebraElement,
-)
+function MA.operate_to!(res::AlgebraElement, ::typeof(*), a::Any, X::AlgebraElement)
     @assert parent(res) === parent(X)
     MA.operate_to!(coeffs(res), *, a, coeffs(X))
     return res
 end
 
-function MA.operate_to!(
-    res::AlgebraElement,
-    ::typeof(div),
-    X::AlgebraElement,
-    a::Number,
-)
+function MA.operate_to!(res::AlgebraElement, ::typeof(div), X::AlgebraElement, a::Number)
     @assert parent(res) === parent(X)
     MA.operate_to!(coeffs(res), div, coeffs(X), a)
     return res
@@ -140,7 +132,7 @@ function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
     A::AlgebraElement,
-    B::AlgebraElement
+    B::AlgebraElement,
 )
     @assert parent(res) == parent(A)
     @assert parent(A) == parent(B)

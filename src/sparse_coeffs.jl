@@ -8,7 +8,11 @@ struct SparseCoefficients{K,V,Vk,Vv,L} <: AbstractCoefficients{K,V}
 end
 
 function SparseCoefficients(elts::Ks, vals::Vs, isless = isless) where {Ks,Vs}
-    return SparseCoefficients{eltype(elts),eltype(vals),Ks,Vs,typeof(isless)}(elts, vals, isless)
+    return SparseCoefficients{eltype(elts),eltype(vals),Ks,Vs,typeof(isless)}(
+        elts,
+        vals,
+        isless,
+    )
 end
 
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
@@ -112,7 +116,10 @@ _similar(x, ::Type{T}) where {T} = similar(x, T)
 _similar_type(::Type{<:Tuple}, ::Type{T}) where {T} = Vector{T}
 _similar_type(::Type{V}, ::Type{T}) where {V,T} = similar_type(V, T)
 
-function similar_type(::Type{SparseCoefficients{K,V,Vk,Vv,L}}, ::Type{T}) where {K,V,Vk,Vv,T,L}
+function similar_type(
+    ::Type{SparseCoefficients{K,V,Vk,Vv,L}},
+    ::Type{T},
+) where {K,V,Vk,Vv,T,L}
     return SparseCoefficients{K,T,_similar_type(Vk, K),_similar_type(Vv, T),L}
 end
 
@@ -175,7 +182,10 @@ end
 # `{...,L}` is needed to force Julia specialize on the function type
 # Otherwise, we get one allocation when we call `issorted`
 # See https://docs.julialang.org/en/v1/manual/performance-tips/#Be-aware-of-when-Julia-avoids-specializing
-function MA.operate!(::typeof(canonical), res::SparseCoefficients{K,V,Vk,Vv,L}) where {K,V,Vk,Vv,L}
+function MA.operate!(
+    ::typeof(canonical),
+    res::SparseCoefficients{K,V,Vk,Vv,L},
+) where {K,V,Vk,Vv,L}
     sorted = issorted(res.basis_elements; lt = res.isless)
     distinct = allunique(res.basis_elements)
     if sorted && distinct && !any(iszero, res.values)
@@ -189,7 +199,7 @@ function MA.operate!(::typeof(canonical), res::SparseCoefficients{K,V,Vk,Vv,L}) 
     end
 
     todelete = BitSet()
-    for i in firstindex(res.basis_elements):lastindex(res.basis_elements)-1
+    for i = firstindex(res.basis_elements):(lastindex(res.basis_elements)-1)
         if iszero(res.values[i])
             push!(todelete, i)
         elseif res.basis_elements[i] == res.basis_elements[i+1]
@@ -213,11 +223,7 @@ function MA.operate!(::typeof(zero), s::SparseCoefficients)
     return s
 end
 
-function MA.operate_to!(
-    res::SparseCoefficients,
-    ::typeof(-),
-    X::SparseCoefficients,
-)
+function MA.operate_to!(res::SparseCoefficients, ::typeof(-), X::SparseCoefficients)
     return MA.operate_to!(res, *, X, -1)
 end
 

@@ -87,19 +87,14 @@ end
     @test collect(explicit) == [1.0, 2.0, 3.0]
     @test haskey(explicit, 3)
     m = Bool[
-        true  false true
-        false true  false
-        true  false true
+        true false true
+        false true false
+        true false true
     ]
     Q = SA.QuadraticForm(Gram(m, explicit))
     A = SA.StarAlgebra(PlaceholderObject(), implicit)
-    @test A(Q) == SA.AlgebraElement(
-        SA.SparseCoefficients(
-            [1.0, 3.0, 4.0, 9.0],
-            [1, 2, 1, 1],
-        ),
-        A,
-    )
+    @test A(Q) ==
+          SA.AlgebraElement(SA.SparseCoefficients([1.0, 3.0, 4.0, 9.0], [1, 2, 1, 1]), A)
     mt = SA.MTable(implicit, (0, 0))
     @test mt(2.0, 3.0) == SA.SparseCoefficients([6.0], [1])
     @test mt(2.0, 3.0) == mt(2, 3)
@@ -121,18 +116,15 @@ end
         @test mult(a, b, Int) == mult(2, 3)
         @test mult(a, b) == mult(2, 3, ChebyPoly)
         m = [
-            2      1 // 2 0
-            1 // 2 0      2
-            0      2      1
+            2 1 // 2 0
+            1 // 2 0 2
+            0 2 1
         ]
         A = SA.StarAlgebra(PlaceholderObject(), mult)
         for explicit in [sub, fixed]
             Q = SA.QuadraticForm(Gram(m, explicit))
             @test A(Q) == SA.AlgebraElement(
-                SA.SparseCoefficients(
-                    [0, 1, 2, 3, 5, 6],
-                    [3//2, 5//2, 1, 1//2, 2, 1//2],
-                ),
+                SA.SparseCoefficients([0, 1, 2, 3, 5, 6], [3//2, 5//2, 1, 1//2, 2, 1//2]),
                 A,
             )
         end

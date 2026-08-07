@@ -45,34 +45,34 @@ import StarAlgebras as SA
     @test coeffs(one(x)) == coeffs(one(RG))
 
     # FIXME Broken
-#    @testset "Augmented basis" begin
-#        ad = SA.AugmentedBasis(db)
-#        @test SA.mstructure(ad) == SA.AugmentedMStructure(SA.mstructure(db))
-#        @test ad[SA.Augmented(h)] isa SA.Augmented
-#        @test sprint(show, ad[SA.Augmented(h)]) == "(-1·()+1·(1,2,4,5))"
-#
-#        @test !(h in ad)
-#        @test SA.Augmented(h) in ad
-#
-#        IG = SA.StarAlgebra(G, ad)
-#
-#        axcfs = SA.coeffs(x, basis(IG))
-#        aycfs = SA.coeffs(y, basis(IG))
-#        azcfs = SA.coeffs(z, basis(IG))
-#        ax = SA.AlgebraElement(axcfs, IG)
-#        ay = SA.AlgebraElement(aycfs, IG)
-#        az = SA.AlgebraElement(azcfs, IG)
-#
-#        @test coeffs(ax * ay) == SA.coeffs(x * y, basis(IG))
-#        @test coeffs(ax * az) == SA.coeffs(x * z, basis(IG))
-#        @test SA.aug(ax) == 0
-#        @test star(ax) * star(ay) == star(ay) * star(ax)
-#
-#        @test length(ad) == length(db) - 1
-#        @test Set(ad) == Set(SA.Augmented(g) for g in db if !isone(g))
-#    end
+    #    @testset "Augmented basis" begin
+    #        ad = SA.AugmentedBasis(db)
+    #        @test SA.mstructure(ad) == SA.AugmentedMStructure(SA.mstructure(db))
+    #        @test ad[SA.Augmented(h)] isa SA.Augmented
+    #        @test sprint(show, ad[SA.Augmented(h)]) == "(-1·()+1·(1,2,4,5))"
+    #
+    #        @test !(h in ad)
+    #        @test SA.Augmented(h) in ad
+    #
+    #        IG = SA.StarAlgebra(G, ad)
+    #
+    #        axcfs = SA.coeffs(x, basis(IG))
+    #        aycfs = SA.coeffs(y, basis(IG))
+    #        azcfs = SA.coeffs(z, basis(IG))
+    #        ax = SA.AlgebraElement(axcfs, IG)
+    #        ay = SA.AlgebraElement(aycfs, IG)
+    #        az = SA.AlgebraElement(azcfs, IG)
+    #
+    #        @test coeffs(ax * ay) == SA.coeffs(x * y, basis(IG))
+    #        @test coeffs(ax * az) == SA.coeffs(x * z, basis(IG))
+    #        @test SA.aug(ax) == 0
+    #        @test star(ax) * star(ay) == star(ay) * star(ax)
+    #
+    #        @test length(ad) == length(db) - 1
+    #        @test Set(ad) == Set(SA.Augmented(g) for g in db if !isone(g))
+    #    end
 
-    @testset "Random elements (seed=$seed)" for seed in 0:20
+    @testset "Random elements (seed=$seed)" for seed = 0:20
         Random.seed!(seed)
         rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
         r = SA.AlgebraElement(rcfs, RG)
@@ -89,7 +89,7 @@ import StarAlgebras as SA
 
         fRG = SA.StarAlgebra(G, SA.MTable(fb, (m, m)))
 
-        @testset "seed=$seed" for seed in 0:20
+        @testset "seed=$seed" for seed = 0:20
             Random.seed!(seed)
             rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
             r = SA.algebra_element(rcfs, RG)
@@ -142,7 +142,7 @@ import StarAlgebras as SA
         @test !(a^3 in subb)
         @test collect(subb) == S
         smstr = SA.DiracMStructure(subb, *)
-        @test only(smstr(1, 2).basis_elements) == subb[subb[1] * subb[2]]
+        @test only(smstr(1, 2).basis_elements) == subb[subb[1]*subb[2]]
         @test only(smstr(1, 2, eltype(subb)).basis_elements) == subb[1] * subb[2]
 
         sbRG = SA.StarAlgebra(G, smstr)
@@ -183,7 +183,7 @@ import StarAlgebras as SA
             @test coeffs(one(x)) == coeffs(one(sRG))
         end
     end
-    @testset "Algebra Elements Basis (seed = $seed)" for seed in 0:200
+    @testset "Algebra Elements Basis (seed = $seed)" for seed = 0:200
         Random.seed!(seed)
         S1 = unique!(collect(Iterators.take(G, 10)))
         S = unique!([a * b for a in S1 for b in S1])
