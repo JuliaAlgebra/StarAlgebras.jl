@@ -4,6 +4,7 @@
 # Example with Graded Lex Ordering
 using Test
 import StarAlgebras as SA
+import MutableArithmetics as MA
 
 @testset "Graded Lex" begin
     alg = bivariate_algebra()
@@ -102,5 +103,24 @@ end
         @test parent(_sub_y) == bas_bi
         @test _sub_y.is_sorted
         @test _sub_y.keys == [(0, 2), (0, 3)]
+    end
+
+    @testset "In-place operations do not promote" begin
+        # `MA.operate_to!` requires its operands to already share a basis, so
+        # it errors on `a` and `b` even though `+`, `-` and `*` promote them.
+        res = zero(a)
+        for op in (+, -, *)
+            err = Regex(
+                "cannot `\\$op` two `AlgebraElement`s over different bases.*promote_bases",
+            )
+            @test_throws err MA.operate_to!(res, op, a, b)
+        end
+
+        # Once brought to a common basis, the same operations go through.
+        _a, _b = SA.promote_bases(a, b)
+        for op in (+, -, *)
+            @test MA.operate_to!(zero(_a), op, _a, _b) == op(a, b)
+        end
+        @test MA.operate_to!(zero(a), +, a, a) == a + a
     end
 end
