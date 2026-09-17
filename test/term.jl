@@ -100,6 +100,26 @@ end
         # identity convert
         t3 = convert(typeof(t), t)
         @test t3 === t
+
+        ae = AlgebraElement(
+            SA.SparseCoefficients((t.index,), (coefficient(t),), grlex),
+            biv_alg,
+        )
+        @test convert(typeof(ae), ae) === ae
+        for T in (Rational{Int}, Float64)
+            R = SA.similar_type(typeof(SA.algebra_element(t)), T)
+            converted = convert(R, ae)
+            @test converted isa R
+            @test parent(converted) === biv_alg
+            @test SA.coeffs(converted)[t.index] == T(3)
+            @test SA.coeffs(converted).isless === grlex
+            @test convert(R, converted) === converted
+            @test convert(R, t) isa R
+            @test convert(R, t) == converted
+            @test iszero(convert(R, zero(t)))
+        end
+        fractional = SA.algebra_element(biv_term(1 // 2, t.index))
+        @test_throws InexactError convert(typeof(SA.algebra_element(t)), fractional)
     end
 
     @testset "broadcastable / ndims" begin

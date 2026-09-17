@@ -127,3 +127,10 @@ function algebra_element(t::Term)
     end
     return AlgebraElement(c, parent(t))
 end
+
+function Base.convert(
+    ::Type{AlgebraElement{T,A,C}},
+    t::Term{S,A,I},
+) where {T,A,C,S,I}
+    return convert(AlgebraElement{T,A,C}, algebra_element(t))
+end
