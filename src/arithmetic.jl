@@ -24,25 +24,40 @@ end
 
 # module structure:
 
-Base.:*(X::AlgebraElement, a::Number) = a * X
-Base.:(/)(X::AlgebraElement, a::Number) = inv(a) * X
-Base.:(//)(X::AlgebraElement, a::Number) = 1 // a * X
-
 function Base.:-(X::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(*, X, -1), -, X)
+    return MA.operate_to!(similar(X, MA.promote_operation(-, eltype(X))), -, X)
 end
 function MA.promote_operation(
     ::typeof(*),
-    ::Type{T},
+    ::Type{<:Union{T,Number}},
     ::Type{A},
-) where {T<:Number,A<:AlgebraElement}
+) where {T,A<:AlgebraElement{T}}
     return algebra_promote_operation(*, A, T)
 end
-function Base.:*(a::Any, X::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(*, X, a), *, a, X)
+function MA.promote_operation(
+    op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
+    ::Type{A},
+    ::Type{<:Union{T,Number}},
+) where {T,A<:AlgebraElement{T}}
+    if op === (//)
+        return similar_type(A, Base.promote_op(op, T, T))
+    end
+    return algebra_promote_operation(op, A, T)
 end
-function Base.:div(X::AlgebraElement, a::Number)
-    return MA.operate_to!(_preallocate_output(div, X, a), div, X, a)
+function _scalar_lmul(a, X::AlgebraElement{T}) where {T}
+    c = convert(T, a)
+    return MA.operate_to!(_preallocate_output(*, X, c), *, c, X)
+end
+function _scalar_right(op, X::AlgebraElement{T}, a) where {T}
+    c = convert(T, a)
+    R = eltype(MA.promote_operation(op, typeof(X), T))
+    return MA.operate_to!(similar(X, R), op, X, c)
+end
+Base.:*(a::Union{T,Number}, X::AlgebraElement{T}) where {T} = _scalar_lmul(a, X)
+for op in (:*, :/, ://, :div)
+    @eval function Base.$op(X::AlgebraElement{T}, a::Union{T,Number}) where {T}
+        return _scalar_right($op, X, a)
+    end
 end
 function Base.:*(
     a::T,
@@ -99,22 +114,22 @@ end
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
-    a::Any,
-    X::AlgebraElement,
-)
+    a::Union{T,Number},
+    X::AlgebraElement{T},
+) where {T}
     @assert parent(res) === parent(X)
-    MA.operate_to!(coeffs(res), *, a, coeffs(X))
+    MA.operate_to!(coeffs(res), *, convert(T, a), coeffs(X))
     return res
 end
 
 function MA.operate_to!(
     res::AlgebraElement,
-    ::typeof(div),
-    X::AlgebraElement,
-    a::Number,
-)
+    op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
+    X::AlgebraElement{T},
+    a::Union{T,Number},
+) where {T}
     @assert parent(res) === parent(X)
-    MA.operate_to!(coeffs(res), div, coeffs(X), a)
+    MA.operate_to!(coeffs(res), op, coeffs(X), convert(T, a))
     return res
 end
 

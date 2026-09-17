@@ -11,6 +11,20 @@ biv_term(coeff, exp::NTuple{2,Int}) = Term(biv_alg, exp, coeff)
 SA.star(m::Monomial) = m
 SA.star(t::Term{Int,typeof(biv_alg)}) = Term(t.algebra, t.index, coefficient(t))
 
+function SA.promote_bases_with_maps(a::ChebyMStruct, b::ChebyMStruct)
+    @assert SA.basis(a) === SA.basis(b)
+    return (a, nothing), (b, nothing)
+end
+
+struct MatrixCoefficient
+    value::Matrix{Int}
+end
+Base.zero(::Type{MatrixCoefficient}) = MatrixCoefficient(zeros(Int, 2, 2))
+Base.iszero(x::MatrixCoefficient) = iszero(x.value)
+function Base.:*(x::MatrixCoefficient, y::MatrixCoefficient)
+    return MatrixCoefficient(x.value * y.value)
+end
+
 @testset "Term" begin
     @testset "Accessors" begin
         t = biv_term(3.0, (1, 2))
@@ -26,6 +40,7 @@ SA.star(t::Term{Int,typeof(biv_alg)}) = Term(t.algebra, t.index, coefficient(t))
         @test iszero(z)
         @test coefficient(z) == 0
         @test basis_element(z) == Monomial((1, 0))
+        @test iszero(SA.algebra_element(z))
 
         @test iszero(biv_term(0.0, (0, 0)))
         @test !iszero(biv_term(1, (0, 0)))
@@ -100,16 +115,18 @@ SA.star(t::Term{Int,typeof(biv_alg)}) = Term(t.algebra, t.index, coefficient(t))
     end
 
     @testset "Term + Term → AlgebraElement" begin
-        t1 = biv_term(3, (1, 0))
-        t2 = biv_term(2, (0, 1))
+        t1 = biv_term(3, (2, 0))
+        t2 = biv_term(2, (0, 3))
         ae = t1 + t2
         @test ae isa SA.AlgebraElement
         # Check it has two terms
         c = SA.coeffs(ae)
         @test length(collect(SA.keys(c))) == 2
+        @test c.isless === grlex
+        @test collect(keys(c)) == [(2, 0), (0, 3)]
 
         # Same index: should combine
-        t3 = biv_term(5, (1, 0))
+        t3 = biv_term(5, (2, 0))
         ae2 = t1 + t3
         c2 = SA.coeffs(ae2)
         @test length(collect(SA.keys(c2))) == 1
@@ -122,6 +139,35 @@ SA.star(t::Term{Int,typeof(biv_alg)}) = Term(t.algebra, t.index, coefficient(t))
         @test ae isa SA.AlgebraElement
         c = SA.coeffs(ae)
         @test length(collect(SA.keys(c))) == 1
+        @test iszero(t1 - t1)
+    end
+
+    @testset "Term product can expand" begin
+        alg = SA.StarAlgebra(ChebyPoly(0), ChebyMStruct(cheby_basis()))
+        product = Term(alg, 2, 3 // 1) * Term(alg, 3, 2 // 1)
+        @test collect(keys(SA.coeffs(product))) == [1, 5]
+        @test collect(values(SA.coeffs(product))) == [3 // 1, 3 // 1]
+    end
+
+    @testset "AlgebraElement coefficient scaling" begin
+        p = SA.algebra_element(biv_term(2.5, (1, 0)))
+        for scaled in (2 * p, p * 2)
+            @test eltype(scaled) === Float64
+            @test SA.coeffs(scaled)[(1, 0)] == 5.0
+        end
+        @test iszero(0 * p)
+        @test_throws MethodError "x" * p
+        @test_throws MethodError p * "x"
+        p_int = SA.algebra_element(biv_term(2, (1, 0)))
+        @test_throws InexactError 0.5 * p_int
+        @test_throws InexactError p_int * 0.5
+        @test_throws InexactError MA.operate_to!(similar(p_int), *, p_int, 0.5)
+
+        a = MatrixCoefficient([1 2; 0 1])
+        p_matrix =
+            SA.algebra_element(biv_term(MatrixCoefficient([1 0; 3 1]), (1, 0)))
+        @test SA.coeffs(a * p_matrix)[(1, 0)].value == [7 2; 3 1]
+        @test SA.coeffs(p_matrix * a)[(1, 0)].value == [1 2; 3 7]
     end
 
     @testset "Term + AlgebraElement" begin
@@ -154,6 +200,7 @@ SA.star(t::Term{Int,typeof(biv_alg)}) = Term(t.algebra, t.index, coefficient(t))
         @test !iszero(tc)
         @test iszero(zero(tc))
         @test coefficient(zero(tc)) == 0 + 0im
+        @test LinearAlgebra.dot(tc, tc) == 5
 
         # Rational
         tr = biv_term(3 // 4, (2, 0))

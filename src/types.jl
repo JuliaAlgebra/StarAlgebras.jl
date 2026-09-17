@@ -179,6 +179,7 @@ end
 Base.one(a::AlgebraElement) = one(eltype(a), parent(a))
 
 function Base.isone(a::AlgebraElement)
+    iszero(a) && return false
     A = parent(a)
     id = one(object(A))
     if id in basis(A)

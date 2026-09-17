@@ -79,6 +79,7 @@ MA.operate!(::typeof(canonical), v::Vector) = v
 function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
     MA.operate!(canonical, ac1)
     MA.operate!(canonical, ac2)
+    length(keys(ac1)) == length(keys(ac2)) || return false
     all(x -> ==(x...), zip(keys(ac1), keys(ac2))) || return false
     all(x -> ==(x...), zip(values(ac1), values(ac2))) || return false
     return true
@@ -137,16 +138,28 @@ function LinearAlgebra.dot(ac::AbstractCoefficients, w::AbstractVector)
 end
 
 Base.zero(X::AbstractCoefficients) = MA.operate!(zero, similar(X))
-Base.:-(X::AbstractCoefficients) = MA.operate_to!(__prealloc(X, -1, *), -, X)
-Base.:*(X::AbstractCoefficients, a::Any) = a * X
-Base.:/(X::AbstractCoefficients, a::Number) = inv(a) * X
-Base.://(X::AbstractCoefficients, a::Number) = X * 1 // a
-
-function Base.:*(a::Any, X::AbstractCoefficients)
-    return MA.operate_to!(__prealloc(X, a, *), *, a, X)
+function Base.:-(X::AbstractCoefficients)
+    return MA.operate_to!(
+        similar(X, MA.promote_operation(-, value_type(X))),
+        -,
+        X,
+    )
 end
-function Base.:div(X::AbstractCoefficients, a::Number)
-    return MA.operate_to!(__prealloc(X, a, div), div, X, a)
+function Base.:*(a::Union{T,Number}, X::AbstractCoefficients{K,T}) where {K,T}
+    res = similar(X, MA.promote_operation(*, T, T))
+    return MA.operate_to!(res, *, convert(T, a), X)
+end
+for op in (:*, :/, ://, :div)
+    @eval function Base.$op(
+        X::AbstractCoefficients{K,T},
+        a::Union{T,Number},
+    ) where {K,T}
+        R =
+            $op === (//) ? Base.promote_op($op, T, T) :
+            MA.promote_operation($op, T, T)
+        res = similar(X, R)
+        return MA.operate_to!(res, $op, X, convert(T, a))
+    end
 end
 function Base.:+(X::AbstractCoefficients, Y::AbstractCoefficients)
     return MA.operate_to!(__prealloc(X, Y, +), +, X, Y)
@@ -183,30 +196,29 @@ end
 function MA.operate_to!(
     res::AbstractCoefficients,
     ::typeof(*),
-    a::Any,
-    X::AbstractCoefficients,
-)
-    if res !== X
-        MA.operate!(zero, res)
-    end
-    for (idx, x) in nonzero_pairs(X)
-        res[idx] = a * x
-    end
-    return res
+    a::Union{T,Number},
+    X::AbstractCoefficients{K,T},
+) where {K,T}
+    return _map_coefficients!(res, Base.Fix1(*, convert(T, a)), X)
 end
 
 function MA.operate_to!(
     res::AbstractCoefficients,
-    ::typeof(div),
-    X::AbstractCoefficients,
-    a::Number,
-)
+    op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
+    X::AbstractCoefficients{K,T},
+    a::Union{T,Number},
+) where {K,T}
+    return _map_coefficients!(res, Base.Fix2(op, convert(T, a)), X)
+end
+
+function _map_coefficients!(res, f, X)
     if res !== X
         MA.operate!(zero, res)
     end
     for (idx, x) in nonzero_pairs(X)
-        res[idx] = div(x, a)
+        res[idx] = f(x)
     end
+    MA.operate!(canonical, res)
     return res
 end
 

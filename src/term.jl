@@ -88,7 +88,7 @@ function Base.convert(::Type{Term{T,A,I}}, t::Term{<:Any,A,I}) where {T,A,I}
 end
 Base.convert(::Type{Term{T,A,I}}, t::Term{T,A,I}) where {T,A,I} = t
 
-Base.:^(x::Term, p::Integer) = Base.power_by_squaring(x, p)
+Base.:^(x::Term, p::Integer) = algebra_element(x)^p
 
 Base.ndims(::Union{Type{<:Term},Term}) = 0
 Base.broadcastable(t::Term) = Ref(t)
@@ -102,94 +102,28 @@ function MA.mutable_copy(t::Term)
     )
 end
 
-function MA.mutability(::Type{Term{T,A,I}}) where {T,A,I}
-    if MA.mutability(T) isa MA.IsMutable && MA.mutability(I) isa MA.IsMutable
-        return MA.IsMutable()
-    else
-        return MA.IsNotMutable()
-    end
-end
-
-# dot for Term to avoid recursive fallback in LinearAlgebra.dot
 function LinearAlgebra.dot(t1::Term, t2::Term)
-    return coefficient(t1) *
-           coefficient(t2) *
-           (basis_element(t1) * basis_element(t2))
-end
-function LinearAlgebra.dot(x, t::Term)
-    return x * t
-end
-function LinearAlgebra.dot(t::Term, x)
-    return star(t) * x
-end
-
-function MA.operate_to!(t::Term, ::typeof(*), t1::Term, t2::Term)
-    MA.operate_to!(t.coefficient, *, coefficient(t1), coefficient(t2))
-    # Index multiplication goes through the algebra's mstructure
-    ms = mstructure(t.algebra)
-    # For the index, we can't mutate in general, so reconstruct
-    # TODO: add mutable index path for performance
-    new_idx = ms(t1.index, t2.index, eltype(basis(t.algebra)))
-    # new_idx is a SparseCoefficients with one entry for commutative case
-    # Extract the single key
-    @assert length(collect(keys(new_idx))) == 1 "Term * Term must produce a single basis element"
-    t_new = Term(t.algebra, first(keys(new_idx)), t.coefficient)
-    return t_new
-end
-
-function MA.operate!(::typeof(*), t1::Term, t2::Term)
-    MA.operate!(*, t1.coefficient, coefficient(t2))
-    ms = mstructure(t1.algebra)
-    new_idx = ms(t1.index, t2.index, eltype(basis(t1.algebra)))
-    @assert length(collect(keys(new_idx))) == 1
-    # Can't mutate index field of immutable struct, return new term
-    return Term(t1.algebra, first(keys(new_idx)), t1.coefficient)
-end
-
-function MA.operate!(::typeof(one), t::Term)
-    MA.operate!(one, t.coefficient)
-    # Can't mutate index to identity in immutable struct
-    # Return new term with identity index
-    return Term(t.algebra, t.index, t.coefficient)
-end
-
-# Term + Term → AlgebraElement
-function Base.:+(t1::Term, t2::Term)
-    (a1, m1), (a2, m2) = promote_bases_with_maps(t1.algebra, t2.algebra)
-    idx1 = m1 === nothing ? t1.index : m1(t1.index)
-    idx2 = m2 === nothing ? t2.index : m2(t2.index)
-    sc = SparseCoefficients([idx1, idx2], [coefficient(t1), coefficient(t2)])
-    return algebra_element(sc, a1)
-end
-
-function Base.:-(t1::Term, t2::Term)
-    (a1, m1), (a2, m2) = promote_bases_with_maps(t1.algebra, t2.algebra)
-    idx1 = m1 === nothing ? t1.index : m1(t1.index)
-    idx2 = m2 === nothing ? t2.index : m2(t2.index)
-    sc = SparseCoefficients([idx1, idx2], [coefficient(t1), -coefficient(t2)])
-    return algebra_element(sc, a1)
+    return LinearAlgebra.dot(algebra_element(t1), algebra_element(t2))
 end
 
 function Base.:-(t::Term)
     return Term(t.algebra, t.index, -coefficient(t))
 end
 
-# Term + AlgebraElement and vice versa
-function Base.:+(t::Term, a::AlgebraElement)
-    return algebra_element(t) + a
-end
-function Base.:+(a::AlgebraElement, t::Term)
-    return a + algebra_element(t)
-end
-function Base.:-(t::Term, a::AlgebraElement)
-    return algebra_element(t) - a
-end
-function Base.:-(a::AlgebraElement, t::Term)
-    return a - algebra_element(t)
+for op in (:+, :-, :*)
+    @eval begin
+        Base.$op(t1::Term, t2::Term) =
+            $op(algebra_element(t1), algebra_element(t2))
+        Base.$op(t::Term, a::AlgebraElement) = $op(algebra_element(t), a)
+        Base.$op(a::AlgebraElement, t::Term) = $op(a, algebra_element(t))
+    end
 end
 
 # Convert Term to single-entry AlgebraElement
 function algebra_element(t::Term)
-    sc = SparseCoefficients((t.index,), (coefficient(t),))
-    return algebra_element(sc, t.algebra)
+    c = zero_coeffs(typeof(coefficient(t)), basis(parent(t)))
+    if !iszero(t)
+        c[t.index] = coefficient(t)
+    end
+    return AlgebraElement(c, parent(t))
 end

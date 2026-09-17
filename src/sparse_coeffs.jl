@@ -240,32 +240,6 @@ end
 
 function MA.operate_to!(
     res::SparseCoefficients,
-    ::typeof(-),
-    X::SparseCoefficients,
-)
-    return MA.operate_to!(res, *, X, -1)
-end
-
-function MA.operate_to!(
-    res::SparseCoefficients,
-    ::typeof(*),
-    X::SparseCoefficients,
-    a::Number,
-)
-    if res === X
-        res.values .*= a
-    else
-        resize!(res.basis_elements, length(X.basis_elements))
-        resize!(res.values, length(res.basis_elements))
-        res.basis_elements .= X.basis_elements
-        res.values .= a .* X.values
-    end
-
-    return res
-end
-
-function MA.operate_to!(
-    res::SparseCoefficients,
     ::typeof(+),
     X::SparseCoefficients,
     Y::SparseCoefficients,
