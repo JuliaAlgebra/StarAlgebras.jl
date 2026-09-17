@@ -72,6 +72,36 @@ function MA.promote_operation(::typeof(canonical), ::Type{C}) where {C}
     return C
 end
 
+"""
+    remove_leading_term(a::AlgebraElement)
+
+Return a copy of `a` with its last nonzero basis coefficient removed.
+Use `MA.operate!(remove_leading_term, a)` to modify `a` in place.
+
+The in-place operation takes constant time for canonical sparse coefficients
+stored in vectors. Dense vectors are scanned backwards for the last nonzero
+coefficient, taking linear time in the worst case.
+"""
+function remove_leading_term end
+
+function MA.operate!(::typeof(remove_leading_term), c::SparseVector)
+    if !isempty(SparseArrays.nonzeroinds(c))
+        pop!(SparseArrays.nonzeroinds(c))
+        pop!(SparseArrays.nonzeros(c))
+    end
+    return c
+end
+
+function MA.operate!(::typeof(remove_leading_term), c::Vector)
+    for i in reverse(eachindex(c))
+        if !iszero(c[i])
+            c[i] = zero(c[i])
+            break
+        end
+    end
+    return c
+end
+
 # example implementation for vectors
 MA.operate!(::typeof(canonical), sv::SparseVector) = dropzeros!(sv)
 MA.operate!(::typeof(canonical), v::Vector) = v

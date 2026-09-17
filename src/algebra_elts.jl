@@ -10,6 +10,26 @@ end
 
 Base.copy(a::AlgebraElement) = AlgebraElement(copy(coeffs(a)), parent(a))
 
+function remove_leading_term(a::AlgebraElement)
+    return MA.operate!(remove_leading_term, copy(a))
+end
+
+function MA.operate!(::typeof(remove_leading_term), a::AlgebraElement)
+    MA.operate!(remove_leading_term, coeffs(a))
+    return a
+end
+
+function MA.operate(::typeof(remove_leading_term), a::AlgebraElement)
+    return remove_leading_term(a)
+end
+
+function MA.promote_operation(
+    ::typeof(remove_leading_term),
+    ::Type{A},
+) where {A<:AlgebraElement}
+    return A
+end
+
 function Base.deepcopy_internal(a::AlgebraElement, id::IdDict)
     if !haskey(id, a)
         id[a] = AlgebraElement(Base.deepcopy_internal(coeffs(a), id), parent(a))

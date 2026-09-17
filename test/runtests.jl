@@ -47,6 +47,7 @@ end
 
 @testset "StarAlgebras" begin
     include("term.jl")
+    include("remove_leading_term.jl")
     include("basic.jl")
     # proof of concept
     using PermutationGroups

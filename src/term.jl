@@ -46,6 +46,19 @@ Base.isone(t::Term) = isone(coefficient(t)) && isone(basis_element(t))
 
 Base.zero(t::Term) = Term(t.algebra, t.index, zero(coefficient(t)))
 
+function remove_leading_term(t::Term)
+    return zero(t)
+end
+function MA.operate(::typeof(remove_leading_term), t::Term)
+    return remove_leading_term(t)
+end
+function MA.promote_operation(
+    ::typeof(remove_leading_term),
+    ::Type{Term{T,A,I}},
+) where {T,A,I}
+    return Term{MA.promote_operation(zero, T),A,I}
+end
+
 function Base.:(==)(t1::Term, t2::Term)
     c1 = coefficient(t1)
     c2 = coefficient(t2)

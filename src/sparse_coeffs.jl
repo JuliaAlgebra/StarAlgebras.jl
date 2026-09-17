@@ -194,6 +194,17 @@ function unsafe_push!(res::SparseCoefficients, key, value)
     return res
 end
 
+function MA.operate!(
+    ::typeof(remove_leading_term),
+    c::SparseCoefficients{K,V,Vector{K},Vector{V}},
+) where {K,V}
+    if !isempty(keys(c))
+        pop!(c.basis_elements)
+        pop!(c.values)
+    end
+    return c
+end
+
 # `{...,L}` is needed to force Julia specialize on the function type
 # Otherwise, we get one allocation when we call `issorted`
 # See https://docs.julialang.org/en/v1/manual/performance-tips/#Be-aware-of-when-Julia-avoids-specializing
