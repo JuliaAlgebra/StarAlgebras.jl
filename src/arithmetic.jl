@@ -2,6 +2,7 @@
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
 _coeff_type(::Type{A}) where {A<:AlgebraElement} = eltype(A)
+_coeff_type(::Type{<:Term{T}}) where {T} = T
 _coeff_type(a::Type) = a
 _coeff_type(a) = _coeff_type(typeof(a))
 
@@ -24,25 +25,40 @@ end
 
 # module structure:
 
-Base.:*(X::AlgebraElement, a::Number) = a * X
-Base.:(/)(X::AlgebraElement, a::Number) = inv(a) * X
-Base.:(//)(X::AlgebraElement, a::Number) = 1 // a * X
-
 function Base.:-(X::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(*, X, -1), -, X)
+    return MA.operate_to!(similar(X, MA.promote_operation(-, eltype(X))), -, X)
 end
 function MA.promote_operation(
     ::typeof(*),
-    ::Type{T},
+    ::Type{<:Union{T,Number}},
     ::Type{A},
-) where {T<:Number,A<:AlgebraElement}
+) where {T,A<:AlgebraElement{T}}
     return algebra_promote_operation(*, A, T)
 end
-function Base.:*(a::Any, X::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(*, X, a), *, a, X)
+function MA.promote_operation(
+    op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
+    ::Type{A},
+    ::Type{<:Union{T,Number}},
+) where {T,A<:AlgebraElement{T}}
+    if op === (//)
+        return similar_type(A, Base.promote_op(op, T, T))
+    end
+    return algebra_promote_operation(op, A, T)
 end
-function Base.:div(X::AlgebraElement, a::Number)
-    return MA.operate_to!(_preallocate_output(div, X, a), div, X, a)
+function _scalar_lmul(a, X::AlgebraElement{T}) where {T}
+    c = convert(T, a)
+    return MA.operate_to!(_preallocate_output(*, X, c), *, c, X)
+end
+function _scalar_right(op, X::AlgebraElement{T}, a) where {T}
+    c = convert(T, a)
+    R = eltype(MA.promote_operation(op, typeof(X), T))
+    return MA.operate_to!(similar(X, R), op, X, c)
+end
+Base.:*(a::Union{T,Number}, X::AlgebraElement{T}) where {T} = _scalar_lmul(a, X)
+for op in (:*, :/, ://, :div)
+    @eval function Base.$op(X::AlgebraElement{T}, a::Union{T,Number}) where {T}
+        return _scalar_right($op, X, a)
+    end
 end
 function Base.:*(
     a::T,
@@ -77,11 +93,15 @@ Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
 # Informative error for the in-place operations below, which require their
 # operands to share a basis (they do not promote, unlike `*`, `+`, `-`).
-function _assert_same_basis(op, A::AlgebraElement, B::AlgebraElement)
+function _assert_same_basis(
+    op,
+    A::AlgebraElement,
+    B::Union{AlgebraElement,Term},
+)
     parent(A) == parent(B) && return
     return throw(
         ArgumentError(
-            "cannot `$op` two `AlgebraElement`s over different bases in place: their " *
+            "cannot `$op` algebra elements over different bases in place: their " *
             "bases differ. Bring them to a common basis first, e.g. " *
             "`_A, _B = StarAlgebras.promote_bases(A, B)`, or use the `*`, `+`, `-` " *
             "operators which promote automatically.",
@@ -99,22 +119,22 @@ end
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
-    a::Any,
-    X::AlgebraElement,
-)
+    a::Union{T,Number},
+    X::AlgebraElement{T},
+) where {T}
     @assert parent(res) === parent(X)
-    MA.operate_to!(coeffs(res), *, a, coeffs(X))
+    MA.operate_to!(coeffs(res), *, convert(T, a), coeffs(X))
     return res
 end
 
 function MA.operate_to!(
     res::AlgebraElement,
-    ::typeof(div),
-    X::AlgebraElement,
-    a::Number,
-)
+    op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
+    X::AlgebraElement{T},
+    a::Union{T,Number},
+) where {T}
     @assert parent(res) === parent(X)
-    MA.operate_to!(coeffs(res), div, coeffs(X), a)
+    MA.operate_to!(coeffs(res), op, coeffs(X), convert(T, a))
     return res
 end
 

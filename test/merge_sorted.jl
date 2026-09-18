@@ -98,6 +98,29 @@
         @test result == [1, 6, 10, 7]
     end
 
+    @testset "Aliasing merge_sorted!" begin
+        for rev in (false, true), alias in (:left, :right, :both)
+            x = rev ? [5, 3, 1] : [1, 3, 5]
+            y = alias === :both ? x : rev ? [7, 3, 2] : [2, 3, 7]
+            expected = SA.merge_sorted(x, y; lt = isless, rev, dedup_kw...)
+            out = alias === :right ? y : x
+            @test SA.merge_sorted!(out, x, y; lt = isless, rev, dedup_kw...) ===
+                  out
+            @test out == expected
+        end
+        for x in (Int[], [1, 2, 3])
+            @test SA.merge_sorted!(
+                x,
+                x,
+                x;
+                lt = isless,
+                combine = -,
+                filter = !iszero,
+            ) === x
+            @test isempty(x)
+        end
+    end
+
     @testset "Tuple dedup merge" begin
         # Disjoint
         @test SA.merge_sorted((1, 3, 5), (2, 4, 6); lt = isless, dedup_kw...) ==

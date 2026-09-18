@@ -179,6 +179,7 @@ end
 Base.one(a::AlgebraElement) = one(eltype(a), parent(a))
 
 function Base.isone(a::AlgebraElement)
+    iszero(a) && return false
     A = parent(a)
     id = one(object(A))
     if id in basis(A)
@@ -229,7 +230,7 @@ end
 # and `U` is `SparseCoefficients` with `Vector`
 function Base.convert(
     ::Type{AlgebraElement{T,A,U}},
-    a::AlgebraElement{T,A,V},
-) where {A,T,U,V}
+    a::AlgebraElement{S,A,V},
+) where {A,S,T,U,V}
     return AlgebraElement(convert(U, coeffs(a)), parent(a))
 end
