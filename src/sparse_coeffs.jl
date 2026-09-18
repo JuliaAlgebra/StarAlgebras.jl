@@ -21,6 +21,29 @@ function Base.copy(sc::SparseCoefficients)
     return SparseCoefficients(copy(keys(sc)), copy(values(sc)), sc.isless)
 end
 
+function MA.mutability(
+    ::Type{<:SparseCoefficients{K,V,Vector{K},Vector{V}}},
+) where {K,V}
+    return MA.IsMutable()
+end
+
+# Addition has an allocating implementation but no in-place kernel yet.
+function MA.mutability(
+    ::Type{<:SparseCoefficients},
+    ::typeof(+),
+    ::Type{<:SparseCoefficients},
+    ::Type{<:SparseCoefficients},
+)
+    return MA.IsNotMutable()
+end
+
+function MA.mutable_copy(sc::SparseCoefficients)
+    result = copy(sc)
+    map!(MA.copy_if_mutable, keys(result), keys(result))
+    map!(MA.copy_if_mutable, values(result), values(result))
+    return result
+end
+
 function _search(keys::Tuple, key; lt)
     # `searchsortedfirst` is not defined for `Tuple`
     return findfirst(isequal(key), keys)

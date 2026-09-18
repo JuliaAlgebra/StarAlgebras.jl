@@ -10,6 +10,26 @@ end
 
 Base.copy(a::AlgebraElement) = AlgebraElement(copy(coeffs(a)), parent(a))
 
+function MA.mutability(::Type{<:AlgebraElement{T,A,C}}) where {T,A,C}
+    return _coefficients_mutability(C)
+end
+
+function MA.mutable_copy(a::AlgebraElement)
+    return AlgebraElement(MA.mutable_copy(coeffs(a)), parent(a))
+end
+
+function MA.mutability(::Type{<:AlgebraElement}, op, ::Vararg{Type})
+    return MA.IsNotMutable()
+end
+
+function MA.mutability(
+    ::Type{AlgebraElement{T,A,C}},
+    ::Union{typeof(zero),typeof(remove_leading_term)},
+    ::Type{AlgebraElement{T,A,C}},
+) where {T,A<:AbstractStarAlgebra,C}
+    return _coefficients_mutability(C)
+end
+
 function remove_leading_term(a::AlgebraElement)
     return MA.operate!(remove_leading_term, copy(a))
 end

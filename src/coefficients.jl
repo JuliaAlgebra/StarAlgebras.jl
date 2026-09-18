@@ -23,8 +23,47 @@ provided based on random indexing. Additionally one needs to provide:
 * `Base.setindex!(ac, val, idx)`
 * `MutableArithmetics.operate!(ms::UnsafeAddMul, ac, v::C, w::C) where C<:SA.AbstractCoefficients`
 
+# Mutability
+
+To enable mutation through `AlgebraElement`'s MutableArithmetics interface,
+a coefficient container `c::C` must implement:
+
+* `MA.mutability(::Type{C})`: return `MA.IsMutable()` for mutable storage.
+* `copy(c)::C`: copy the storage so inserting, replacing, or removing an entry
+  in the copy does not change `c`. Mutable keys and values may remain shared.
+* `MA.mutable_copy(c)::C`: return a copy with independent mutable storage,
+  keys, and values. Reuse `copy` and `MA.copy_if_mutable`; immutable metadata
+  may be shared.
+* `MA.operate!(zero, c)`: zero all coefficients in place.
+* `MA.operate!(remove_leading_term, c)`: remove the last nonzero coefficient
+  in basis order from canonical `c` in place. Leave zero storage
+  unchanged. This operation must preserve canonical form.
+
+Both operations preserve the index domain of fixed-size storage. They must
+not mutate shared key or value objects, since `copy(c)` may share them.
+Their return values are ignored by `AlgebraElement`.
+For dense vectors, removal replaces the last nonzero entry with zero;
+for canonical sparse storage, it deletes the final stored entry.
+
+For `AbstractCoefficients`, operation-specific mutability enables `zero` and
+`remove_leading_term`. Other operations use MA's default mutability rules:
+implement their promotion and in-place methods, or explicitly return
+`MA.IsNotMutable()` from an operation-specific `MA.mutability` method.
 """
 abstract type AbstractCoefficients{K,V} end
+
+# Temporary workaround until MA defines
+# MA.mutability(::Type{<:SparseVector}) = MA.IsMutable().
+# Enabling that trait makes MA.@rewrite and JuMP macros call additional
+# operate! methods, so it needs thorough checks that it does not break JuMP
+# before this helper can be removed in favor of MA.mutability.
+function _coefficients_mutability(::Type{C}) where {C}
+    return MA.mutability(C)
+end
+
+function _coefficients_mutability(::Type{<:SparseVector})
+    return MA.IsMutable()
+end
 
 key_type(::Type{<:AbstractCoefficients{K}}) where {K} = K
 value_type(::Type{<:AbstractCoefficients{K,V}}) where {K,V} = V
@@ -83,6 +122,14 @@ stored in vectors. Dense vectors are scanned backwards for the last nonzero
 coefficient, taking linear time in the worst case.
 """
 function remove_leading_term end
+
+function MA.mutability(
+    ::Type{C},
+    ::Union{typeof(zero),typeof(remove_leading_term)},
+    ::Type{C},
+) where {C<:AbstractCoefficients}
+    return MA.mutability(C)
+end
 
 function MA.operate!(::typeof(remove_leading_term), c::SparseVector)
     if !isempty(SparseArrays.nonzeroinds(c))
