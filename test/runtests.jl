@@ -49,6 +49,8 @@ end
     include("term.jl")
     include("remove_leading_term.jl")
     include("mutable_arithmetics.jl")
+    include("term_arithmetic.jl")
+    include("merge_allocations.jl")
     include("basic.jl")
     # proof of concept
     using PermutationGroups

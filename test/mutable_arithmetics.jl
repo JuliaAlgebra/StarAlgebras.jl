@@ -45,12 +45,46 @@ end
     MA.operate!(+, b[1], 1)
     @test c[1] == 2
     result = MA.operate!!(+, b, c)
+    @test result === b
     @test result[1] == 5
-    @test b[1] == 3
+    @test c[1] == 2
     @test MA.operate!!(remove_leading_term, b) === b
     @test iszero(b[3])
     @test MA.operate!!(zero, b) === b
     @test iszero(b)
+end
+
+@testset "Sparse coefficient merge" begin
+    for T in (Int, BigInt), alias in (:none, :left, :right)
+        x = SA.SparseCoefficients([1, 3, 5], T[2, 3, 4])
+        y = SA.SparseCoefficients([2, 3, 6], T[5, -3, 7])
+        out = alias === :left ? x : alias === :right ? y : zero(x)
+        @test MA.operate_to!(out, +, x, y) === out
+        @test keys(out) == [1, 2, 5, 6]
+        @test values(out) == [2, 5, 4, 7]
+        alias === :left || @test values(x) == [2, 3, 4]
+        alias === :right || @test values(y) == [5, -3, 7]
+        @test MA.operate!!(+, out, out) === out
+        @test values(out) == [4, 10, 8, 14]
+        @test MA.operate!!(+, out, -out) === out
+        @test isempty(keys(out))
+        @test isempty(values(out))
+    end
+
+    x = SA.SparseCoefficients([3, 1, 3], [1, 2, -1])
+    y = SA.SparseCoefficients([2, 1], [3, -2], >)
+    @test MA.operate!!(+, x, y) === x
+    @test keys(x) == [2]
+    @test values(x) == [3]
+    @test keys(y) == [2, 1]
+    @test values(y) == [3, -2]
+
+    x = SA.SparseCoefficients([1], [1])
+    y = SA.SparseCoefficients([1, 2], [0.5, 2.5])
+    out = MA.operate!!(+, x, y)
+    @test out !== x
+    @test values(out) == [1.5, 2.5]
+    @test values(x) == [1]
 end
 
 @testset "Custom coefficient storage" begin

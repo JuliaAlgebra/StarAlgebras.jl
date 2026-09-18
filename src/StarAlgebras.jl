@@ -38,6 +38,7 @@ include("algebra_elts.jl")
 include("star.jl")
 
 include("arithmetic.jl")
+include("term_arithmetic.jl")
 include("quadratic_form.jl")
 include("show.jl")
 

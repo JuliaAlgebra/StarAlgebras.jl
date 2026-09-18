@@ -2,6 +2,7 @@
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
 _coeff_type(::Type{A}) where {A<:AlgebraElement} = eltype(A)
+_coeff_type(::Type{<:Term{T}}) where {T} = T
 _coeff_type(a::Type) = a
 _coeff_type(a) = _coeff_type(typeof(a))
 
@@ -92,11 +93,15 @@ Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
 # Informative error for the in-place operations below, which require their
 # operands to share a basis (they do not promote, unlike `*`, `+`, `-`).
-function _assert_same_basis(op, A::AlgebraElement, B::AlgebraElement)
+function _assert_same_basis(
+    op,
+    A::AlgebraElement,
+    B::Union{AlgebraElement,Term},
+)
     parent(A) == parent(B) && return
     return throw(
         ArgumentError(
-            "cannot `$op` two `AlgebraElement`s over different bases in place: their " *
+            "cannot `$op` algebra elements over different bases in place: their " *
             "bases differ. Bring them to a common basis first, e.g. " *
             "`_A, _B = StarAlgebras.promote_bases(A, B)`, or use the `*`, `+`, `-` " *
             "operators which promote automatically.",

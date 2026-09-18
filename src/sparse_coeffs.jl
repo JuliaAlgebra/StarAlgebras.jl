@@ -27,14 +27,15 @@ function MA.mutability(
     return MA.IsMutable()
 end
 
-# Addition has an allocating implementation but no in-place kernel yet.
-function MA.mutability(
-    ::Type{<:SparseCoefficients},
+function MA.promote_operation(
     ::typeof(+),
-    ::Type{<:SparseCoefficients},
-    ::Type{<:SparseCoefficients},
-)
-    return MA.IsNotMutable()
+    ::Type{X},
+    ::Type{Y},
+) where {X<:SparseCoefficients,Y<:SparseCoefficients}
+    return similar_type(
+        X,
+        MA.promote_operation(+, value_type(X), value_type(Y)),
+    )
 end
 
 function MA.mutable_copy(sc::SparseCoefficients)
@@ -266,6 +267,53 @@ end
 
 # arithmetic on coefficients; performance overloads
 
+# An indexed view of the parallel arrays for the shared merge kernel.
+struct _CoefficientPairs{K,V,C<:AbstractCoefficients{K,V}} <:
+       AbstractVector{Pair{K,V}}
+    coefficients::C
+end
+Base.size(p::_CoefficientPairs) = (length(keys(p.coefficients)),)
+Base.firstindex(p::_CoefficientPairs) = firstindex(keys(p.coefficients))
+Base.lastindex(p::_CoefficientPairs) = lastindex(keys(p.coefficients))
+function Base.getindex(p::_CoefficientPairs, i::Int)
+    return keys(p.coefficients)[i] => values(p.coefficients)[i]
+end
+function Base.setindex!(p::_CoefficientPairs, value, i::Int)
+    keys(p.coefficients)[i], values(p.coefficients)[i] = value
+    return p
+end
+function Base.resize!(p::_CoefficientPairs, n::Int)
+    resize!(keys(p.coefficients), n)
+    resize!(values(p.coefficients), n)
+    return p
+end
+
+function _merge_coefficients!(res, X, Y, transform::F = identity) where {F}
+    x = Iterators.Reverse(_CoefficientPairs(X))
+    y = Iterators.map(transform, Iterators.Reverse(_CoefficientPairs(Y)))
+    _merge_sorted!(
+        _CoefficientPairs(res),
+        x,
+        y;
+        lt = res.isless,
+        by = first,
+        combine = (a, b) -> first(a) => last(a) + last(b),
+        filter = p -> !iszero(last(p)),
+    )
+    return res
+end
+
+# Read-only coefficients returned by a multiplicative structure can contain
+# unsorted or repeated keys. Preserve the canonicalizing addition for those.
+function _strictly_sorted(c::SparseCoefficients)
+    k = keys(c)
+    return all(i -> c.isless(k[i], k[i+1]), firstindex(k):(lastindex(k)-1))
+end
+
+function MA.operate!(::typeof(+), X::SparseCoefficients, Y::SparseCoefficients)
+    return MA.operate_to!(X, +, X, Y)
+end
+
 function MA.operate!(::typeof(zero), s::SparseCoefficients)
     empty!(s.basis_elements)
     empty!(s.values)
@@ -278,6 +326,11 @@ function MA.operate_to!(
     X::SparseCoefficients,
     Y::SparseCoefficients,
 )
+    if res.isless == X.isless == Y.isless &&
+       _strictly_sorted(X) &&
+       _strictly_sorted(Y)
+        return _merge_coefficients!(res, X, Y)
+    end
     if res === X
         append!(res.basis_elements, Y.basis_elements)
         append!(res.values, Y.values)

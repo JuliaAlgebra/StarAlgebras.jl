@@ -40,6 +40,39 @@ When the product is not representable faithfully,
 """
 abstract type MultiplicativeStructure{T,I} end
 
+abstract type TermProductStyle end
+
+"""
+    GeneralTermProduct()
+
+No guarantee that multiplying by a basis element produces single terms in order.
+"""
+struct GeneralTermProduct <: TermProductStyle end
+
+"""
+    OrderedTermProduct()
+
+Every product of two basis elements has exactly one nonzero basis coefficient
+(which need not be one). Multiplication strictly preserves key order with
+either a fixed left factor or a fixed right factor. In particular, distinct
+input keys have distinct product keys.
+"""
+struct OrderedTermProduct <: TermProductStyle end
+
+"""
+    term_product_style(ms::MultiplicativeStructure, lt)::TermProductStyle
+
+Describe multiplication of basis elements under the key comparator `lt`.
+The default is `GeneralTermProduct()`. Return `OrderedTermProduct()` only
+when its single-term and order guarantees hold on both sides. This allows
+term products to be merged with sorted coefficients without sorting again.
+
+The guarantee concerns basis keys, not the order of coefficient multiplication.
+"""
+function term_product_style(::MultiplicativeStructure, lt)
+    return GeneralTermProduct()
+end
+
 function (mstr::MultiplicativeStructure{T})(x::T, y::T) where {T}
     return mstr(x, y, T)
 end
