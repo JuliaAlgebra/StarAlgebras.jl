@@ -37,21 +37,16 @@ function _matrix_product_to!(
 ) where {P<:AlgebraElement}
     _check_matrix_product(output, A, B)
     isempty(output) && return output
-    if isempty(B)
-        # No input values supply a parent for an empty contraction.
+    prototype = _product_prototype(A, B)
+    if prototype === nothing
+        # Empty storage may leave no input values supplying a parent.
         MA.operate!(zero, output)
         return output
     end
-    alg = _product_algebra(A, B)
+    alg = _product_algebra(A, B, prototype)
     A = _promote_product_array(A, alg)
     B = _promote_product_array(B, alg)
-    prototype = first(A)
-    if first(B) isa AlgebraElement &&
-       (!(prototype isa AlgebraElement) || coeffs(first(B)) isa DenseArray)
-        prototype = first(B)
-    elseif prototype isa Number
-        prototype = first(B)
-    end
+    prototype = first(promote_bases(prototype, alg))
     for i in eachindex(output)
         # Each output needs independent storage, including mutable zeros.
         output[i] = _sum_zero(prototype, eltype(P))

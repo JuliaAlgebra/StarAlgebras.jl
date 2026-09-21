@@ -96,11 +96,32 @@ function _sum_product_coeff_types(a::Union{AlgebraElement,Term}, ::Number)
     return (_coeff_type(a), _coeff_type(a))
 end
 
-function _product_algebra(a, b)
-    alg = parent(first(a) isa Number ? first(b) : first(a))
-    for x in Iterators.flatten((a, b))
-        if x isa Union{AlgebraElement,Term} && parent(x) != alg
-            alg = first(promote_bases(alg, parent(x)))
+_product_values(a) = a
+_product_values(a::SparseMatrixCSC) = nonzeros(a)
+
+function _product_prototype(a)
+    values = _product_values(a)
+    return isempty(values) ? nothing : first(values)
+end
+_product_prototype(::AbstractArray{<:Number}) = nothing
+
+function _product_prototype(a, b)
+    x, y = _product_prototype(a), _product_prototype(b)
+    if y isa AlgebraElement &&
+       (!(x isa AlgebraElement) || coeffs(y) isa DenseArray)
+        return y
+    end
+    return x === nothing ? y : x
+end
+
+function _product_algebra(a, b, prototype = _product_prototype(a, b))
+    alg = parent(prototype)
+    for array in (a, b)
+        eltype(array) <: Number && continue
+        for x in _product_values(array)
+            if parent(x) != alg
+                alg = first(promote_bases(alg, parent(x)))
+            end
         end
     end
     return alg
@@ -112,6 +133,36 @@ end
 function _promote_product_array(a, alg)
     prepare = x -> parent(x) == alg ? x : first(promote_bases(x, alg))
     return map(prepare, a)
+end
+
+function _promote_product_array(
+    a::SparseMatrixCSC{<:Union{AlgebraElement,Term}},
+    alg,
+)
+    # Mapping a sparse matrix directly also evaluates f(zero(eltype(a))).
+    # Algebra elements need a parent to construct that zero, so only map storage.
+    return SparseMatrixCSC(
+        size(a)...,
+        copy(a.colptr),
+        copy(rowvals(a)),
+        _promote_product_array(nonzeros(a), alg),
+    )
+end
+
+for (Wrapper, op) in
+    ((LinearAlgebra.Transpose, transpose), (LinearAlgebra.Adjoint, adjoint))
+    @eval begin
+        _product_values(a::$Wrapper{<:Any,<:SparseMatrixCSC}) =
+            $op(nonzeros(parent(a)))
+
+        function _promote_product_array(
+            a::$Wrapper{<:Union{AlgebraElement,Term},<:SparseMatrixCSC},
+            alg,
+        )
+            # Apply the wrapper before promoting the resulting algebra elements.
+            return _promote_product_array(copy(a), alg)
+        end
+    end
 end
 
 function _sum_products(a, b)

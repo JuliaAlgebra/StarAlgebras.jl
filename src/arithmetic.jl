@@ -25,6 +25,9 @@ end
 
 # module structure:
 
+Base.:+(a::Union{AlgebraElement,Term}) = a
+Base.:*(a::Union{AlgebraElement,Term}) = a
+
 function Base.:-(X::AlgebraElement)
     return MA.operate_to!(similar(X, MA.promote_operation(-, eltype(X))), -, X)
 end
