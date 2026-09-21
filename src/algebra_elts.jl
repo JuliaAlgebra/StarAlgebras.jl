@@ -175,13 +175,20 @@ function promote_with_map(a::AlgebraElement, alg, map)
     return AlgebraElement(c, alg), map
 end
 
-function promote_bases_with_maps(a::AlgebraElement, b::AlgebraElement)
+function promote_with_map(t::Term, alg, map)
+    return Term(alg, map(t.index), coefficient(t)), map
+end
+
+function promote_bases_with_maps(
+    a::Union{AlgebraElement,Term},
+    b::Union{AlgebraElement,Term},
+)
     _a, _b = promote_bases_with_maps(parent(a), parent(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 
 function promote_bases_with_maps(
-    a::AlgebraElement,
+    a::Union{AlgebraElement,Term},
     b::Union{StarAlgebra,MultiplicativeStructure,AbstractBasis},
 )
     _a, _b = promote_bases_with_maps(parent(a), b)
