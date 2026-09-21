@@ -29,6 +29,10 @@ function MA.operate!(::typeof(SA.remove_leading_term), ac::ACoeffs)
 end
 
 # for preallocation in arithmetic
+function SA.similar_type(::Type{<:ACoeffs}, ::Type{T}) where {T}
+    return ACoeffs{T}
+end
+
 function Base.similar(ac::ACoeffs, ::Type{T}) where {T}
     vals = similar(ac.vals, T)
     MA.operate!(zero, vals)

@@ -19,6 +19,8 @@ implemented, or fallbacks using the framework of `MutableArithmetics` are
 provided based on random indexing. Additionally one needs to provide:
 
 * `Base.similar(ac, T::Type)` with the same semantics as the one for vectors
+* `StarAlgebras.similar_type(::Type{C}, ::Type{T})`: the type of `similar(ac, T)`
+  for `ac::C`
 * `Base.getindex(ac, idx)`
 * `Base.setindex!(ac, val, idx)`
 * `MutableArithmetics.operate!(ms::UnsafeAddMul, ac, v::C, w::C) where C<:SA.AbstractCoefficients`

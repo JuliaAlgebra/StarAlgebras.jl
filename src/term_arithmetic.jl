@@ -1,6 +1,38 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2026: Marek Kaluba, Benoît Legat
 
+function MA.promote_operation(
+    ::typeof(+),
+    ::Type{F},
+    ::Type{T},
+) where {F<:AlgebraElement,T<:Term}
+    return similar_type(F, MA.promote_operation(+, eltype(F), _coeff_type(T)))
+end
+
+function MA.operate!(::typeof(+), f::AlgebraElement, t::Term)
+    _assert_same_basis(+, f, t)
+    iszero(t) && return f
+    _add_term!(coeffs(f), t)
+    return f
+end
+
+function _add_term!(c, t::Term)
+    c[t.index] += coefficient(t)
+    MA.operate!(canonical, c)
+    return c
+end
+
+function _add_term!(c::SparseCoefficients, t::Term)
+    # Reuse the sorted merge without allocating a single-term polynomial.
+    # Inserted mutable keys and coefficients must remain independent of `t`.
+    single = SparseCoefficients(
+        (MA.copy_if_mutable(t.index),),
+        (MA.copy_if_mutable(coefficient(t)),),
+        c.isless,
+    )
+    return MA.operate!(+, c, single)
+end
+
 # Keep coefficient and basis multiplication in operand order on both sides.
 for (L, R, left) in
     ((:Term, :AlgebraElement, true), (:AlgebraElement, :Term, false))
@@ -19,39 +51,6 @@ for (L, R, left) in
                 F,
                 similar_type($G, T),
             )
-        end
-
-        function MA.mutability(
-            ::Type{F},
-            op::MA.AddSubMul,
-            ::Type{F},
-            ::Type{L},
-            ::Type{R},
-        ) where {F<:AlgebraElement,L<:$L,R<:$R}
-            if MA.mutability(F) isa MA.IsMutable &&
-               MA.promote_operation(op, F, L, R) === F
-                return MA.IsMutable()
-            end
-            return MA.IsNotMutable()
-        end
-
-        function MA.mutability(
-            output::AlgebraElement,
-            op::MA.AddSubMul,
-            f::AlgebraElement,
-            a::$L,
-            b::$R,
-        )
-            if parent(output) == parent(f) == parent(a) == parent(b)
-                return MA.mutability(
-                    typeof(output),
-                    op,
-                    typeof(f),
-                    typeof(a),
-                    typeof(b),
-                )
-            end
-            return MA.IsNotMutable()
         end
 
         function MA.operate!(op::MA.AddSubMul, f::AlgebraElement, a::$L, b::$R)

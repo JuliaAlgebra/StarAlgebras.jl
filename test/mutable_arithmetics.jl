@@ -1,6 +1,16 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2026: Marek Kaluba, Benoît Legat
 
+module TestMutableArithmetics
+
+using Test
+using SparseArrays
+using StarAlgebras
+import StarAlgebras as SA
+import MutableArithmetics as MA
+
+include(joinpath(@__DIR__, "..", "examples", "acoeffs.jl"))
+
 @testset "Mutable copies and operation routing" begin
     alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 4.0]))
     for c in (
@@ -9,6 +19,8 @@
         SA.SparseCoefficients([1, 3], BigInt[1, 3]),
     )
         a = AlgebraElement(c, alg)
+        @test (@inferred MA.promote_operation(zero, typeof(a))) ===
+              typeof(zero(a))
         original = deepcopy(a)
         b = MA.copy_if_mutable(a)
         @test b !== a
@@ -26,13 +38,29 @@
         @test iszero(b)
         @test a == original
 
-        # Operations without an in-place implementation still allocate.
+        # Missing in-place implementations must surface instead of allocating.
         @test MA.mutability(typeof(a), +, typeof(a), typeof(a)) isa
-              MA.IsNotMutable
-        @test MA.operate!!(+, a, a) == 2a
-        @test MA.operate!!(MA.sub_mul, a, 2, a) == -a
+              MA.IsMutable
+        @test_throws ErrorException MA.operate!!(+, a, a)
+        @test_throws ErrorException MA.operate!!(MA.sub_mul, a, 2, a)
         @test a == original
     end
+end
+
+@testset "Zero promotion with tuple storage" begin
+    alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 4.0]))
+    a = AlgebraElement(SA.SparseCoefficients((1, 3), (big(1), big(3))), alg)
+    z = zero(a)
+    @test (@inferred MA.promote_operation(zero, typeof(a))) === typeof(z)
+    @test typeof(z) !== typeof(a)
+    @test parent(z) === alg
+
+    r = @inferred MA.operate!!(zero, a)
+    @test iszero(r)
+    @test typeof(r) === typeof(z)
+    @test parent(r) === alg
+    @test keys(SA.coeffs(a)) == (1, 3)
+    @test values(SA.coeffs(a)) == (1, 3)
 end
 
 @testset "Coefficient storage mutation routing" begin
@@ -152,4 +180,6 @@ end
     other = AlgebraElement(copy(c), StarAlgebra(2.0, basis(alg)))
     @test_throws ArgumentError SA.map_coefficients_to!(other, zero, input)
     @test values(SA.coeffs(other)) == [1, 2, 3]
+end
+
 end

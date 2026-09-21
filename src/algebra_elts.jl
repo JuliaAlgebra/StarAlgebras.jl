@@ -18,16 +18,11 @@ function MA.mutable_copy(a::AlgebraElement)
     return AlgebraElement(MA.mutable_copy(coeffs(a)), parent(a))
 end
 
-function MA.mutability(::Type{<:AlgebraElement}, op, ::Vararg{Type})
-    return MA.IsNotMutable()
-end
-
-function MA.mutability(
-    ::Type{AlgebraElement{T,A,C}},
-    ::Union{typeof(zero),typeof(remove_leading_term)},
-    ::Type{AlgebraElement{T,A,C}},
-) where {T,A<:AbstractStarAlgebra,C}
-    return _coefficients_mutability(C)
+function MA.promote_operation(
+    ::typeof(zero),
+    ::Type{A},
+) where {A<:AlgebraElement}
+    return similar_type(A, eltype(A))
 end
 
 function remove_leading_term(a::AlgebraElement)
