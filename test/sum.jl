@@ -72,11 +72,29 @@ end
         @test (f, g) == originals
         @test_throws DimensionMismatch SA.sum_products([f, g], [g])
         @test_throws DimensionMismatch SA.sum_products(typeof(f)[], [g])
+
+        for (a, b) in (([2.0, 3.0], [f, g]), ([f, g], [2.0, 3.0]))
+            result = @inferred SA.sum_products(a, b)
+            @test [SA.coeffs(result)[i] for i in 1:5] == [7, 2, 3, 0, 0]
+            @test eltype(result) === T
+            @test parent(result) === alg
+            @test (f, g) == originals
+            @test_throws DimensionMismatch SA.sum_products(a, b[1:1])
+            @test_throws DimensionMismatch SA.sum_products(a[1:0], b)
+        end
+        @test_throws InexactError SA.sum_products([0.5], [f])
+        @test_throws InexactError SA.sum_products([f], [0.5])
     end
     a, b = SA.Term(alg, 2, 2), SA.Term(alg, 3, 3)
     for left in (a, SA.algebra_element(a)), right in (b, SA.algebra_element(b))
         result = @inferred SA.sum_products([left], [right])
         @test SA.coeffs(result) == [0, 0, 0, 6, 0]
+        @test parent(result) === alg
+    end
+    for (left, right) in (([2.0, 3.0], [a, b]), ([a, b], [2.0, 3.0]))
+        result = @inferred SA.sum_products(left, right)
+        @test SA.coeffs(result) == [0, 4, 9, 0, 0]
+        @test eltype(result) === Int
         @test parent(result) === alg
     end
     basis = SA.DiracBasis(["", "a", "b", "ab", "ba", "bb"])

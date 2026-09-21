@@ -130,6 +130,21 @@ function Base.:*(t::Term{T}, a::Union{T,Number}) where {T}
     return Term(parent(t), t.index, coefficient(t) * convert(T, a))
 end
 
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{<:Number},
+    ::Type{Term{T,A,I}},
+) where {T,A,I}
+    return Term{MA.promote_operation(*, T, T),A,I}
+end
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{Term{T,A,I}},
+    ::Type{<:Number},
+) where {T,A,I}
+    return Term{MA.promote_operation(*, T, T),A,I}
+end
+
 for op in (:+, :-, :*)
     @eval begin
         Base.$op(t1::Term, t2::Term) =

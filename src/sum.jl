@@ -67,29 +67,59 @@ end
 """
     sum_products(a, b)
 
-Sum the products of corresponding algebra elements or terms in `a` and `b`.
-Promote all operands to a common basis before accumulating with
-MutableArithmetics. The inputs are not modified.
+Sum the products of corresponding entries in `a` and `b`. At least one array
+contains algebra elements or terms; the other may also contain numbers.
+Numeric factors convert to the coefficient type of their corresponding algebra
+element or term, as in ordinary scalar multiplication. Promote algebra operands
+to a common basis before accumulating with MutableArithmetics. The inputs are
+not modified.
 """
-function sum_products(
-    a::AbstractArray{<:Union{AlgebraElement,Term}},
-    b::AbstractArray{<:Union{AlgebraElement,Term}},
+function sum_products end
+
+for (A, B) in (
+    (Union{AlgebraElement,Term}, Union{AlgebraElement,Term}),
+    (Number, Union{AlgebraElement,Term}),
+    (Union{AlgebraElement,Term}, Number),
 )
+    @eval function sum_products(a::AbstractArray{<:$A}, b::AbstractArray{<:$B})
+        return _sum_products(a, b)
+    end
+end
+
+function _sum_product_coeff_types(a, b)
+    return (_coeff_type(a), _coeff_type(b))
+end
+function _sum_product_coeff_types(::Number, b::Union{AlgebraElement,Term})
+    return (_coeff_type(b), _coeff_type(b))
+end
+function _sum_product_coeff_types(a::Union{AlgebraElement,Term}, ::Number)
+    return (_coeff_type(a), _coeff_type(a))
+end
+
+function _sum_products(a, b)
     MA._check_same_length(a, b)
     if isempty(a)
         return MA.fused_map_reduce(MA.add_mul, a, b)
     end
-    alg = parent(first(a))
+    prototype = first(a)
+    if !(prototype isa AlgebraElement) &&
+       first(b) isa Union{AlgebraElement,Term}
+        prototype = first(b)
+    end
+    alg = parent(first(a) isa Number ? first(b) : first(a))
     for x in Iterators.flatten((a, b))
-        if parent(x) != alg
+        if x isa Union{AlgebraElement,Term} && parent(x) != alg
             alg = first(promote_bases(alg, parent(x)))
         end
     end
-    T = MA.promote_operation(*, _coeff_type(first(a)), _coeff_type(first(b)))
+    T = MA.promote_operation(*, _sum_product_coeff_types(first(a), first(b))...)
     for (x, y) in zip(a, b)
-        T = MA.promote_operation(MA.add_mul, T, _coeff_type(x), _coeff_type(y))
+        T = MA.promote_operation(
+            MA.add_mul,
+            T,
+            _sum_product_coeff_types(x, y)...,
+        )
     end
-    prototype = first(a) isa AlgebraElement ? first(a) : first(b)
     z = _sum_zero(prototype, T)
     if parent(z) != alg
         z = first(promote_bases(z, alg))
@@ -99,8 +129,8 @@ function sum_products(
     end
     return MA.fused_map_reduce(
         MA.add_mul,
-        map(prepare, a),
-        map(prepare, b);
+        eltype(a) <: Number ? a : map(prepare, a),
+        eltype(b) <: Number ? b : map(prepare, b);
         init = z,
     )
 end
