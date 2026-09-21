@@ -107,3 +107,49 @@ end
     @test (-SA.coeffs(a)).vals == [-1, 0, -3, 0]
     @test_throws MethodError MA.operate!!(-, SA.coeffs(a))
 end
+
+@testset "Coefficient mapping" begin
+    alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 4.0]))
+    for T in (Int, BigInt), alias in (false, true)
+        for c in (
+            T[2, 0, 3, 0],
+            sparsevec([1, 3], T[2, 3], 4),
+            SA.SparseCoefficients([1, 3], T[2, 3]),
+        )
+            input = AlgebraElement(c, alg)
+            output = alias ? input : copy(input)
+            @test @inferred(
+                SA.map_coefficients_to!(output, c -> c - 2, input)
+            ) === output
+            @test [SA.coeffs(output)[i] for i in 1:4] == [0, 0, 1, 0]
+            if !alias
+                @test [SA.coeffs(input)[i] for i in 1:4] == [2, 0, 3, 0]
+            end
+            @test SA.map_coefficients!(c -> 2c, output; nonzero = true) ===
+                  output
+            @test [SA.coeffs(output)[i] for i in 1:4] == [0, 0, 2, 0]
+            @test SA.map_coefficients!(zero, output) === output
+            @test iszero(output)
+            if c isa Union{SA.SparseCoefficients,SparseVector}
+                @test isempty(collect(SA.nonzero_pairs(SA.coeffs(output))))
+            end
+        end
+    end
+
+    # Preserve canonical output when storage uses a different ordering.
+    c = SA.SparseCoefficients([1, 2, 3], [1, 2, 3])
+    out = SA.SparseCoefficients(Int[], Float64[], >)
+    @test SA.map_coefficients_to!(out, c -> c / 2, c) === out
+    @test keys(out) == [3, 2, 1]
+    @test values(out) == [1.5, 1.0, 0.5]
+    @test values(c) == [1, 2, 3]
+    repeated = SA.SparseCoefficients([3, 1, 3], [1, 2, 3])
+    @test SA.map_coefficients_to!(out, c -> c^2, repeated) === out
+    @test keys(out) == [3, 1]
+    @test values(out) == [10, 4]
+
+    input = AlgebraElement(c, alg)
+    other = AlgebraElement(copy(c), StarAlgebra(2.0, basis(alg)))
+    @test_throws ArgumentError SA.map_coefficients_to!(other, zero, input)
+    @test values(SA.coeffs(other)) == [1, 2, 3]
+end

@@ -276,7 +276,7 @@ function MA.operate_to!(
     a::Union{T,Number},
     X::AbstractCoefficients{K,T},
 ) where {K,T}
-    return _map_coefficients!(res, Base.Fix1(*, convert(T, a)), X)
+    return map_coefficients_to!(res, Base.Fix1(*, convert(T, a)), X)
 end
 
 function MA.operate_to!(
@@ -285,17 +285,42 @@ function MA.operate_to!(
     X::AbstractCoefficients{K,T},
     a::Union{T,Number},
 ) where {K,T}
-    return _map_coefficients!(res, Base.Fix2(op, convert(T, a)), X)
+    return map_coefficients_to!(res, Base.Fix2(op, convert(T, a)), X)
 end
 
-function _map_coefficients!(res, f, X)
+"""
+    map_coefficients!(f, X; nonzero=false)
+
+Replace the stored coefficients of `X` by their images under `f`, returning `X`.
+See [`map_coefficients_to!`](@ref) for the storage and basis requirements.
+"""
+function map_coefficients!(f::F, X; nonzero = false) where {F}
+    return map_coefficients_to!(X, f, X; nonzero)
+end
+
+"""
+    map_coefficients_to!(res, f, X; nonzero=false)
+
+Map the stored coefficients of `X` into `res`, which may be `X` itself.
+Implicit zeros are left zero, even when `f(0)` is nonzero. Zero results are
+removed from sparse storage. Set `nonzero=true` when every mapped coefficient
+is known to be nonzero to skip zero removal.
+
+For `AlgebraElement` arguments, `res` and `X` must have the same basis.
+Coefficient containers must support writing coefficients and canonicalization.
+The function `f` receives coefficients directly; use a nonmutating function
+when the input coefficients must be preserved.
+"""
+function map_coefficients_to!(res, f::F, X; nonzero = false) where {F}
     if res !== X
         MA.operate!(zero, res)
     end
     for (idx, x) in nonzero_pairs(X)
         res[idx] = f(x)
     end
-    MA.operate!(canonical, res)
+    if !nonzero
+        MA.operate!(canonical, res)
+    end
     return res
 end
 

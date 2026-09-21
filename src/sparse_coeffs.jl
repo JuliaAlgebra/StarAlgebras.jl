@@ -288,6 +288,30 @@ function Base.resize!(p::_CoefficientPairs, n::Int)
     return p
 end
 
+function Base.deleteat!(p::_CoefficientPairs, indices)
+    deleteat!(keys(p.coefficients), indices)
+    deleteat!(values(p.coefficients), indices)
+    return p
+end
+
+function map_coefficients_to!(
+    res::SparseCoefficients,
+    f::F,
+    X::SparseCoefficients;
+    nonzero = false,
+) where {F}
+    output = _CoefficientPairs(res)
+    resize!(output, length(keys(X)))
+    map!(p -> first(p) => f(last(p)), output, _CoefficientPairs(X))
+    if !nonzero
+        filter!(p -> !iszero(last(p)), output)
+    end
+    if !_strictly_sorted(res)
+        MA.operate!(canonical, res)
+    end
+    return res
+end
+
 function _merge_coefficients!(res, X, Y, transform::F = identity) where {F}
     x = Iterators.Reverse(_CoefficientPairs(X))
     y = Iterators.map(transform, Iterators.Reverse(_CoefficientPairs(Y)))

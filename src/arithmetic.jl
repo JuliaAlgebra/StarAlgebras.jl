@@ -111,6 +111,17 @@ end
 
 # mutable API
 
+function map_coefficients_to!(
+    res::AlgebraElement,
+    f::F,
+    X::AlgebraElement;
+    nonzero = false,
+) where {F}
+    _assert_same_basis(map_coefficients_to!, res, X)
+    map_coefficients_to!(coeffs(res), f, coeffs(X); nonzero)
+    return res
+end
+
 function MA.operate!(::typeof(zero), a::AlgebraElement)
     MA.operate!(zero, coeffs(a))
     return a

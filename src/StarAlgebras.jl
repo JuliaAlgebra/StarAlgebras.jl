@@ -11,6 +11,7 @@ import MutableArithmetics as MA
 export StarAlgebra, AlgebraElement, Term
 export basis, coeffs, star, coefficient, basis_element
 export remove_leading_term
+export map_coefficients!, map_coefficients_to!
 
 function star end
 

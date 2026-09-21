@@ -25,8 +25,8 @@ function merge_sorted!(
     return _merge_sorted!(result, a, b; lt, combine, filter, rev)
 end
 
-# To make it work in case `result` is an alias for `a` or `b`, the trick
-# is to merge it backward:
+# Merging backwards preserves unread entries when `result` shares storage
+# with either input underlying the iterators `a` and `b`:
 # https://stackoverflow.com/a/4553321
 # Backwards iterators also allow lazy term products, computed once per entry.
 function _merge_sorted!(
@@ -65,8 +65,8 @@ function _merge_sorted!(
             i -= 1
         end
     end
-    # In case some entries were equal, we allocated too much and added from the end
-    # so now we need to compact things by moving them forward
+    # Combining or filtering entries can leave unused space at the beginning.
+    # Shift the retained suffix to the beginning before shrinking the result.
     n = lastindex(result) - i
     if i >= firstindex(result)
         for j in 1:n

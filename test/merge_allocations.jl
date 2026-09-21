@@ -21,6 +21,32 @@ function test_allocation_free_merge!(
     return
 end
 
+function test_coefficient_mapping_allocations(f::F, alias, nonzero, n) where {F}
+    input = SA.SparseCoefficients(collect(1:n), collect(1:n))
+    original = copy(input)
+    output = alias ? input : zero(input)
+    sizehint!(keys(output), n)
+    sizehint!(values(output), n)
+    @test @inferred(SA.map_coefficients_to!(output, f, input; nonzero)) ===
+          output
+    for (v, saved) in
+        ((keys(input), keys(original)), (values(input), values(original)))
+        resize!(v, n)
+        copyto!(v, saved)
+    end
+    @test @allocated(SA.map_coefficients_to!(output, f, input; nonzero)) == 0
+    @test collect(SA.nonzero_pairs(output)) ==
+          [i => f(i) for i in 1:n if !iszero(f(i))]
+    return
+end
+
+@testset "Allocation-free coefficient mapping" begin
+    for n in (0, 100), alias in (false, true)
+        test_coefficient_mapping_allocations(Base.Fix2(mod, 3), alias, false, n)
+        test_coefficient_mapping_allocations(-, alias, true, n)
+    end
+end
+
 @testset "Allocation-free sorted merge" begin
     for n in (0, 1, 100),
         rev in (false, true),
