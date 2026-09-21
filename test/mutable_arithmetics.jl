@@ -38,12 +38,39 @@ include(joinpath(@__DIR__, "..", "examples", "acoeffs.jl"))
         @test iszero(b)
         @test a == original
 
+        @test (@inferred MA.add!!(b, a)) === b
+        @test b == original
+        @test (@inferred MA.add!!(b, b)) === b
+        @test b == 2a
+        @test iszero(MA.add!!(b, -b))
+
         # Missing in-place implementations must surface instead of allocating.
-        @test MA.mutability(typeof(a), +, typeof(a), typeof(a)) isa
-              MA.IsMutable
-        @test_throws ErrorException MA.operate!!(+, a, a)
         @test_throws ErrorException MA.operate!!(MA.sub_mul, a, 2, a)
         @test a == original
+    end
+end
+
+function test_addition_allocations(::Type{T}, n) where {T}
+    alg = StarAlgebra(1, SA.FixedBasis(collect(1:max(1, n))))
+    c = SA.SparseCoefficients(collect(1:n), ones(T, n))
+    d = SA.SparseCoefficients(collect(1:n), -ones(T, n))
+    f, g = AlgebraElement(c, alg), AlgebraElement(d, alg)
+    sizehint!(keys(c), 2n)
+    sizehint!(values(c), 2n)
+    @test (@inferred MA.add!!(f, g)) === f
+    resize!(keys(c), n)
+    resize!(values(c), n)
+    copyto!(keys(c), 1:n)
+    fill!(values(c), one(T))
+    @test (@allocated MA.add!!(f, g)) == 0
+    @test iszero(f)
+    @test values(d) == -ones(T, n)
+    return
+end
+
+@testset "Allocation-free algebra element addition" begin
+    for T in (Int, Float64), n in (0, 1, 100)
+        test_addition_allocations(T, n)
     end
 end
 

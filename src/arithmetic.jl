@@ -166,6 +166,10 @@ function MA.operate_to!(res::AlgebraElement, ::typeof(-), X::AlgebraElement)
     return res
 end
 
+function MA.operate!(::typeof(+), X::AlgebraElement, Y::AlgebraElement)
+    return MA.operate_to!(X, +, X, Y)
+end
+
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(+),
