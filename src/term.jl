@@ -123,6 +123,13 @@ function Base.:-(t::Term)
     return Term(t.algebra, t.index, -coefficient(t))
 end
 
+function Base.:*(a::Union{T,Number}, t::Term{T}) where {T}
+    return Term(parent(t), t.index, convert(T, a) * coefficient(t))
+end
+function Base.:*(t::Term{T}, a::Union{T,Number}) where {T}
+    return Term(parent(t), t.index, coefficient(t) * convert(T, a))
+end
+
 for op in (:+, :-, :*)
     @eval begin
         Base.$op(t1::Term, t2::Term) =

@@ -228,6 +228,89 @@ function MA.operate!(
     return f
 end
 
+# Scalars use the same coefficient conversion as ordinary multiplication.
+for (L, R, left) in (
+    (:(Union{T,Number}), :(Union{AlgebraElement{T},Term{T}}), true),
+    (:(Union{AlgebraElement{T},Term{T}}), :(Union{T,Number}), false),
+)
+    a, g = left ? (:a, :b) : (:b, :a)
+    fix = left ? Base.Fix1 : Base.Fix2
+    @eval begin
+        function MA.promote_operation(
+            op::MA.AddSubMul,
+            ::Type{F},
+            ::Type{A},
+            ::Type{B},
+        ) where {T,F<:AlgebraElement,A<:$L,B<:$R}
+            return similar_type(F, MA.promote_operation(op, eltype(F), T, T))
+        end
+
+        function MA.operate!(
+            op::MA.AddSubMul,
+            f::AlgebraElement,
+            a::$L,
+            b::$R,
+        ) where {T}
+            return _scalar_add_mul!(op, f, $g, $fix(*, convert(T, $a)))
+        end
+
+        function MA.operate_to!(
+            output::AlgebraElement,
+            op::MA.AddSubMul,
+            f::AlgebraElement,
+            a::$L,
+            b::$R,
+        ) where {T}
+            _prepare_fused_output!(output, op, f, a, b)
+            return MA.operate!(op, output, a, b)
+        end
+    end
+end
+
+function _scalar_add_mul!(
+    op,
+    f::AlgebraElement,
+    g::AlgebraElement,
+    scale::F,
+) where {F}
+    _assert_same_basis(op, f, g)
+    _add_scaled_coefficients!(MA.add_sub_op(op), coeffs(f), coeffs(g), scale)
+    return f
+end
+
+function _scalar_add_mul!(op, f::AlgebraElement, t::Term, scale::F) where {F}
+    value = MA.add_sub_op(op)(scale(coefficient(t)))
+    return MA.operate!(+, f, Term(parent(t), t.index, value))
+end
+
+function _add_scaled_coefficients!(add, f, g, scale::F) where {F}
+    for (k, v) in nonzero_pairs(g)
+        # Replace coefficients: they may be shared with the scalar or input.
+        f[k] = add(f[k], scale(v))
+    end
+    MA.operate!(canonical, f)
+    return f
+end
+
+function _add_scaled_coefficients!(
+    add,
+    f::SparseCoefficients,
+    g::SparseCoefficients,
+    scale::F,
+) where {F}
+    product = p -> MA.copy_if_mutable(first(p)) => add(scale(last(p)))
+    if f.isless == g.isless && _strictly_sorted(f) && _strictly_sorted(g)
+        return _merge_coefficients!(f, f, g, product)
+    end
+    # Capture the original range so this also works when f === g.
+    for i in eachindex(keys(g))
+        k, v = product(keys(g)[i] => values(g)[i])
+        unsafe_push!(f, k, v)
+    end
+    MA.operate!(canonical, f)
+    return f
+end
+
 function MA.operate!(
     ::UnsafeAddMul{typeof(*)},
     res::AlgebraElement,

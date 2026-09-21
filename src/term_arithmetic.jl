@@ -84,9 +84,17 @@ function MA.operate_to!(
     a::Union{AlgebraElement,Term},
     b::Union{AlgebraElement,Term},
 )
+    _prepare_fused_output!(output, op, f, a, b)
+    return MA.operate!(op, output, a, b)
+end
+
+function _prepare_fused_output!(output, op, f, a, b)
     _assert_same_basis(op, output, f)
-    _assert_same_basis(op, output, a)
-    _assert_same_basis(op, output, b)
+    for g in (a, b)
+        if g isa Union{AlgebraElement,Term}
+            _assert_same_basis(op, output, g)
+        end
+    end
     if coeffs(output) !== coeffs(f)
         if (a isa AlgebraElement && coeffs(output) === coeffs(a)) ||
            (b isa AlgebraElement && coeffs(output) === coeffs(b))
@@ -100,7 +108,7 @@ function MA.operate_to!(
         MA.operate!(UnsafeAdd(), output, f)
         MA.operate!(canonical, coeffs(output))
     end
-    return MA.operate!(op, output, a, b)
+    return output
 end
 
 _term_product_style(ms, f, g) = GeneralTermProduct()
