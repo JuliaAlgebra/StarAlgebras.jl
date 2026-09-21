@@ -96,6 +96,24 @@ function _sum_product_coeff_types(a::Union{AlgebraElement,Term}, ::Number)
     return (_coeff_type(a), _coeff_type(a))
 end
 
+function _product_algebra(a, b)
+    alg = parent(first(a) isa Number ? first(b) : first(a))
+    for x in Iterators.flatten((a, b))
+        if x isa Union{AlgebraElement,Term} && parent(x) != alg
+            alg = first(promote_bases(alg, parent(x)))
+        end
+    end
+    return alg
+end
+
+function _promote_product_array(a::AbstractArray{<:Number}, alg)
+    return a
+end
+function _promote_product_array(a, alg)
+    prepare = x -> parent(x) == alg ? x : first(promote_bases(x, alg))
+    return map(prepare, a)
+end
+
 function _sum_products(a, b)
     MA._check_same_length(a, b)
     if isempty(a)
@@ -106,12 +124,7 @@ function _sum_products(a, b)
        first(b) isa Union{AlgebraElement,Term}
         prototype = first(b)
     end
-    alg = parent(first(a) isa Number ? first(b) : first(a))
-    for x in Iterators.flatten((a, b))
-        if x isa Union{AlgebraElement,Term} && parent(x) != alg
-            alg = first(promote_bases(alg, parent(x)))
-        end
-    end
+    alg = _product_algebra(a, b)
     T = MA.promote_operation(*, _sum_product_coeff_types(first(a), first(b))...)
     for (x, y) in zip(a, b)
         T = MA.promote_operation(
@@ -124,13 +137,10 @@ function _sum_products(a, b)
     if parent(z) != alg
         z = first(promote_bases(z, alg))
     end
-    prepare = let alg = alg
-        x -> parent(x) == alg ? x : first(promote_bases(x, alg))
-    end
     return MA.fused_map_reduce(
         MA.add_mul,
-        eltype(a) <: Number ? a : map(prepare, a),
-        eltype(b) <: Number ? b : map(prepare, b);
+        _promote_product_array(a, alg),
+        _promote_product_array(b, alg);
         init = z,
     )
 end
