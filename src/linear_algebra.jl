@@ -11,16 +11,13 @@ for (A, B) in (
         ::typeof(*),
         A::AbstractMatrix{<:$A},
         B::AbstractVecOrMat{<:$B},
+        α::Number = true,
     )
-        return _matrix_product_to!(output, A, B)
+        return _matrix_product_to!(output, A, B, α)
     end
 end
 
-function _matrix_product_to!(
-    output::VecOrMat{P},
-    A,
-    B,
-) where {P<:AlgebraElement}
+function _check_matrix_product(output, A, B)
     MA._dim_check(output, A, B)
     if Base.mightalias(output, A) || Base.mightalias(output, B)
         throw(
@@ -29,6 +26,16 @@ function _matrix_product_to!(
             ),
         )
     end
+    return
+end
+
+function _matrix_product_to!(
+    output::VecOrMat{P},
+    A,
+    B,
+    α,
+) where {P<:AlgebraElement}
+    _check_matrix_product(output, A, B)
     isempty(output) && return output
     if isempty(B)
         # No input values supply a parent for an empty contraction.
@@ -49,5 +56,47 @@ function _matrix_product_to!(
         # Each output needs independent storage, including mutable zeros.
         output[i] = _sum_zero(prototype, eltype(P))
     end
-    return MA.operate!(MA.add_mul, output, A, B)
+    iszero(α) && return output
+    MA.operate!(MA.add_mul, output, A, B)
+    if !isone(α)
+        for p in output
+            MA.operate_to!(p, *, p, α)
+        end
+    end
+    return output
+end
+
+function MA._mul!(
+    output::VecOrMat{<:AlgebraElement},
+    A::AbstractMatrix,
+    B::AbstractVecOrMat,
+    α::Number,
+    β::Number,
+)
+    _check_matrix_product(output, A, B)
+    isempty(output) && return output
+    if iszero(β)
+        # The destination may be uninitialized when its old value is unused.
+        return MA.operate_to!(output, *, A, B, α)
+    end
+    if iszero(α) || isempty(B)
+        if !isone(β)
+            for i in eachindex(output)
+                output[i] = output[i] * β
+            end
+        end
+        return output
+    end
+    # Keep the old destination while the existing kernel computes A * B * α.
+    # A reusable per-entry accumulator in MA could avoid this temporary array;
+    # reusing the current matrix kernel is sufficient for now.
+    product = MA.operate_to!(similar(output), *, A, B, α)
+    alg = _product_algebra(product, output)
+    for i in eachindex(output, product)
+        p = first(promote_bases(product[i], alg))
+        c = first(promote_bases(output[i], alg))
+        output[i] =
+            isone(β) ? MA.operate!(+, p, c) : MA.operate!(MA.add_mul, p, c, β)
+    end
+    return output
 end

@@ -80,6 +80,13 @@ end
             output = similar(result)
             @test (@inferred LinearAlgebra.mul!(output, A, b)) === output
             @test output == result
+            for (α, β) in ((2, 0), (0, 0), (1, 1), (2, 3), (0, 1), (0, 3))
+                output = iszero(β) ? similar(result) : fill(f, size(result))
+                @test (@inferred LinearAlgebra.mul!(output, A, b, α, β)) ===
+                      output
+                @test [[SA.coeffs(r)[i] for i in 1:5] for r in output] == [α .* c + β .* [1, 2, 0, 0, 0] for c in expected]
+                @test (A, b) == originals
+            end
             second = MA.mutable_copy(result[2])
             MA.operate!(zero, result[1])
             @test result[2] == second
@@ -106,6 +113,15 @@ end
         )) === output
         @test SA.coeffs(output[1]) == [0, 0, 8, 0, 0]
         @test SA.coeffs(output[2]) == [0, 0, 0, 12, 0]
+        @test (@inferred LinearAlgebra.mul!(
+            output,
+            reshape([a, b], 2, 1),
+            B,
+            2,
+            3,
+        )) === output
+        @test SA.coeffs(output[1]) == [0, 0, 40, 0, 0]
+        @test SA.coeffs(output[2]) == [0, 0, 0, 60, 0]
     end
 
     inputs = [f, copy(f)]
@@ -142,6 +158,11 @@ end
     result = @inferred MA.operate(*, [a b], [b, a])
     @test keys(SA.coeffs(only(result))) == ["ab", "ba"]
     @test values(SA.coeffs(only(result))) == [A * B, B * A]
+    output = [SA.algebra_element(SA.Term(alg, "", A))]
+    @test (@inferred LinearAlgebra.mul!(output, [a b], [b, a], true, true)) ===
+          output
+    @test keys(SA.coeffs(only(output))) == ["", "ab", "ba"]
+    @test values(SA.coeffs(only(output))) == [A, A * B, B * A]
     result = @inferred MA.operate(*, [a b], reshape([b, a], 2, 1))
     @test keys(SA.coeffs(only(result))) == ["ab", "ba"]
     @test values(SA.coeffs(only(result))) == [A * B, B * A]
