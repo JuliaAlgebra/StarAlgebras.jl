@@ -63,3 +63,44 @@ function Base.sum(
     # Base shares `init` across output entries, so addition must not mutate it.
     return mapreduce(identity, Base.add_sum, a; dims, init = z)
 end
+
+"""
+    sum_products(a, b)
+
+Sum the products of corresponding algebra elements or terms in `a` and `b`.
+Promote all operands to a common basis before accumulating with
+MutableArithmetics. The inputs are not modified.
+"""
+function sum_products(
+    a::AbstractArray{<:Union{AlgebraElement,Term}},
+    b::AbstractArray{<:Union{AlgebraElement,Term}},
+)
+    MA._check_same_length(a, b)
+    if isempty(a)
+        return MA.fused_map_reduce(MA.add_mul, a, b)
+    end
+    alg = parent(first(a))
+    for x in Iterators.flatten((a, b))
+        if parent(x) != alg
+            alg = first(promote_bases(alg, parent(x)))
+        end
+    end
+    T = MA.promote_operation(*, _coeff_type(first(a)), _coeff_type(first(b)))
+    for (x, y) in zip(a, b)
+        T = MA.promote_operation(MA.add_mul, T, _coeff_type(x), _coeff_type(y))
+    end
+    prototype = first(a) isa AlgebraElement ? first(a) : first(b)
+    z = _sum_zero(prototype, T)
+    if parent(z) != alg
+        z = first(promote_bases(z, alg))
+    end
+    prepare = let alg = alg
+        x -> parent(x) == alg ? x : first(promote_bases(x, alg))
+    end
+    return MA.fused_map_reduce(
+        MA.add_mul,
+        map(prepare, a),
+        map(prepare, b);
+        init = z,
+    )
+end

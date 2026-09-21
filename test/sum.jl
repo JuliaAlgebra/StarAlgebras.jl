@@ -54,4 +54,36 @@ import MutableArithmetics as MA
     @test values(c) == (2, 4)
 end
 
+@testset "Products accumulate in their common parent" begin
+    alg = SA.StarAlgebra(1.0, SA.FixedBasis(2.0 .^ (0:4)))
+    for T in (Int, BigInt),
+        storage in (
+            identity,
+            sparse,
+            v -> SA.SparseCoefficients(findall(!iszero, v), filter(!iszero, v)),
+        )
+
+        f = SA.AlgebraElement(storage(T[2, 1, 0, 0, 0]), alg)
+        g = SA.AlgebraElement(storage(T[1, 0, 1, 0, 0]), alg)
+        originals = MA.mutable_copy.((f, g))
+        result = @inferred SA.sum_products([f, g], [g, f])
+        @test [SA.coeffs(result)[i] for i in 1:5] == [4, 2, 4, 2, 0]
+        @test parent(result) === alg
+        @test (f, g) == originals
+        @test_throws DimensionMismatch SA.sum_products([f, g], [g])
+        @test_throws DimensionMismatch SA.sum_products(typeof(f)[], [g])
+    end
+    a, b = SA.Term(alg, 2, 2), SA.Term(alg, 3, 3)
+    for left in (a, SA.algebra_element(a)), right in (b, SA.algebra_element(b))
+        result = @inferred SA.sum_products([left], [right])
+        @test SA.coeffs(result) == [0, 0, 0, 6, 0]
+        @test parent(result) === alg
+    end
+    basis = SA.DiracBasis(["", "a", "b", "ab", "ba", "bb"])
+    alg = SA.StarAlgebra("", SA.DiracMStructure(basis, *))
+    a, b = SA.Term(alg, "a", 2), SA.Term(alg, "b", 3)
+    result = @inferred SA.sum_products([a, b], [b, b])
+    @test collect(SA.nonzero_pairs(SA.coeffs(result))) == ["ab" => 6, "bb" => 9]
+end
+
 end
