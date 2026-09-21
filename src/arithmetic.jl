@@ -208,6 +208,27 @@ function MA.operate_to!(
 end
 
 function MA.operate!(
+    op::MA.AddSubMul,
+    f::AlgebraElement,
+    a::AlgebraElement,
+    b::AlgebraElement,
+)
+    _assert_same_basis(op, f, a)
+    _assert_same_basis(op, f, b)
+    c, ca, cb = coeffs(f), coeffs(a), coeffs(b)
+    if c === ca || c === cb
+        # Preserve both factors before accumulation changes their storage.
+        original = MA.mutable_copy(c)
+        ca = c === ca ? original : ca
+        cb = c === cb ? original : cb
+    end
+    α = op === MA.add_mul ? true : -1
+    MA.operate!(UnsafeAddMul(mstructure(f)), c, ca, cb, α)
+    MA.operate!(canonical, c)
+    return f
+end
+
+function MA.operate!(
     ::UnsafeAddMul{typeof(*)},
     res::AlgebraElement,
     A::AlgebraElement,

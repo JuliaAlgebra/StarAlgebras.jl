@@ -33,6 +33,24 @@ function _add_term!(c::SparseCoefficients, t::Term)
     return MA.operate!(+, c, single)
 end
 
+function MA.promote_operation(
+    op::MA.AddSubMul,
+    ::Type{F},
+    ::Type{A},
+    ::Type{B},
+) where {F<:AlgebraElement,A<:Term,B<:Term}
+    T = MA.promote_operation(op, eltype(F), _coeff_type(A), _coeff_type(B))
+    return similar_type(F, T)
+end
+
+function MA.operate!(op::MA.AddSubMul, f::AlgebraElement, a::Term, b::Term)
+    c = coeffs(f)
+    lt = c isa SparseCoefficients ? c.isless : isless
+    # A read-only single entry reuses the term-by-element product kernels.
+    single = SparseCoefficients((b.index,), (coefficient(b),), lt)
+    return MA.operate!(op, f, a, AlgebraElement(single, parent(b)))
+end
+
 # Keep coefficient and basis multiplication in operand order on both sides.
 for (L, R, left) in
     ((:Term, :AlgebraElement, true), (:AlgebraElement, :Term, false))
@@ -56,32 +74,33 @@ for (L, R, left) in
         function MA.operate!(op::MA.AddSubMul, f::AlgebraElement, a::$L, b::$R)
             return _term_add_mul!(op, f, $t, $g, Val($left))
         end
-
-        function MA.operate_to!(
-            output::AlgebraElement,
-            op::MA.AddSubMul,
-            f::AlgebraElement,
-            a::$L,
-            b::$R,
-        )
-            _assert_same_basis(op, output, f)
-            _assert_same_basis(op, output, a)
-            _assert_same_basis(op, output, b)
-            if coeffs(output) !== coeffs(f)
-                if coeffs(output) === coeffs($g)
-                    throw(
-                        ArgumentError(
-                            "Aliasing the product in operate_to! is not supported; use operate!",
-                        ),
-                    )
-                end
-                MA.operate!(zero, output)
-                MA.operate!(UnsafeAdd(), output, f)
-                MA.operate!(canonical, coeffs(output))
-            end
-            return _term_add_mul!(op, output, $t, $g, Val($left))
-        end
     end
+end
+
+function MA.operate_to!(
+    output::AlgebraElement,
+    op::MA.AddSubMul,
+    f::AlgebraElement,
+    a::Union{AlgebraElement,Term},
+    b::Union{AlgebraElement,Term},
+)
+    _assert_same_basis(op, output, f)
+    _assert_same_basis(op, output, a)
+    _assert_same_basis(op, output, b)
+    if coeffs(output) !== coeffs(f)
+        if (a isa AlgebraElement && coeffs(output) === coeffs(a)) ||
+           (b isa AlgebraElement && coeffs(output) === coeffs(b))
+            throw(
+                ArgumentError(
+                    "Aliasing the product in operate_to! is not supported; use operate!",
+                ),
+            )
+        end
+        MA.operate!(zero, output)
+        MA.operate!(UnsafeAdd(), output, f)
+        MA.operate!(canonical, coeffs(output))
+    end
+    return MA.operate!(op, output, a, b)
 end
 
 _term_product_style(ms, f, g) = GeneralTermProduct()
