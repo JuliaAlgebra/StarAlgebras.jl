@@ -10,7 +10,7 @@ function MA.promote_operation(
 end
 
 function MA.operate!(::typeof(+), f::AlgebraElement, t::Term)
-    _assert_same_basis(+, f, t)
+    t = _promote_operand(+, f, t)
     iszero(t) && return f
     _add_term!(coeffs(f), t)
     return f
@@ -64,9 +64,9 @@ for (L, R, left) in
             a::$L,
             b::$R,
         )
-            _assert_same_basis(op, output, f)
-            _assert_same_basis(op, output, a)
-            _assert_same_basis(op, output, b)
+            f = _promote_operand(op, output, f)
+            a = _promote_operand(op, output, a)
+            b = _promote_operand(op, output, b)
             if coeffs(output) !== coeffs(f)
                 if coeffs(output) === coeffs($g)
                     throw(
@@ -93,8 +93,8 @@ function _term_product_style(ms, f::SparseCoefficients, g::SparseCoefficients)
 end
 
 function _term_add_mul!(op::MA.AddSubMul, f::AlgebraElement, t::Term, g, left)
-    _assert_same_basis(op, f, t)
-    _assert_same_basis(op, f, g)
+    t = _promote_operand(op, f, t)
+    g = _promote_operand(op, f, g)
     iszero(t) && return f
     ms = mstructure(f)
     c, d = coeffs(f), coeffs(g)

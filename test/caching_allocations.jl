@@ -1,6 +1,16 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+module TestCachingAllocations
+
+using Test
+using SparseArrays
+using StarAlgebras
+import StarAlgebras as SA
+import MutableArithmetics as MA
+
+include("../examples/words.jl")
+
 function _alloc_test(output, op, a, b, allocs)
     MA.operate_to!(output, op, a, b)
     MA.operate_to!(output, op, a, b)
@@ -50,8 +60,9 @@ end
 
     @test (@allocations Y * Y) > 2(k^2 - 2 * k)
     @test Y * Y isa AlgebraElement
-    res = SA._preallocate_output(*, Y, Y)
-    @test @allocations(SA._preallocate_output(*, Y, Y)) ≤ 10
+    P = MA.promote_operation(*, typeof(Y), typeof(Y))
+    res = @inferred MA.zero_for(P, (Y,), (Y,))
+    @test @allocations(MA.zero_for(P, (Y,), (Y,))) ≤ 10
     MA.operate_to!(res, *, Y, Y) # makes sure res is of right size
     @test (@allocations MA.operate_to!(res, *, Y, Y)) ≤ 1
 
@@ -108,4 +119,6 @@ end
         )
         @test_throws err c .+ ones(3)
     end
+end
+
 end
