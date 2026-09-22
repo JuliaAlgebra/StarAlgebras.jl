@@ -10,7 +10,7 @@ function MA.promote_operation(
 end
 
 function MA.operate!(::typeof(+), f::AlgebraElement, t::Term)
-    _assert_same_basis(+, f, t)
+    t = _promote_operand(+, f, t)
     iszero(t) && return f
     _add_term!(coeffs(f), t)
     return f
@@ -84,17 +84,14 @@ function MA.operate_to!(
     a::Union{AlgebraElement,Term},
     b::Union{AlgebraElement,Term},
 )
-    _prepare_fused_output!(output, op, f, a, b)
+    a, b = _prepare_fused_output!(output, op, f, a, b)
     return MA.operate!(op, output, a, b)
 end
 
 function _prepare_fused_output!(output, op, f, a, b)
-    _assert_same_basis(op, output, f)
-    for g in (a, b)
-        if g isa Union{AlgebraElement,Term}
-            _assert_same_basis(op, output, g)
-        end
-    end
+    f = _promote_operand(op, output, f)
+    a = _promote_operand(op, output, a)
+    b = _promote_operand(op, output, b)
     if coeffs(output) !== coeffs(f)
         if (a isa AlgebraElement && coeffs(output) === coeffs(a)) ||
            (b isa AlgebraElement && coeffs(output) === coeffs(b))
@@ -108,7 +105,7 @@ function _prepare_fused_output!(output, op, f, a, b)
         MA.operate!(UnsafeAdd(), output, f)
         MA.operate!(canonical, coeffs(output))
     end
-    return output
+    return a, b
 end
 
 _term_product_style(ms, f, g) = GeneralTermProduct()
@@ -120,8 +117,8 @@ function _term_product_style(ms, f::SparseCoefficients, g::SparseCoefficients)
 end
 
 function _term_add_mul!(op::MA.AddSubMul, f::AlgebraElement, t::Term, g, left)
-    _assert_same_basis(op, f, t)
-    _assert_same_basis(op, f, g)
+    t = _promote_operand(op, f, t)
+    g = _promote_operand(op, f, g)
     iszero(t) && return f
     ms = mstructure(f)
     c, d = coeffs(f), coeffs(g)

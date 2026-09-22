@@ -155,6 +155,7 @@ end
 function promote_bases_with_maps end
 
 function promote_bases_with_maps(a::StarAlgebra, b::StarAlgebra)
+    a == b && return ((a, nothing), (b, nothing))
     _a, _b = promote_bases_with_maps(mstructure(a), mstructure(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end

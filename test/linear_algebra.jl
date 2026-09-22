@@ -160,7 +160,9 @@ end
         g = SA.AlgebraElement(storage(T[0, 1, 1, 0, 0]), alg)
         originals = MA.mutable_copy.((f, g))
         P = SparseMatrixCSC(2, 2, Int32[1, 2, 3], Int32[2, 1], [f, g])
-        prepared = @inferred SA._promote_product_array(P, alg)
+        identity_matrix =
+            SparseMatrixCSC(2, 2, Int32[1, 2, 3], Int32[1, 2], [1, 1])
+        prepared = @inferred identity_matrix * P
         @test typeof(prepared) === typeof(P)
         @test nonzeros(prepared) == [f, g]
         @test nonzeros(prepared) !== nonzeros(P)
@@ -198,7 +200,7 @@ end
         @test (@inferred [f g] * empty) == [zero(f) zero(f)]
         explicit = SparseMatrixCSC(2, 2, [1, 2, 2], [2], [zero(f)])
         @test (@inferred explicit * [2, 3]) == [zero(f), zero(f)]
-        @test nnz(SA._promote_product_array(explicit, alg)) == 1
+        @test nnz(@inferred sparse([1 0; 0 1]) * explicit) == 1
         @test isempty(@inferred zeros(Int, 0, 2) * P)
     end
 
@@ -212,12 +214,66 @@ end
     ]
 end
 
+@testset "Sparse matrix products" begin
+    alg = SA.StarAlgebra(
+        Monomial((0, 0)),
+        SA.FixedBasis([Monomial((i, 0)) for i in 0:4]),
+    )
+    N = SparseMatrixCSC(2, 2, Int32[1, 2, 3], Int32[2, 1], [3, 2])
+    for T in (Int, BigInt), storage in (identity, sparse, sparse_coefficients)
+        f = SA.AlgebraElement(storage(T[1, 2, 0, 0, 0]), alg)
+        g = SA.AlgebraElement(storage(T[0, 1, 1, 0, 0]), alg)
+        originals = MA.mutable_copy.((f, g))
+        P = SparseMatrixCSC(2, 2, Int32[1, 2, 3], Int32[2, 1], [f, g])
+        for (A, B, expected) in
+            ((N, P, [2f, 3g]), (P, N, [3g, 2f]), (P, P, [g * f, f * g]))
+            result = @inferred A * B
+            @test result isa SparseMatrixCSC{typeof(f),Int32}
+            @test result.colptr == Int32[1, 2, 3]
+            @test rowvals(result) == Int32[1, 2]
+            @test nonzeros(result) == expected
+            @test nonzeros(@inferred MA.operate(*, A, B)) == expected
+            output = copy(P)
+            @test (@inferred LinearAlgebra.mul!(output, A, B)) === output
+            @test rowvals(output) == Int32[1, 2]
+            @test nonzeros(output) == expected
+            @test (@inferred MA.operate_to!(output, *, A, B, 2)) === output
+            @test nonzeros(output) == [2p for p in expected]
+            dense = Matrix{typeof(f)}(undef, 2, 2)
+            @test (@inferred LinearAlgebra.mul!(dense, A, B)) === dense
+            @test dense == [expected[1] zero(f); zero(f) expected[2]]
+            @test (f, g) == originals
+        end
+        empty = spzeros(typeof(f), Int32, 2, 2)
+        @test nnz(@inferred empty * P) == 0
+        @test nnz(@inferred P * empty) == 0
+        @test nnz(@inferred empty * empty) == 0
+        @test !SA._matrix_product_mightalias(copy(empty), transpose(empty))
+        @test_throws ArgumentError LinearAlgebra.mul!(P, P, P)
+        aliased =
+            SparseMatrixCSC(2, 2, P.colptr, copy(rowvals(P)), copy(nonzeros(P)))
+        @test_throws ArgumentError LinearAlgebra.mul!(aliased, P, P)
+        aliased = SparseMatrixCSC(
+            2,
+            2,
+            copy(empty.colptr),
+            rowvals(empty),
+            copy(nonzeros(empty)),
+        )
+        @test_throws ArgumentError LinearAlgebra.mul!(aliased, empty, P)
+        @test nonzeros(P) == [f, g]
+    end
+end
+
 @testset "Matrix products preserve factor order" begin
     basis = SA.DiracBasis(["", "a", "b", "ab", "ba"])
     alg = SA.StarAlgebra("", SA.DiracMStructure(basis, *))
     A, B = [1 2; 0 1], [1 0; 3 1]
     a = SA.algebra_element(SA.Term(alg, "a", A))
     b = SA.algebra_element(SA.Term(alg, "b", B))
+    scalar = SA.algebra_element(SA.Term(alg, "a", 2))
+    @test "b" * scalar == SA.algebra_element(SA.Term(alg, "ba", 2))
+    @test scalar * "b" == SA.algebra_element(SA.Term(alg, "ab", 2))
     result = @inferred MA.operate(*, [a b], [b, a])
     @test keys(SA.coeffs(only(result))) == ["ab", "ba"]
     @test values(SA.coeffs(only(result))) == [A * B, B * A]
@@ -233,6 +289,11 @@ end
     @test values(SA.coeffs(only(result))) == [A * B, B * A]
     right = SparseMatrixCSC(2, 1, [1, 3], [1, 2], [b, a])
     @test (@inferred MA.operate(*, [a b], right)) == result
+    product = @inferred left * right
+    @test only(nonzeros(product)) == only(result)
+    output = Matrix{typeof(a)}(undef, 1, 1)
+    @test (@inferred LinearAlgebra.mul!(output, left, right)) === output
+    @test output == result
     @test A == [1 2; 0 1]
     @test B == [1 0; 3 1]
 end

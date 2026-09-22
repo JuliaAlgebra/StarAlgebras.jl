@@ -94,8 +94,7 @@ end
 
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
-# Informative error for the in-place operations below, which require their
-# operands to share a basis (they do not promote, unlike `*`, `+`, `-`).
+# The destination's parent cannot change during an in-place operation.
 function _assert_same_basis(
     op,
     A::AlgebraElement,
@@ -104,12 +103,21 @@ function _assert_same_basis(
     parent(A) == parent(B) && return
     return throw(
         ArgumentError(
-            "cannot `$op` algebra elements over different bases in place: their " *
-            "bases differ. Bring them to a common basis first, e.g. " *
-            "`_A, _B = StarAlgebras.promote_bases(A, B)`, or use the `*`, `+`, `-` " *
-            "operators which promote automatically.",
+            "cannot `$op` in place with this destination basis. Prepare the " *
+            "destination in a common basis with `StarAlgebras.promote_bases`, " *
+            "or use the `*`, `+`, `-` operators which promote automatically.",
         ),
     )
+end
+
+_promote_operand(op, output, x) = x
+
+# Promote operands without changing the prepared destination's parent.
+function _promote_operand(op, output, x::Union{AlgebraElement,Term})
+    parent(x) == parent(output) && return x
+    x = first(promote_bases(x, parent(output)))
+    _assert_same_basis(op, output, x)
+    return x
 end
 
 # mutable API
@@ -136,7 +144,7 @@ function MA.operate_to!(
     a::Union{T,Number},
     X::AlgebraElement{T},
 ) where {T}
-    @assert parent(res) === parent(X)
+    X = _promote_operand(*, res, X)
     MA.operate_to!(coeffs(res), *, convert(T, a), coeffs(X))
     return res
 end
@@ -147,7 +155,7 @@ function MA.operate_to!(
     X::AlgebraElement{T},
     a::Union{T,Number},
 ) where {T}
-    @assert parent(res) === parent(X)
+    X = _promote_operand(op, res, X)
     MA.operate_to!(coeffs(res), op, coeffs(X), convert(T, a))
     return res
 end
@@ -158,13 +166,13 @@ function MA.operate_to!(
     a,
     X::AlgebraElement,
 )
-    @assert parent(res) == parent(X)
+    X = _promote_operand(mul, res, X)
     MA.operate_to!(coeffs(res), mul, a, coeffs(X))
     return res
 end
 
 function MA.operate_to!(res::AlgebraElement, ::typeof(-), X::AlgebraElement)
-    @assert parent(res) === parent(X)
+    X = _promote_operand(-, res, X)
     MA.operate_to!(coeffs(res), -, coeffs(X))
     return res
 end
@@ -179,8 +187,8 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    _assert_same_basis(+, X, Y)
-    @assert parent(res) == parent(X)
+    X = _promote_operand(+, res, X)
+    Y = _promote_operand(+, res, Y)
     MA.operate_to!(coeffs(res), +, coeffs(X), coeffs(Y))
     return res
 end
@@ -191,8 +199,8 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    _assert_same_basis(-, X, Y)
-    @assert parent(res) == parent(X)
+    X = _promote_operand(-, res, X)
+    Y = _promote_operand(-, res, Y)
     MA.operate_to!(coeffs(res), -, coeffs(X), coeffs(Y))
     return res
 end
@@ -203,8 +211,8 @@ function MA.operate_to!(
     A::AlgebraElement,
     B::AlgebraElement,
 )
-    _assert_same_basis(*, A, B)
-    @assert parent(res) == parent(A)
+    A = _promote_operand(*, res, A)
+    B = _promote_operand(*, res, B)
     mstr = mstructure(res)
     MA.operate_to!(coeffs(res), mstr, coeffs(A), coeffs(B), true)
     return res
@@ -216,8 +224,8 @@ function MA.operate!(
     a::AlgebraElement,
     b::AlgebraElement,
 )
-    _assert_same_basis(op, f, a)
-    _assert_same_basis(op, f, b)
+    a = _promote_operand(op, f, a)
+    b = _promote_operand(op, f, b)
     c, ca, cb = coeffs(f), coeffs(a), coeffs(b)
     if c === ca || c === cb
         # Preserve both factors before accumulation changes their storage.
@@ -264,7 +272,7 @@ for (L, R, left) in (
             a::$L,
             b::$R,
         ) where {T}
-            _prepare_fused_output!(output, op, f, a, b)
+            a, b = _prepare_fused_output!(output, op, f, a, b)
             return MA.operate!(op, output, a, b)
         end
     end
@@ -276,7 +284,7 @@ function _scalar_add_mul!(
     g::AlgebraElement,
     scale::F,
 ) where {F}
-    _assert_same_basis(op, f, g)
+    g = _promote_operand(op, f, g)
     _add_scaled_coefficients!(MA.add_sub_op(op), coeffs(f), coeffs(g), scale)
     return f
 end

@@ -7,7 +7,10 @@ for (A, B) in (
     (Union{AlgebraElement,Term}, Number),
 )
     @eval function MA.operate_to!(
-        output::VecOrMat{<:AlgebraElement},
+        output::Union{
+            VecOrMat{<:AlgebraElement},
+            SparseMatrixCSC{<:AlgebraElement},
+        },
         ::typeof(*),
         A::AbstractMatrix{<:$A},
         B::AbstractVecOrMat{<:$B},
@@ -17,9 +20,29 @@ for (A, B) in (
     end
 end
 
+_matrix_product_mightalias(a, b) = Base.mightalias(a, b)
+
+function _matrix_product_mightalias(a::SparseMatrixCSC, b::SparseMatrixCSC)
+    # Distinct empty buffers can share dataids. Compare the arrays themselves
+    # as well: sharing an empty, resizable buffer still aliases its owner.
+    return any(
+        x === y || Base.mightalias(x, y) for
+        x in (a.colptr, rowvals(a), nonzeros(a)),
+        y in (b.colptr, rowvals(b), nonzeros(b))
+    )
+end
+
+function _matrix_product_mightalias(
+    a,
+    b::Union{LinearAlgebra.Transpose,LinearAlgebra.Adjoint},
+)
+    return _matrix_product_mightalias(a, parent(b))
+end
+
 function _check_matrix_product(output, A, B)
     MA._dim_check(output, A, B)
-    if Base.mightalias(output, A) || Base.mightalias(output, B)
+    if _matrix_product_mightalias(output, A) ||
+       _matrix_product_mightalias(output, B)
         throw(
             ArgumentError(
                 "The output of matrix multiplication must not alias an input",
@@ -29,8 +52,20 @@ function _check_matrix_product(output, A, B)
     return
 end
 
+function _matrix_product_zeros!(output::VecOrMat{P}, prototype) where {P}
+    for i in eachindex(output)
+        # Each output needs independent storage, including mutable zeros.
+        output[i] = _sum_zero(prototype, eltype(P))
+    end
+    return output
+end
+
+function _matrix_product_zeros!(output::SparseMatrixCSC, prototype)
+    return MA.operate!(zero, output)
+end
+
 function _matrix_product_to!(
-    output::VecOrMat{P},
+    output::Union{VecOrMat{P},SparseMatrixCSC{P}},
     A,
     B,
     α,
@@ -44,17 +79,23 @@ function _matrix_product_to!(
         return output
     end
     alg = _product_algebra(A, B, prototype)
-    A = _promote_product_array(A, alg)
-    B = _promote_product_array(B, alg)
     prototype = first(promote_bases(prototype, alg))
-    for i in eachindex(output)
-        # Each output needs independent storage, including mutable zeros.
-        output[i] = _sum_zero(prototype, eltype(P))
-    end
+    _matrix_product_zeros!(output, prototype)
     iszero(α) && return output
-    MA.operate!(MA.add_mul, output, A, B)
+    if output isa SparseMatrixCSC &&
+       A isa
+       Union{SparseMatrixCSC,MA._TransposeOrAdjoint{<:Any,<:SparseMatrixCSC}} &&
+       B isa
+       Union{SparseMatrixCSC,MA._TransposeOrAdjoint{<:Any,<:SparseMatrixCSC}}
+        init =
+            (a, b) ->
+                MA.operate!(MA.add_mul, _sum_zero(prototype, eltype(P)), a, b)
+        MA._spmatmul!(init, output, A, B)
+    else
+        MA.operate!(MA.add_mul, output, A, B)
+    end
     if !isone(α)
-        for p in output
+        for p in _product_values(output)
             MA.operate_to!(p, *, p, α)
         end
     end
@@ -89,7 +130,7 @@ function MA._mul!(
     alg = _product_algebra(product, output)
     for i in eachindex(output, product)
         p = first(promote_bases(product[i], alg))
-        c = first(promote_bases(output[i], alg))
+        c = output[i]
         output[i] =
             isone(β) ? MA.operate!(+, p, c) : MA.operate!(MA.add_mul, p, c, β)
     end

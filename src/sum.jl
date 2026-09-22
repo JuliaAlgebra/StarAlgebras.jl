@@ -46,9 +46,7 @@ function MA.operate(
     init = nothing,
 )
     z = _sum_init(a, init)
-    prepare = x ->
-        parent(x) == parent(z) ? x : first(promote_bases(x, parent(z)))
-    return mapreduce(prepare, MA.add!!, a; init = z)
+    return mapreduce(identity, MA.add!!, a; init = z)
 end
 
 function Base.sum(
@@ -70,9 +68,9 @@ end
 Sum the products of corresponding entries in `a` and `b`. At least one array
 contains algebra elements or terms; the other may also contain numbers.
 Numeric factors convert to the coefficient type of their corresponding algebra
-element or term, as in ordinary scalar multiplication. Promote algebra operands
-to a common basis before accumulating with MutableArithmetics. The inputs are
-not modified.
+element or term, as in ordinary scalar multiplication. Prepare an accumulator
+in a common basis; scalar operations promote operands as needed while
+MutableArithmetics accumulates the products. The inputs are not modified.
 """
 function sum_products end
 
@@ -127,42 +125,10 @@ function _product_algebra(a, b, prototype = _product_prototype(a, b))
     return alg
 end
 
-function _promote_product_array(a::AbstractArray{<:Number}, alg)
-    return a
-end
-function _promote_product_array(a, alg)
-    prepare = x -> parent(x) == alg ? x : first(promote_bases(x, alg))
-    return map(prepare, a)
-end
-
-function _promote_product_array(
-    a::SparseMatrixCSC{<:Union{AlgebraElement,Term}},
-    alg,
-)
-    # Mapping a sparse matrix directly also evaluates f(zero(eltype(a))).
-    # Algebra elements need a parent to construct that zero, so only map storage.
-    return SparseMatrixCSC(
-        size(a)...,
-        copy(a.colptr),
-        copy(rowvals(a)),
-        _promote_product_array(nonzeros(a), alg),
-    )
-end
-
 for (Wrapper, op) in
     ((LinearAlgebra.Transpose, transpose), (LinearAlgebra.Adjoint, adjoint))
-    @eval begin
-        _product_values(a::$Wrapper{<:Any,<:SparseMatrixCSC}) =
-            $op(nonzeros(parent(a)))
-
-        function _promote_product_array(
-            a::$Wrapper{<:Union{AlgebraElement,Term},<:SparseMatrixCSC},
-            alg,
-        )
-            # Apply the wrapper before promoting the resulting algebra elements.
-            return _promote_product_array(copy(a), alg)
-        end
-    end
+    @eval _product_values(a::$Wrapper{<:Any,<:SparseMatrixCSC}) =
+        $op(nonzeros(parent(a)))
 end
 
 function _sum_products(a, b)
@@ -188,10 +154,5 @@ function _sum_products(a, b)
     if parent(z) != alg
         z = first(promote_bases(z, alg))
     end
-    return MA.fused_map_reduce(
-        MA.add_mul,
-        _promote_product_array(a, alg),
-        _promote_product_array(b, alg);
-        init = z,
-    )
+    return MA.fused_map_reduce(MA.add_mul, a, b; init = z)
 end
