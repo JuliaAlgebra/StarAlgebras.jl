@@ -8,8 +8,10 @@ import LinearAlgebra
 
 import MutableArithmetics as MA
 
-export StarAlgebra, AlgebraElement
-export basis, coeffs, star
+export StarAlgebra, AlgebraElement, Term
+export basis, coeffs, star, coefficient, basis_element
+export remove_leading_term
+export map_coefficients!, map_coefficients_to!
 
 function star end
 
@@ -32,10 +34,14 @@ include("mtables.jl")
 
 # Algebras and elts
 include("types.jl")
+include("term.jl")
 include("algebra_elts.jl")
 include("star.jl")
 
 include("arithmetic.jl")
+include("term_arithmetic.jl")
+include("sum.jl")
+include("linear_algebra.jl")
 include("quadratic_form.jl")
 include("show.jl")
 

@@ -21,6 +21,30 @@ function Base.copy(sc::SparseCoefficients)
     return SparseCoefficients(copy(keys(sc)), copy(values(sc)), sc.isless)
 end
 
+function MA.mutability(
+    ::Type{<:SparseCoefficients{K,V,Vector{K},Vector{V}}},
+) where {K,V}
+    return MA.IsMutable()
+end
+
+function MA.promote_operation(
+    ::typeof(+),
+    ::Type{X},
+    ::Type{Y},
+) where {X<:SparseCoefficients,Y<:SparseCoefficients}
+    return similar_type(
+        X,
+        MA.promote_operation(+, value_type(X), value_type(Y)),
+    )
+end
+
+function MA.mutable_copy(sc::SparseCoefficients)
+    result = copy(sc)
+    map!(MA.copy_if_mutable, keys(result), keys(result))
+    map!(MA.copy_if_mutable, values(result), values(result))
+    return result
+end
+
 function _search(keys::Tuple, key; lt)
     # `searchsortedfirst` is not defined for `Tuple`
     return findfirst(isequal(key), keys)
@@ -194,6 +218,17 @@ function unsafe_push!(res::SparseCoefficients, key, value)
     return res
 end
 
+function MA.operate!(
+    ::typeof(remove_leading_term),
+    c::SparseCoefficients{K,V,Vector{K},Vector{V}},
+) where {K,V}
+    if !isempty(keys(c))
+        pop!(c.basis_elements)
+        pop!(c.values)
+    end
+    return c
+end
+
 # `{...,L}` is needed to force Julia specialize on the function type
 # Otherwise, we get one allocation when we call `issorted`
 # See https://docs.julialang.org/en/v1/manual/performance-tips/#Be-aware-of-when-Julia-avoids-specializing
@@ -232,6 +267,77 @@ end
 
 # arithmetic on coefficients; performance overloads
 
+# An indexed view of the parallel arrays for the shared merge kernel.
+struct _CoefficientPairs{K,V,C<:AbstractCoefficients{K,V}} <:
+       AbstractVector{Pair{K,V}}
+    coefficients::C
+end
+Base.size(p::_CoefficientPairs) = (length(keys(p.coefficients)),)
+Base.firstindex(p::_CoefficientPairs) = firstindex(keys(p.coefficients))
+Base.lastindex(p::_CoefficientPairs) = lastindex(keys(p.coefficients))
+function Base.getindex(p::_CoefficientPairs, i::Int)
+    return keys(p.coefficients)[i] => values(p.coefficients)[i]
+end
+function Base.setindex!(p::_CoefficientPairs, value, i::Int)
+    keys(p.coefficients)[i], values(p.coefficients)[i] = value
+    return p
+end
+function Base.resize!(p::_CoefficientPairs, n::Int)
+    resize!(keys(p.coefficients), n)
+    resize!(values(p.coefficients), n)
+    return p
+end
+
+function Base.deleteat!(p::_CoefficientPairs, indices)
+    deleteat!(keys(p.coefficients), indices)
+    deleteat!(values(p.coefficients), indices)
+    return p
+end
+
+function map_coefficients_to!(
+    res::SparseCoefficients,
+    f::F,
+    X::SparseCoefficients;
+    nonzero = false,
+) where {F}
+    output = _CoefficientPairs(res)
+    resize!(output, length(keys(X)))
+    map!(p -> first(p) => f(last(p)), output, _CoefficientPairs(X))
+    if !nonzero
+        filter!(p -> !iszero(last(p)), output)
+    end
+    if !_strictly_sorted(res)
+        MA.operate!(canonical, res)
+    end
+    return res
+end
+
+function _merge_coefficients!(res, X, Y, transform::F = identity) where {F}
+    x = Iterators.Reverse(_CoefficientPairs(X))
+    y = Iterators.map(transform, Iterators.Reverse(_CoefficientPairs(Y)))
+    _merge_sorted!(
+        _CoefficientPairs(res),
+        x,
+        y;
+        lt = res.isless,
+        by = first,
+        combine = (a, b) -> first(a) => last(a) + last(b),
+        filter = p -> !iszero(last(p)),
+    )
+    return res
+end
+
+# Read-only coefficients returned by a multiplicative structure can contain
+# unsorted or repeated keys. Preserve the canonicalizing addition for those.
+function _strictly_sorted(c::SparseCoefficients)
+    k = keys(c)
+    return all(i -> c.isless(k[i], k[i+1]), firstindex(k):(lastindex(k)-1))
+end
+
+function MA.operate!(::typeof(+), X::SparseCoefficients, Y::SparseCoefficients)
+    return MA.operate_to!(X, +, X, Y)
+end
+
 function MA.operate!(::typeof(zero), s::SparseCoefficients)
     empty!(s.basis_elements)
     empty!(s.values)
@@ -240,36 +346,15 @@ end
 
 function MA.operate_to!(
     res::SparseCoefficients,
-    ::typeof(-),
-    X::SparseCoefficients,
-)
-    return MA.operate_to!(res, *, X, -1)
-end
-
-function MA.operate_to!(
-    res::SparseCoefficients,
-    ::typeof(*),
-    X::SparseCoefficients,
-    a::Number,
-)
-    if res === X
-        res.values .*= a
-    else
-        resize!(res.basis_elements, length(X.basis_elements))
-        resize!(res.values, length(res.basis_elements))
-        res.basis_elements .= X.basis_elements
-        res.values .= a .* X.values
-    end
-
-    return res
-end
-
-function MA.operate_to!(
-    res::SparseCoefficients,
     ::typeof(+),
     X::SparseCoefficients,
     Y::SparseCoefficients,
 )
+    if res.isless == X.isless == Y.isless &&
+       _strictly_sorted(X) &&
+       _strictly_sorted(Y)
+        return _merge_coefficients!(res, X, Y)
+    end
     if res === X
         append!(res.basis_elements, Y.basis_elements)
         append!(res.values, Y.values)

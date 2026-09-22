@@ -7,8 +7,8 @@
     merge_sorted!(result, v1::AbstractVector, v2::AbstractVector; lt, combine, filter, rev=false)
 
 In-place version of [`merge_sorted`](@ref) that writes the result into `result`.
-`result` must be large enough to hold the merged output (at most `length(v1) + length(v2)`).
-It is resized to the actual output length before returning.
+`result` is resized to hold the merged output and may be `v1` or `v2`.
+The merge writes backwards, then compacts the result after combining and filtering.
 If `rev=true`, the comparison `lt` is reversed.
 """
 function merge_sorted!(
@@ -20,47 +20,60 @@ function merge_sorted!(
     filter,
     rev = false,
 )
-    i = firstindex(result)
-    i1 = firstindex(v1)
-    i2 = firstindex(v2)
-    while i1 <= lastindex(v1) && i2 <= lastindex(v2)
-        x1 = v1[i1]
-        x2 = v2[i2]
-        if x1 == x2
-            c = combine(x1, x2)
-            if filter(c)
-                result[i] = c
-                i += 1
-            end
-            i1 += 1
-            i2 += 1
-        elseif xor(lt(x1, x2), rev)
-            if filter(x1)
-                result[i] = x1
-                i += 1
-            end
-            i1 += 1
+    a = Iterators.Reverse(v1)
+    b = Iterators.Reverse(v2)
+    return _merge_sorted!(result, a, b; lt, combine, filter, rev)
+end
+
+# Merging backwards preserves unread entries when `result` shares storage
+# with either input underlying the iterators `a` and `b`:
+# https://stackoverflow.com/a/4553321
+# Backwards iterators also allow lazy term products, computed once per entry.
+function _merge_sorted!(
+    result,
+    a,
+    b;
+    lt,
+    combine,
+    filter,
+    rev = false,
+    by = identity,
+)
+    # Capture the original iterator bounds before resizing aliased storage.
+    x, y = iterate(a), iterate(b)
+    resize!(result, length(a) + length(b))
+    i = lastindex(result)
+    while x !== nothing || y !== nothing
+        if y === nothing
+            value = x[1]
+            x = iterate(a, x[2])
+        elseif x === nothing
+            value = y[1]
+            y = iterate(b, y[2])
+        elseif by(x[1]) == by(y[1])
+            value = combine(x[1], y[1])
+            x, y = iterate(a, x[2]), iterate(b, y[2])
+        elseif xor(lt(by(x[1]), by(y[1])), rev)
+            value = y[1]
+            y = iterate(b, y[2])
         else
-            if filter(x2)
-                result[i] = x2
-                i += 1
-            end
-            i2 += 1
+            value = x[1]
+            x = iterate(a, x[2])
+        end
+        if filter(value)
+            result[i] = value
+            i -= 1
         end
     end
-    for j in i1:lastindex(v1)
-        if filter(v1[j])
-            result[i] = v1[j]
-            i += 1
+    # Combining or filtering entries can leave unused space at the beginning.
+    # Shift the retained suffix to the beginning before shrinking the result.
+    n = lastindex(result) - i
+    if i >= firstindex(result)
+        for j in 1:n
+            result[firstindex(result)+j-1] = result[i+j]
         end
     end
-    for j in i2:lastindex(v2)
-        if filter(v2[j])
-            result[i] = v2[j]
-            i += 1
-        end
-    end
-    resize!(result, i - 1)
+    resize!(result, n)
     return result
 end
 

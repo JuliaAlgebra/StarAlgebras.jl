@@ -2,6 +2,7 @@
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
 _coeff_type(::Type{A}) where {A<:AlgebraElement} = eltype(A)
+_coeff_type(::Type{<:Term{T}}) where {T} = T
 _coeff_type(a::Type) = a
 _coeff_type(a) = _coeff_type(typeof(a))
 
@@ -24,25 +25,43 @@ end
 
 # module structure:
 
-Base.:*(X::AlgebraElement, a::Number) = a * X
-Base.:(/)(X::AlgebraElement, a::Number) = inv(a) * X
-Base.:(//)(X::AlgebraElement, a::Number) = 1 // a * X
+Base.:+(a::Union{AlgebraElement,Term}) = a
+Base.:*(a::Union{AlgebraElement,Term}) = a
 
 function Base.:-(X::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(*, X, -1), -, X)
+    return MA.operate_to!(similar(X, MA.promote_operation(-, eltype(X))), -, X)
 end
 function MA.promote_operation(
     ::typeof(*),
-    ::Type{T},
+    ::Type{<:Union{T,Number}},
     ::Type{A},
-) where {T<:Number,A<:AlgebraElement}
+) where {T,A<:AlgebraElement{T}}
     return algebra_promote_operation(*, A, T)
 end
-function Base.:*(a::Any, X::AlgebraElement)
-    return MA.operate_to!(_preallocate_output(*, X, a), *, a, X)
+function MA.promote_operation(
+    op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
+    ::Type{A},
+    ::Type{<:Union{T,Number}},
+) where {T,A<:AlgebraElement{T}}
+    if op === (//)
+        return similar_type(A, Base.promote_op(op, T, T))
+    end
+    return algebra_promote_operation(op, A, T)
 end
-function Base.:div(X::AlgebraElement, a::Number)
-    return MA.operate_to!(_preallocate_output(div, X, a), div, X, a)
+function _scalar_lmul(a, X::AlgebraElement{T}) where {T}
+    c = convert(T, a)
+    return MA.operate_to!(_preallocate_output(*, X, c), *, c, X)
+end
+function _scalar_right(op, X::AlgebraElement{T}, a) where {T}
+    c = convert(T, a)
+    R = eltype(MA.promote_operation(op, typeof(X), T))
+    return MA.operate_to!(similar(X, R), op, X, c)
+end
+Base.:*(a::Union{T,Number}, X::AlgebraElement{T}) where {T} = _scalar_lmul(a, X)
+for op in (:*, :/, ://, :div)
+    @eval function Base.$op(X::AlgebraElement{T}, a::Union{T,Number}) where {T}
+        return _scalar_right($op, X, a)
+    end
 end
 function Base.:*(
     a::T,
@@ -75,21 +94,44 @@ end
 
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
-# Informative error for the in-place operations below, which require their
-# operands to share a basis (they do not promote, unlike `*`, `+`, `-`).
-function _assert_same_basis(op, A::AlgebraElement, B::AlgebraElement)
+# The destination's parent cannot change during an in-place operation.
+function _assert_same_basis(
+    op,
+    A::AlgebraElement,
+    B::Union{AlgebraElement,Term},
+)
     parent(A) == parent(B) && return
     return throw(
         ArgumentError(
-            "cannot `$op` two `AlgebraElement`s over different bases in place: their " *
-            "bases differ. Bring them to a common basis first, e.g. " *
-            "`_A, _B = StarAlgebras.promote_bases(A, B)`, or use the `*`, `+`, `-` " *
-            "operators which promote automatically.",
+            "cannot `$op` in place with this destination basis. Prepare the " *
+            "destination in a common basis with `StarAlgebras.promote_bases`, " *
+            "or use the `*`, `+`, `-` operators which promote automatically.",
         ),
     )
 end
 
+_promote_operand(op, output, x) = x
+
+# Promote operands without changing the prepared destination's parent.
+function _promote_operand(op, output, x::Union{AlgebraElement,Term})
+    parent(x) == parent(output) && return x
+    x = first(promote_bases(x, parent(output)))
+    _assert_same_basis(op, output, x)
+    return x
+end
+
 # mutable API
+
+function map_coefficients_to!(
+    res::AlgebraElement,
+    f::F,
+    X::AlgebraElement;
+    nonzero = false,
+) where {F}
+    _assert_same_basis(map_coefficients_to!, res, X)
+    map_coefficients_to!(coeffs(res), f, coeffs(X); nonzero)
+    return res
+end
 
 function MA.operate!(::typeof(zero), a::AlgebraElement)
     MA.operate!(zero, coeffs(a))
@@ -99,22 +141,22 @@ end
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
-    a::Any,
-    X::AlgebraElement,
-)
-    @assert parent(res) === parent(X)
-    MA.operate_to!(coeffs(res), *, a, coeffs(X))
+    a::Union{T,Number},
+    X::AlgebraElement{T},
+) where {T}
+    X = _promote_operand(*, res, X)
+    MA.operate_to!(coeffs(res), *, convert(T, a), coeffs(X))
     return res
 end
 
 function MA.operate_to!(
     res::AlgebraElement,
-    ::typeof(div),
-    X::AlgebraElement,
-    a::Number,
-)
-    @assert parent(res) === parent(X)
-    MA.operate_to!(coeffs(res), div, coeffs(X), a)
+    op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
+    X::AlgebraElement{T},
+    a::Union{T,Number},
+) where {T}
+    X = _promote_operand(op, res, X)
+    MA.operate_to!(coeffs(res), op, coeffs(X), convert(T, a))
     return res
 end
 
@@ -124,15 +166,19 @@ function MA.operate_to!(
     a,
     X::AlgebraElement,
 )
-    @assert parent(res) == parent(X)
+    X = _promote_operand(mul, res, X)
     MA.operate_to!(coeffs(res), mul, a, coeffs(X))
     return res
 end
 
 function MA.operate_to!(res::AlgebraElement, ::typeof(-), X::AlgebraElement)
-    @assert parent(res) === parent(X)
+    X = _promote_operand(-, res, X)
     MA.operate_to!(coeffs(res), -, coeffs(X))
     return res
+end
+
+function MA.operate!(::typeof(+), X::AlgebraElement, Y::AlgebraElement)
+    return MA.operate_to!(X, +, X, Y)
 end
 
 function MA.operate_to!(
@@ -141,8 +187,8 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    _assert_same_basis(+, X, Y)
-    @assert parent(res) == parent(X)
+    X = _promote_operand(+, res, X)
+    Y = _promote_operand(+, res, Y)
     MA.operate_to!(coeffs(res), +, coeffs(X), coeffs(Y))
     return res
 end
@@ -153,8 +199,8 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    _assert_same_basis(-, X, Y)
-    @assert parent(res) == parent(X)
+    X = _promote_operand(-, res, X)
+    Y = _promote_operand(-, res, Y)
     MA.operate_to!(coeffs(res), -, coeffs(X), coeffs(Y))
     return res
 end
@@ -165,11 +211,115 @@ function MA.operate_to!(
     A::AlgebraElement,
     B::AlgebraElement,
 )
-    _assert_same_basis(*, A, B)
-    @assert parent(res) == parent(A)
+    A = _promote_operand(*, res, A)
+    B = _promote_operand(*, res, B)
     mstr = mstructure(res)
     MA.operate_to!(coeffs(res), mstr, coeffs(A), coeffs(B), true)
     return res
+end
+
+function MA.operate!(
+    op::MA.AddSubMul,
+    f::AlgebraElement,
+    a::AlgebraElement,
+    b::AlgebraElement,
+)
+    a = _promote_operand(op, f, a)
+    b = _promote_operand(op, f, b)
+    c, ca, cb = coeffs(f), coeffs(a), coeffs(b)
+    if c === ca || c === cb
+        # Preserve both factors before accumulation changes their storage.
+        original = MA.mutable_copy(c)
+        ca = c === ca ? original : ca
+        cb = c === cb ? original : cb
+    end
+    α = op === MA.add_mul ? true : -1
+    MA.operate!(UnsafeAddMul(mstructure(f)), c, ca, cb, α)
+    MA.operate!(canonical, c)
+    return f
+end
+
+# Scalars use the same coefficient conversion as ordinary multiplication.
+for (L, R, left) in (
+    (:(Union{T,Number}), :(Union{AlgebraElement{T},Term{T}}), true),
+    (:(Union{AlgebraElement{T},Term{T}}), :(Union{T,Number}), false),
+)
+    a, g = left ? (:a, :b) : (:b, :a)
+    fix = left ? Base.Fix1 : Base.Fix2
+    @eval begin
+        function MA.promote_operation(
+            op::MA.AddSubMul,
+            ::Type{F},
+            ::Type{A},
+            ::Type{B},
+        ) where {T,F<:AlgebraElement,A<:$L,B<:$R}
+            return similar_type(F, MA.promote_operation(op, eltype(F), T, T))
+        end
+
+        function MA.operate!(
+            op::MA.AddSubMul,
+            f::AlgebraElement,
+            a::$L,
+            b::$R,
+        ) where {T}
+            return _scalar_add_mul!(op, f, $g, $fix(*, convert(T, $a)))
+        end
+
+        function MA.operate_to!(
+            output::AlgebraElement,
+            op::MA.AddSubMul,
+            f::AlgebraElement,
+            a::$L,
+            b::$R,
+        ) where {T}
+            a, b = _prepare_fused_output!(output, op, f, a, b)
+            return MA.operate!(op, output, a, b)
+        end
+    end
+end
+
+function _scalar_add_mul!(
+    op,
+    f::AlgebraElement,
+    g::AlgebraElement,
+    scale::F,
+) where {F}
+    g = _promote_operand(op, f, g)
+    _add_scaled_coefficients!(MA.add_sub_op(op), coeffs(f), coeffs(g), scale)
+    return f
+end
+
+function _scalar_add_mul!(op, f::AlgebraElement, t::Term, scale::F) where {F}
+    value = MA.add_sub_op(op)(scale(coefficient(t)))
+    return MA.operate!(+, f, Term(parent(t), t.index, value))
+end
+
+function _add_scaled_coefficients!(add, f, g, scale::F) where {F}
+    for (k, v) in nonzero_pairs(g)
+        # Replace coefficients: they may be shared with the scalar or input.
+        f[k] = add(f[k], scale(v))
+    end
+    MA.operate!(canonical, f)
+    return f
+end
+
+function _add_scaled_coefficients!(
+    add,
+    f::SparseCoefficients,
+    g::SparseCoefficients,
+    scale::F,
+) where {F}
+    product = p -> MA.copy_if_mutable(first(p)) => add(scale(last(p)))
+    if f.isless == g.isless && _strictly_sorted(f) && _strictly_sorted(g)
+        return _merge_coefficients!(f, f, g, product)
+    end
+    # Capture the original range so this also works when f === g.
+    for i in eachindex(keys(g))
+        k, v = product(keys(g)[i] => values(g)[i])
+        unsafe_push!(f, k, v)
+    end
+    MA.operate!(canonical, f)
+    return f
 end
 
 function MA.operate!(

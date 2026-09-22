@@ -10,6 +10,41 @@ end
 
 Base.copy(a::AlgebraElement) = AlgebraElement(copy(coeffs(a)), parent(a))
 
+function MA.mutability(::Type{<:AlgebraElement{T,A,C}}) where {T,A,C}
+    return _coefficients_mutability(C)
+end
+
+function MA.mutable_copy(a::AlgebraElement)
+    return AlgebraElement(MA.mutable_copy(coeffs(a)), parent(a))
+end
+
+function MA.promote_operation(
+    ::typeof(zero),
+    ::Type{A},
+) where {A<:AlgebraElement}
+    return similar_type(A, eltype(A))
+end
+
+function remove_leading_term(a::AlgebraElement)
+    return MA.operate!(remove_leading_term, copy(a))
+end
+
+function MA.operate!(::typeof(remove_leading_term), a::AlgebraElement)
+    MA.operate!(remove_leading_term, coeffs(a))
+    return a
+end
+
+function MA.operate(::typeof(remove_leading_term), a::AlgebraElement)
+    return remove_leading_term(a)
+end
+
+function MA.promote_operation(
+    ::typeof(remove_leading_term),
+    ::Type{A},
+) where {A<:AlgebraElement}
+    return A
+end
+
 function Base.deepcopy_internal(a::AlgebraElement, id::IdDict)
     if !haskey(id, a)
         id[a] = AlgebraElement(Base.deepcopy_internal(coeffs(a), id), parent(a))
@@ -120,6 +155,7 @@ end
 function promote_bases_with_maps end
 
 function promote_bases_with_maps(a::StarAlgebra, b::StarAlgebra)
+    a == b && return ((a, nothing), (b, nothing))
     _a, _b = promote_bases_with_maps(mstructure(a), mstructure(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
@@ -140,13 +176,20 @@ function promote_with_map(a::AlgebraElement, alg, map)
     return AlgebraElement(c, alg), map
 end
 
-function promote_bases_with_maps(a::AlgebraElement, b::AlgebraElement)
+function promote_with_map(t::Term, alg, map)
+    return Term(alg, map(t.index), coefficient(t)), map
+end
+
+function promote_bases_with_maps(
+    a::Union{AlgebraElement,Term},
+    b::Union{AlgebraElement,Term},
+)
     _a, _b = promote_bases_with_maps(parent(a), parent(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 
 function promote_bases_with_maps(
-    a::AlgebraElement,
+    a::Union{AlgebraElement,Term},
     b::Union{StarAlgebra,MultiplicativeStructure,AbstractBasis},
 )
     _a, _b = promote_bases_with_maps(parent(a), b)

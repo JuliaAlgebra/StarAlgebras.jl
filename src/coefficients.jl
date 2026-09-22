@@ -19,12 +19,53 @@ implemented, or fallbacks using the framework of `MutableArithmetics` are
 provided based on random indexing. Additionally one needs to provide:
 
 * `Base.similar(ac, T::Type)` with the same semantics as the one for vectors
+* `StarAlgebras.similar_type(::Type{C}, ::Type{T})`: the type of `similar(ac, T)`
+  for `ac::C`
 * `Base.getindex(ac, idx)`
 * `Base.setindex!(ac, val, idx)`
 * `MutableArithmetics.operate!(ms::UnsafeAddMul, ac, v::C, w::C) where C<:SA.AbstractCoefficients`
 
+# Mutability
+
+To enable mutation through `AlgebraElement`'s MutableArithmetics interface,
+a coefficient container `c::C` must implement:
+
+* `MA.mutability(::Type{C})`: return `MA.IsMutable()` for mutable storage.
+* `copy(c)::C`: copy the storage so inserting, replacing, or removing an entry
+  in the copy does not change `c`. Mutable keys and values may remain shared.
+* `MA.mutable_copy(c)::C`: return a copy with independent mutable storage,
+  keys, and values. Reuse `copy` and `MA.copy_if_mutable`; immutable metadata
+  may be shared.
+* `MA.operate!(zero, c)`: zero all coefficients in place.
+* `MA.operate!(remove_leading_term, c)`: remove the last nonzero coefficient
+  in basis order from canonical `c` in place. Leave zero storage
+  unchanged. This operation must preserve canonical form.
+
+Both operations preserve the index domain of fixed-size storage. They must
+not mutate shared key or value objects, since `copy(c)` may share them.
+Their return values are ignored by `AlgebraElement`.
+For dense vectors, removal replaces the last nonzero entry with zero;
+for canonical sparse storage, it deletes the final stored entry.
+
+For `AbstractCoefficients`, operation-specific mutability enables `zero` and
+`remove_leading_term`. Other operations use MA's default mutability rules:
+implement their promotion and in-place methods, or explicitly return
+`MA.IsNotMutable()` from an operation-specific `MA.mutability` method.
 """
 abstract type AbstractCoefficients{K,V} end
+
+# Temporary workaround until MA defines
+# MA.mutability(::Type{<:SparseVector}) = MA.IsMutable().
+# Enabling that trait makes MA.@rewrite and JuMP macros call additional
+# operate! methods, so it needs thorough checks that it does not break JuMP
+# before this helper can be removed in favor of MA.mutability.
+function _coefficients_mutability(::Type{C}) where {C}
+    return MA.mutability(C)
+end
+
+function _coefficients_mutability(::Type{<:SparseVector})
+    return MA.IsMutable()
+end
 
 key_type(::Type{<:AbstractCoefficients{K}}) where {K} = K
 value_type(::Type{<:AbstractCoefficients{K,V}}) where {K,V} = V
@@ -72,6 +113,44 @@ function MA.promote_operation(::typeof(canonical), ::Type{C}) where {C}
     return C
 end
 
+"""
+    remove_leading_term(a::AlgebraElement)
+
+Return a copy of `a` with its last nonzero basis coefficient removed.
+Use `MA.operate!(remove_leading_term, a)` to modify `a` in place.
+
+The in-place operation takes constant time for canonical sparse coefficients
+stored in vectors. Dense vectors are scanned backwards for the last nonzero
+coefficient, taking linear time in the worst case.
+"""
+function remove_leading_term end
+
+function MA.mutability(
+    ::Type{C},
+    ::Union{typeof(zero),typeof(remove_leading_term)},
+    ::Type{C},
+) where {C<:AbstractCoefficients}
+    return MA.mutability(C)
+end
+
+function MA.operate!(::typeof(remove_leading_term), c::SparseVector)
+    if !isempty(SparseArrays.nonzeroinds(c))
+        pop!(SparseArrays.nonzeroinds(c))
+        pop!(SparseArrays.nonzeros(c))
+    end
+    return c
+end
+
+function MA.operate!(::typeof(remove_leading_term), c::Vector)
+    for i in reverse(eachindex(c))
+        if !iszero(c[i])
+            c[i] = zero(c[i])
+            break
+        end
+    end
+    return c
+end
+
 # example implementation for vectors
 MA.operate!(::typeof(canonical), sv::SparseVector) = dropzeros!(sv)
 MA.operate!(::typeof(canonical), v::Vector) = v
@@ -79,6 +158,7 @@ MA.operate!(::typeof(canonical), v::Vector) = v
 function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
     MA.operate!(canonical, ac1)
     MA.operate!(canonical, ac2)
+    length(keys(ac1)) == length(keys(ac2)) || return false
     all(x -> ==(x...), zip(keys(ac1), keys(ac2))) || return false
     all(x -> ==(x...), zip(values(ac1), values(ac2))) || return false
     return true
@@ -137,16 +217,28 @@ function LinearAlgebra.dot(ac::AbstractCoefficients, w::AbstractVector)
 end
 
 Base.zero(X::AbstractCoefficients) = MA.operate!(zero, similar(X))
-Base.:-(X::AbstractCoefficients) = MA.operate_to!(__prealloc(X, -1, *), -, X)
-Base.:*(X::AbstractCoefficients, a::Any) = a * X
-Base.:/(X::AbstractCoefficients, a::Number) = inv(a) * X
-Base.://(X::AbstractCoefficients, a::Number) = X * 1 // a
-
-function Base.:*(a::Any, X::AbstractCoefficients)
-    return MA.operate_to!(__prealloc(X, a, *), *, a, X)
+function Base.:-(X::AbstractCoefficients)
+    return MA.operate_to!(
+        similar(X, MA.promote_operation(-, value_type(X))),
+        -,
+        X,
+    )
 end
-function Base.:div(X::AbstractCoefficients, a::Number)
-    return MA.operate_to!(__prealloc(X, a, div), div, X, a)
+function Base.:*(a::Union{T,Number}, X::AbstractCoefficients{K,T}) where {K,T}
+    res = similar(X, MA.promote_operation(*, T, T))
+    return MA.operate_to!(res, *, convert(T, a), X)
+end
+for op in (:*, :/, ://, :div)
+    @eval function Base.$op(
+        X::AbstractCoefficients{K,T},
+        a::Union{T,Number},
+    ) where {K,T}
+        R =
+            $op === (//) ? Base.promote_op($op, T, T) :
+            MA.promote_operation($op, T, T)
+        res = similar(X, R)
+        return MA.operate_to!(res, $op, X, convert(T, a))
+    end
 end
 function Base.:+(X::AbstractCoefficients, Y::AbstractCoefficients)
     return MA.operate_to!(__prealloc(X, Y, +), +, X, Y)
@@ -183,29 +275,53 @@ end
 function MA.operate_to!(
     res::AbstractCoefficients,
     ::typeof(*),
-    a::Any,
-    X::AbstractCoefficients,
-)
-    if res !== X
-        MA.operate!(zero, res)
-    end
-    for (idx, x) in nonzero_pairs(X)
-        res[idx] = a * x
-    end
-    return res
+    a::Union{T,Number},
+    X::AbstractCoefficients{K,T},
+) where {K,T}
+    return map_coefficients_to!(res, Base.Fix1(*, convert(T, a)), X)
 end
 
 function MA.operate_to!(
     res::AbstractCoefficients,
-    ::typeof(div),
-    X::AbstractCoefficients,
-    a::Number,
-)
+    op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
+    X::AbstractCoefficients{K,T},
+    a::Union{T,Number},
+) where {K,T}
+    return map_coefficients_to!(res, Base.Fix2(op, convert(T, a)), X)
+end
+
+"""
+    map_coefficients!(f, X; nonzero=false)
+
+Replace the stored coefficients of `X` by their images under `f`, returning `X`.
+See [`map_coefficients_to!`](@ref) for the storage and basis requirements.
+"""
+function map_coefficients!(f::F, X; nonzero = false) where {F}
+    return map_coefficients_to!(X, f, X; nonzero)
+end
+
+"""
+    map_coefficients_to!(res, f, X; nonzero=false)
+
+Map the stored coefficients of `X` into `res`, which may be `X` itself.
+Implicit zeros are left zero, even when `f(0)` is nonzero. Zero results are
+removed from sparse storage. Set `nonzero=true` when every mapped coefficient
+is known to be nonzero to skip zero removal.
+
+For `AlgebraElement` arguments, `res` and `X` must have the same basis.
+Coefficient containers must support writing coefficients and canonicalization.
+The function `f` receives coefficients directly; use a nonmutating function
+when the input coefficients must be preserved.
+"""
+function map_coefficients_to!(res, f::F, X; nonzero = false) where {F}
     if res !== X
         MA.operate!(zero, res)
     end
     for (idx, x) in nonzero_pairs(X)
-        res[idx] = div(x, a)
+        res[idx] = f(x)
+    end
+    if !nonzero
+        MA.operate!(canonical, res)
     end
     return res
 end
