@@ -44,10 +44,167 @@ include(joinpath(@__DIR__, "..", "examples", "acoeffs.jl"))
         @test b == 2a
         @test iszero(MA.add!!(b, -b))
 
-        # Missing in-place implementations must surface instead of allocating.
-        @test_throws ErrorException MA.operate!!(MA.sub_mul, a, 2, a)
-        @test a == original
+        @test (@inferred MA.operate!!(MA.sub_mul, a, 2, a)) === a
+        @test a == -original
     end
+end
+
+@testset "Fused scalar products" begin
+    alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 4.0, 6.0, 9.0]))
+    for T in (Int, BigInt), storage in (:dense, :sparse, :coefficients)
+        make_element = function (v)
+            c = if storage === :dense
+                T.(v)
+            elseif storage === :sparse
+                sparse(T.(v))
+            else
+                keys = findall(!iszero, v)
+                SA.SparseCoefficients(keys, T.(v[keys]))
+            end
+            return AlgebraElement(c, alg)
+        end
+        f = make_element([1, 0, -1, 0, 0, 0])
+        a = make_element([1, 2, 0, 0, 0, 0])
+        b = make_element([2, 0, 3, 0, 0, 0])
+        for op in (MA.add_mul, MA.sub_mul),
+            (left, right) in (
+                (a, b),
+                (2, b),
+                (b, 2),
+                (2, SA.Term(alg, 2, T(3))),
+                (SA.Term(alg, 2, T(3)), 2),
+            )
+
+            expected = op(
+                f,
+                left isa Term ?
+                make_element([
+                    i == left.index ? coefficient(left) : zero(T) for i in 1:6
+                ]) : left,
+                right isa Term ?
+                make_element([
+                    i == right.index ? coefficient(right) : zero(T) for i in 1:6
+                ]) : right,
+            )
+            originals = MA.copy_if_mutable.((f, left, right))
+            output = zero(f)
+            @test (@inferred MA.operate_to!(output, op, f, left, right)) ===
+                  output
+            @test output == expected
+            @test (f, left, right) == originals
+            output = MA.mutable_copy(f)
+            @test (@inferred MA.operate!!(op, output, left, right)) === output
+            @test output == expected
+        end
+        for op in (MA.add_mul, MA.sub_mul), alias in (:left, :right, :both)
+            output = MA.mutable_copy(f)
+            left = alias === :right ? a : output
+            right = alias === :left ? b : output
+            expected = op(output, left, right)
+            @test (@inferred MA.operate!!(op, output, left, right)) === output
+            @test output == expected
+        end
+        output = MA.mutable_copy(b)
+        for (left, right) in ((output, a), (a, output))
+            @test_throws ArgumentError MA.operate_to!(
+                output,
+                MA.add_mul,
+                f,
+                left,
+                right,
+            )
+        end
+        @test output == b
+        @test_throws InexactError MA.operate!(MA.add_mul, output, 0.5, a)
+        @test output == b
+        # This algebra has no type-only zero; array products need its values.
+        @test_throws MethodError zero(typeof(a))
+        @test (@inferred MA.operate(*, [a b; b a], [a, b])) ==
+              [a * a + b * b, b * a + a * b]
+        @test (@inferred MA.fused_map_reduce(MA.add_mul, [a, b], [a, b])) ==
+              a * a + b * b
+        source = make_element([0, 0, 0, 0, 0, 1])
+        output = zero(source)
+        MA.operate_to!(output, MA.add_mul, source, a, b)
+        coeffs(output)[6] = MA.add!!(coeffs(output)[6], 1)
+        @test coeffs(source)[6] == 1
+        output = MA.mutable_copy(f)
+        @test MA.operate_to!(output, MA.add_mul, output, a, b) === output
+        @test output == f + a * b
+    end
+end
+
+@testset "Scalar coefficient order and ownership" begin
+    alg = StarAlgebra("", SA.DiracBasis(["", "a", "b", "ab", "ba"]))
+    A, B = [1 2; 0 1], [1 0; 3 1]
+    g = AlgebraElement(SA.SparseCoefficients(["a"], [B]), alg)
+    original = MA.mutable_copy(g)
+    for op in (MA.add_mul, MA.sub_mul), left in (true, false)
+        output = zero(g)
+        a, b = left ? (A, g) : (g, A)
+        @test (@inferred MA.operate!!(op, output, a, b)) === output
+        expected = MA.add_sub_op(op)(left ? A * B : B * A)
+        @test coeffs(output)["a"] == expected
+        @test g == original
+        @test A == [1 2; 0 1]
+    end
+    g = AlgebraElement(SA.SparseCoefficients(["a"], [big(2)]), alg)
+    scalar = coeffs(g)["a"]
+    @test MA.operate!(MA.add_mul, g, scalar, g) === g
+    @test coeffs(g)["a"] == 6
+    @test scalar == 2
+
+    a = AlgebraElement(SA.SparseCoefficients(["a"], [A]), alg)
+    b = AlgebraElement(SA.SparseCoefficients(["b"], [B]), alg)
+    output = zero(a)
+    @test (@inferred MA.operate!!(MA.add_mul, output, a, b)) === output
+    @test coeffs(output)["ab"] == A * B
+
+    a = AlgebraElement(SA.SparseCoefficients(["a"], [2]), alg)
+    b = AlgebraElement(SA.SparseCoefficients(["b"], [3]), alg)
+    for (left, right, key) in ((a, b, "ab"), (b, a, "ba"))
+        output = zero(a)
+        @test (@inferred MA.operate!(MA.add_mul, output, left, right)) ===
+              output
+        @test keys(coeffs(output)) == [key]
+        @test values(coeffs(output)) == [6]
+    end
+end
+
+@testset "Unsorted scaled accumulation" begin
+    alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0]))
+    g = AlgebraElement(SA.SparseCoefficients([3, 1, 3], [1, 2, 3], >), alg)
+    f = AlgebraElement(SA.SparseCoefficients([1, 3], [1, 2]), alg)
+    @test (@inferred MA.operate!(MA.sub_mul, f, 2, g)) === f
+    @test keys(coeffs(f)) == [1, 3]
+    @test values(coeffs(f)) == [-3, -6]
+    @test keys(coeffs(g)) == [3, 1, 3]
+    @test values(coeffs(g)) == [1, 2, 3]
+    @test MA.operate!(MA.add_mul, g, g, 2) === g
+    @test keys(coeffs(g)) == [3, 1]
+    @test values(coeffs(g)) == [12, 6]
+end
+
+function test_scalar_product_allocations(::Type{T}) where {T}
+    alg = StarAlgebra(1, SA.FixedBasis(collect(1:100)))
+    for c in (
+        ones(T, 100),
+        sparse(ones(T, 100)),
+        SA.SparseCoefficients(collect(1:100), ones(T, 100)),
+    )
+        f, g = AlgebraElement(copy(c), alg), AlgebraElement(copy(c), alg)
+        for op in (MA.add_mul, MA.sub_mul)
+            @test (@inferred MA.operate!(op, f, 2, g)) === f
+            @test (@allocated MA.operate!(op, f, 2, g)) == 0
+            @test all(isone, values(c))
+        end
+    end
+    return
+end
+
+@testset "Scaled accumulation allocations" begin
+    test_scalar_product_allocations(Int)
+    test_scalar_product_allocations(Float64)
 end
 
 function test_addition_allocations(::Type{T}, n) where {T}

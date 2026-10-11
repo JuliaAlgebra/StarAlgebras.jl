@@ -64,21 +64,7 @@ for (L, R, left) in
             a::$L,
             b::$R,
         )
-            f = _promote_operand(op, output, f)
-            a = _promote_operand(op, output, a)
-            b = _promote_operand(op, output, b)
-            if coeffs(output) !== coeffs(f)
-                if coeffs(output) === coeffs($g)
-                    throw(
-                        ArgumentError(
-                            "Aliasing the product in operate_to! is not supported; use operate!",
-                        ),
-                    )
-                end
-                MA.operate!(zero, output)
-                MA.operate!(UnsafeAdd(), output, f)
-                MA.operate!(canonical, coeffs(output))
-            end
+            a, b = _prepare_fused_output!(output, op, f, a, b)
             return _term_add_mul!(op, output, $t, $g, Val($left))
         end
     end
