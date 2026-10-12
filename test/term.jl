@@ -39,6 +39,14 @@ function Base.:*(x::MatrixCoefficient, y::MatrixCoefficient)
     return MatrixCoefficient(x.value * y.value)
 end
 
+struct VectorTermStructure{B} <:
+       SA.MultiplicativeStructure{Monomial,NTuple{2,Int}}
+    basis::B
+end
+function (ms::VectorTermStructure)(a, b, ::Type{NTuple{2,Int}})
+    return SA.SparseCoefficients([a .+ b], [1])
+end
+
 @testset "Term" begin
     @testset "Accessors" begin
         t = biv_term(3.0, (1, 2))
@@ -216,11 +224,43 @@ end
         @test iszero(t1 - t1)
     end
 
+    @testset "Term * Term → AlgebraElement" begin
+        for T in (Int, Float64, Rational{Int}, BigInt)
+            a, b = biv_term(T(2), (1, 0)), biv_term(T(3), (0, 2))
+            product = @inferred a * b
+            @test product isa AlgebraElement{T}
+            @test product == SA.algebra_element(biv_term(T(6), (1, 2)))
+            z = @inferred zero(a) * b
+            @test z isa typeof(product)
+            @test iszero(z)
+            @test a == biv_term(T(2), (1, 0))
+            @test b == biv_term(T(3), (0, 2))
+        end
+        # Vector-backed basis products obey the same result-type rule.
+        alg = StarAlgebra(Monomial((0, 0)), VectorTermStructure(biv_basis))
+        a, b = Term(alg, (1, 0), 3), Term(alg, (0, 1), 1)
+        product = @inferred a * b
+        @test product isa AlgebraElement{Int}
+        @test product == SA.algebra_element(Term(alg, (1, 1), 3))
+
+        alg = StarAlgebra("", SA.DiracBasis(["", "a", "b", "ab", "ba"]))
+        a, b = Term(alg, "a", 2), Term(alg, "b", 3)
+        @test (@inferred a * b) == SA.algebra_element(Term(alg, "ab", 6))
+        @test (@inferred b * a) == SA.algebra_element(Term(alg, "ba", 6))
+    end
+
     @testset "Term product can expand" begin
         alg = SA.StarAlgebra(ChebyPoly(0), ChebyMStruct(cheby_basis()))
-        product = Term(alg, 2, 3 // 1) * Term(alg, 3, 2 // 1)
+        a, b = Term(alg, 2, 3 // 1), Term(alg, 3, 2 // 1)
+        product = @inferred a * b
+        @test product isa AlgebraElement{Rational{Int}}
         @test collect(keys(SA.coeffs(product))) == [1, 5]
         @test collect(values(SA.coeffs(product))) == [3 // 1, 3 // 1]
+        @test iszero(@inferred zero(a) * b)
+        @test SA.coeffs(@inferred a * a)[0] == 9 // 2
+        # Shared AlgebraElement multiplication does not yet promote integer
+        # coefficients to accommodate the rational weights of this basis.
+        @test_broken SA.coeffs(Term(alg, 2, 3) * Term(alg, 2, 3))[0] == 9 // 2
     end
 
     @testset "AlgebraElement coefficient scaling" begin

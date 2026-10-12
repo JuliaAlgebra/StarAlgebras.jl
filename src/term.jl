@@ -15,6 +15,8 @@ and can be reconstructed via `basis(algebra)[index]`.
 Having the algebra as a field allows generic arithmetic:
 `+(::Term, ::Term)` returns an `AlgebraElement` by combining both terms
 in a common algebra (via `promote_bases`).
+`*(::Term, ::Term)` always returns an `AlgebraElement`, even when the product
+has a single term. This keeps the result representation independent of the basis.
 """
 struct Term{T,A<:AbstractStarAlgebra,I} <: MA.AbstractMutable
     algebra::A
