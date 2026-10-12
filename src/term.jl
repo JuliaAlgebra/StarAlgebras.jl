@@ -141,35 +141,27 @@ Base.:+(x::Union{AlgebraElement,Term}) = x
 Base.:*(x::Union{AlgebraElement,Term}) = x
 
 function Base.:*(a::Union{T,Number}, t::Term{T}) where {T}
-    return Term(
-        parent(t),
-        MA.copy_if_mutable(t.index),
-        convert(T, a) * coefficient(t),
-    )
+    return Term(parent(t), MA.copy_if_mutable(t.index), a * coefficient(t))
 end
 
 function Base.:*(t::Term{T}, a::Union{T,Number}) where {T}
-    return Term(
-        parent(t),
-        MA.copy_if_mutable(t.index),
-        coefficient(t) * convert(T, a),
-    )
+    return Term(parent(t), MA.copy_if_mutable(t.index), coefficient(t) * a)
 end
 
 function MA.promote_operation(
     ::typeof(*),
-    ::Type{<:Union{T,Number}},
+    ::Type{S},
     ::Type{Term{T,A,I}},
-) where {T,A,I}
-    return Term{MA.promote_operation(*, T, T),A,I}
+) where {T,A,I,S<:Union{T,Number}}
+    return Term{MA.promote_operation(*, S, T),A,I}
 end
 
 function MA.promote_operation(
     ::typeof(*),
     ::Type{Term{T,A,I}},
-    ::Type{<:Union{T,Number}},
-) where {T,A,I}
-    return Term{MA.promote_operation(*, T, T),A,I}
+    ::Type{S},
+) where {T,A,I,S<:Union{T,Number}}
+    return Term{MA.promote_operation(*, T, S),A,I}
 end
 
 for op in (:+, :-, :*)

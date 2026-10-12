@@ -22,30 +22,28 @@ function Base.:-(X::AlgebraElement)
 end
 function MA.promote_operation(
     ::typeof(*),
-    ::Type{<:Union{T,Number}},
+    ::Type{S},
     ::Type{A},
-) where {T,A<:AlgebraElement{T}}
-    return algebra_promote_operation(*, A, T)
+) where {T,A<:AlgebraElement{T},S<:Union{T,Number}}
+    return similar_type(A, MA.promote_operation(*, S, T))
 end
 function MA.promote_operation(
     op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
     ::Type{A},
-    ::Type{<:Union{T,Number}},
-) where {T,A<:AlgebraElement{T}}
+    ::Type{S},
+) where {T,A<:AlgebraElement{T},S<:Union{T,Number}}
     if op === (//)
-        return similar_type(A, Base.promote_op(op, T, T))
+        return similar_type(A, Base.promote_op(op, T, S))
     end
-    return algebra_promote_operation(op, A, T)
+    return algebra_promote_operation(op, A, S)
 end
-function _scalar_lmul(a, X::AlgebraElement{T}) where {T}
-    c = convert(T, a)
-    P = MA.promote_operation(*, T, typeof(X))
-    return MA.operate_to!(MA.zero_for(P, (X,)), *, c, X)
+function _scalar_lmul(a, X::AlgebraElement)
+    P = MA.promote_operation(*, typeof(a), typeof(X))
+    return MA.operate_to!(MA.zero_for(P, (X,)), *, a, X)
 end
-function _scalar_right(op, X::AlgebraElement{T}, a) where {T}
-    c = convert(T, a)
-    R = eltype(MA.promote_operation(op, typeof(X), T))
-    return MA.operate_to!(similar(X, R), op, X, c)
+function _scalar_right(op, X::AlgebraElement, a)
+    R = eltype(MA.promote_operation(op, typeof(X), typeof(a)))
+    return MA.operate_to!(similar(X, R), op, X, a)
 end
 Base.:*(a::Union{T,Number}, X::AlgebraElement{T}) where {T} = _scalar_lmul(a, X)
 for op in (:*, :/, ://, :div)
@@ -136,7 +134,7 @@ function MA.operate_to!(
     X::AlgebraElement{T},
 ) where {T}
     X = _promote_operand(*, res, X)
-    MA.operate_to!(coeffs(res), *, convert(T, a), coeffs(X))
+    MA.operate_to!(coeffs(res), *, a, coeffs(X))
     return res
 end
 
@@ -147,7 +145,7 @@ function MA.operate_to!(
     a::Union{T,Number},
 ) where {T}
     X = _promote_operand(op, res, X)
-    MA.operate_to!(coeffs(res), op, coeffs(X), convert(T, a))
+    MA.operate_to!(coeffs(res), op, coeffs(X), a)
     return res
 end
 
@@ -267,7 +265,7 @@ function _prepare_fused_output!(output, op, f, a, b)
     return a, b
 end
 
-# Scalars use the same coefficient conversion as ordinary multiplication.
+# Scalars use the same coefficient arithmetic as ordinary multiplication.
 for (L, R, left) in (
     (:(Union{T,Number}), :(Union{AlgebraElement{T},Term{T}}), true),
     (:(Union{AlgebraElement{T},Term{T}}), :(Union{T,Number}), false),
@@ -281,7 +279,15 @@ for (L, R, left) in (
             ::Type{A},
             ::Type{B},
         ) where {T,F<:AlgebraElement,A<:$L,B<:$R}
-            return similar_type(F, MA.promote_operation(op, eltype(F), T, T))
+            return similar_type(
+                F,
+                MA.promote_operation(
+                    op,
+                    eltype(F),
+                    _coeff_type(A),
+                    _coeff_type(B),
+                ),
+            )
         end
 
         function MA.operate!(
@@ -290,7 +296,7 @@ for (L, R, left) in (
             a::$L,
             b::$R,
         ) where {T}
-            return _scalar_add_mul!(op, f, $g, $fix(*, convert(T, $a)))
+            return _scalar_add_mul!(op, f, $g, $fix(*, $a))
         end
 
         function MA.operate_to!(

@@ -116,7 +116,34 @@ end
         end
         @test output == b
         @test_throws InexactError MA.operate!(MA.add_mul, output, 0.5, a)
-        @test output == b
+        # A failed coefficient write may have changed earlier output entries.
+        @test b == make_element([2, 0, 3, 0, 0, 0])
+        # Distinguish the scalar from this example's Float64 basis elements.
+        for op in (MA.add_mul, MA.sub_mul),
+            (left, right) in (
+                (0.5f0, a),
+                (a, 0.5f0),
+                (0.5f0, SA.Term(alg, 2, T(3))),
+                (SA.Term(alg, 2, T(3)), 0.5f0),
+            )
+
+            g = left isa Number ? right : left
+            g = g isa Term ? make_element([0, 3, 0, 0, 0, 0]) : g
+            expected = op(f, 0.5f0, g)
+            @test (@inferred MA.promote_operation(
+                op,
+                typeof(f),
+                typeof(left),
+                typeof(right),
+            )) === typeof(expected)
+            output = zero(expected)
+            @test (@inferred MA.operate_to!(output, op, f, left, right)) ===
+                  output
+            @test output == expected
+            output = MA.mutable_copy(convert(typeof(expected), f))
+            @test (@inferred MA.operate!!(op, output, left, right)) === output
+            @test output == expected
+        end
         # This algebra has no type-only zero; array products need its values.
         @test_throws MethodError zero(typeof(a))
         @test (@inferred MA.operate(*, [a b; b a], [a, b])) ==

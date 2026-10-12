@@ -225,8 +225,8 @@ function Base.:-(X::AbstractCoefficients)
     )
 end
 function Base.:*(a::Union{T,Number}, X::AbstractCoefficients{K,T}) where {K,T}
-    res = similar(X, MA.promote_operation(*, T, T))
-    return MA.operate_to!(res, *, convert(T, a), X)
+    res = similar(X, MA.promote_operation(*, typeof(a), T))
+    return MA.operate_to!(res, *, a, X)
 end
 for op in (:*, :/, ://, :div)
     @eval function Base.$op(
@@ -234,10 +234,10 @@ for op in (:*, :/, ://, :div)
         a::Union{T,Number},
     ) where {K,T}
         R =
-            $op === (//) ? Base.promote_op($op, T, T) :
-            MA.promote_operation($op, T, T)
+            $op === (//) ? Base.promote_op($op, T, typeof(a)) :
+            MA.promote_operation($op, T, typeof(a))
         res = similar(X, R)
-        return MA.operate_to!(res, $op, X, convert(T, a))
+        return MA.operate_to!(res, $op, X, a)
     end
 end
 function Base.:+(X::AbstractCoefficients, Y::AbstractCoefficients)
@@ -278,7 +278,7 @@ function MA.operate_to!(
     a::Union{T,Number},
     X::AbstractCoefficients{K,T},
 ) where {K,T}
-    return map_coefficients_to!(res, Base.Fix1(*, convert(T, a)), X)
+    return map_coefficients_to!(res, Base.Fix1(*, a), X)
 end
 
 function MA.operate_to!(
@@ -287,7 +287,7 @@ function MA.operate_to!(
     X::AbstractCoefficients{K,T},
     a::Union{T,Number},
 ) where {K,T}
-    return map_coefficients_to!(res, Base.Fix2(op, convert(T, a)), X)
+    return map_coefficients_to!(res, Base.Fix2(op, a), X)
 end
 
 """

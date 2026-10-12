@@ -159,15 +159,18 @@ end
             @test +x === x
             @test *(x) === x
         end
-        @test (@inferred 2.0 * t) == biv_term(4, (1, 0))
-        @test (@inferred t * 2.0) == biv_term(4, (1, 0))
+        for (a, expected) in
+            ((2.0, 4.0), (1.5, 3.0), (1 // 2, 1 // 1), (1 + im, 2 + 2im))
+            for args in ((a, t), (t, a))
+                result = @inferred *(args...)
+                @test result == biv_term(expected, (1, 0))
+                @test coefficient(result) === expected
+                @test (@inferred MA.promote_operation(*, typeof.(args)...)) ===
+                      typeof(result)
+            end
+        end
         @test (@inferred 1.5 * u) == biv_term(4.5, (0, 1))
         @test (@inferred u * 1.5) == biv_term(4.5, (0, 1))
-        for args in ((Float64, typeof(t)), (typeof(t), Float64))
-            @test MA.promote_operation(*, args...) === typeof(t)
-        end
-        @test_throws InexactError 1.5 * t
-        @test_throws InexactError t * 1.5
         @test_throws MethodError "x" * t
         @test_throws MethodError t * "x"
 
@@ -230,9 +233,32 @@ end
         @test_throws MethodError "x" * p
         @test_throws MethodError p * "x"
         p_int = SA.algebra_element(biv_term(2, (1, 0)))
-        @test_throws InexactError 0.5 * p_int
-        @test_throws InexactError p_int * 0.5
-        @test_throws InexactError MA.operate_to!(similar(p_int), *, p_int, 0.5)
+        for input in (p_int, SA.coeffs(p_int))
+            for (op, args, expected) in (
+                (*, (0.5, input), 1.0),
+                (*, (input, 0.5), 1.0),
+                (/, (input, 1.5), 2 / 1.5),
+                (//, (input, 3 // 2), 4 // 3),
+                (div, (input, 1.5), 1.0),
+            )
+                result = @inferred op(args...)
+                c = result isa AlgebraElement ? SA.coeffs(result) : result
+                @test c[(1, 0)] === expected
+                if result isa AlgebraElement
+                    @test (@inferred MA.promote_operation(
+                        op,
+                        typeof.(args)...,
+                    )) === typeof(result)
+                end
+            end
+        end
+        for args in ((0.5, p_int), (p_int, 0.5))
+            output = similar(p_int, Float64)
+            @test (@inferred MA.operate_to!(output, *, args...)) === output
+            @test output == SA.algebra_element(biv_term(1.0, (1, 0)))
+        end
+        @test_throws InexactError MA.operate_to!(similar(p_int), *, p_int, 0.75)
+        @test SA.coeffs(p_int)[(1, 0)] === 2
 
         a = MatrixCoefficient([1 2; 0 1])
         p_matrix =
