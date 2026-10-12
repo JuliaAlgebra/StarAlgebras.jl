@@ -1,6 +1,20 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+using Test, LinearAlgebra, StarAlgebras
+import StarAlgebras as SA
+import MutableArithmetics as MA
+
+if !@isdefined(bivariate_algebra)
+    include("../examples/bivariate.jl")
+end
+if !@isdefined(NaturalNumbers)
+    include("../examples/natural.jl")
+end
+if !@isdefined(cheby_basis)
+    include("../examples/cheby.jl")
+end
+
 # Use the bivariate example algebra for testing
 const biv_alg = bivariate_algebra()
 const biv_basis = SA.basis(biv_alg)
@@ -100,6 +114,7 @@ end
         # identity convert
         t3 = convert(typeof(t), t)
         @test t3 === t
+        @test convert(Term{Number,A,I}, t) isa Term{Number,A,I}
 
         ae = AlgebraElement(
             SA.SparseCoefficients((t.index,), (coefficient(t),), grlex),
@@ -119,7 +134,10 @@ end
             @test iszero(convert(R, zero(t)))
         end
         fractional = SA.algebra_element(biv_term(1 // 2, t.index))
-        @test_throws InexactError convert(typeof(SA.algebra_element(t)), fractional)
+        @test_throws InexactError convert(
+            typeof(SA.algebra_element(t)),
+            fractional,
+        )
     end
 
     @testset "broadcastable / ndims" begin
@@ -132,6 +150,39 @@ end
     @testset "negation" begin
         t = biv_term(3, (1, 0))
         @test -t == biv_term(-3, (1, 0))
+    end
+
+    @testset "Scalar multiplication and promotion" begin
+        t = biv_term(2, (1, 0))
+        u = biv_term(3.0, (0, 1))
+        for x in (t, SA.algebra_element(t))
+            @test +x === x
+            @test *(x) === x
+        end
+        @test (@inferred 2.0 * t) == biv_term(4, (1, 0))
+        @test (@inferred t * 2.0) == biv_term(4, (1, 0))
+        @test (@inferred 1.5 * u) == biv_term(4.5, (0, 1))
+        @test (@inferred u * 1.5) == biv_term(4.5, (0, 1))
+        for args in ((Float64, typeof(t)), (typeof(t), Float64))
+            @test MA.promote_operation(*, args...) === typeof(t)
+        end
+        @test_throws InexactError 1.5 * t
+        @test_throws InexactError t * 1.5
+        @test_throws MethodError "x" * t
+        @test_throws MethodError t * "x"
+
+        a = MatrixCoefficient([1 2; 0 1])
+        t_matrix = biv_term(MatrixCoefficient([1 0; 3 1]), (1, 0))
+        @test coefficient(a * t_matrix).value == [7 2; 3 1]
+        @test coefficient(t_matrix * a).value == [1 2; 3 7]
+
+        p, q = SA.algebra_element(t), SA.algebra_element(u)
+        for (a, b, T) in
+            ((t, u, typeof(u)), (p, q, typeof(q)), (p, u, typeof(q)))
+            @test (@inferred Base.vect(a, b)) isa Vector{T}
+            @test (@inferred Base.vect(b, a)) isa Vector{T}
+            @test [a, b] == [convert(T, a), convert(T, b)]
+        end
     end
 
     @testset "Term + Term → AlgebraElement" begin

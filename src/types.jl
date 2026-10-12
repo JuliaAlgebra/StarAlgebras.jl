@@ -205,6 +205,18 @@ function similar_type(::Type{AlgebraElement{T,A,V}}, ::Type{C}) where {A,T,V,C}
     return AlgebraElement{C,A,similar_type(V, C)}
 end
 
+function Base.promote_rule(
+    ::Type{AlgebraElement{T,A,U}},
+    ::Type{AlgebraElement{S,A,V}},
+) where {T,S,A,U,V}
+    C = promote_type(T, S)
+    return AlgebraElement{
+        C,
+        A,
+        promote_type(similar_type(U, C), similar_type(V, C)),
+    }
+end
+
 function Base.similar(X::AlgebraElement, T = eltype(X))
     return AlgebraElement(similar(coeffs(X), T), parent(X))
 end

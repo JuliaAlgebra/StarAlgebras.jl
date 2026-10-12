@@ -97,9 +97,23 @@ function Base.hash(t::Term, u::UInt)
 end
 
 function Base.convert(::Type{Term{T,A,I}}, t::Term{<:Any,A,I}) where {T,A,I}
-    return Term(t.algebra, t.index, convert(T, coefficient(t)))
+    return Term{T,A,I}(t.algebra, t.index, convert(T, coefficient(t)))
 end
 Base.convert(::Type{Term{T,A,I}}, t::Term{T,A,I}) where {T,A,I} = t
+
+function Base.promote_rule(
+    ::Type{Term{T,A,I}},
+    ::Type{Term{S,A,I}},
+) where {T,S,A,I}
+    return Term{promote_type(T, S),A,I}
+end
+
+function Base.promote_rule(
+    ::Type{P},
+    ::Type{Term{S,A,I}},
+) where {T,S,A,C,I,P<:AlgebraElement{T,A,C}}
+    return similar_type(P, promote_type(T, S))
+end
 
 Base.:^(x::Term, p::Integer) = algebra_element(x)^p
 
@@ -121,6 +135,41 @@ end
 
 function Base.:-(t::Term)
     return Term(t.algebra, t.index, -coefficient(t))
+end
+
+Base.:+(x::Union{AlgebraElement,Term}) = x
+Base.:*(x::Union{AlgebraElement,Term}) = x
+
+function Base.:*(a::Union{T,Number}, t::Term{T}) where {T}
+    return Term(
+        parent(t),
+        MA.copy_if_mutable(t.index),
+        convert(T, a) * coefficient(t),
+    )
+end
+
+function Base.:*(t::Term{T}, a::Union{T,Number}) where {T}
+    return Term(
+        parent(t),
+        MA.copy_if_mutable(t.index),
+        coefficient(t) * convert(T, a),
+    )
+end
+
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{<:Union{T,Number}},
+    ::Type{Term{T,A,I}},
+) where {T,A,I}
+    return Term{MA.promote_operation(*, T, T),A,I}
+end
+
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{Term{T,A,I}},
+    ::Type{<:Union{T,Number}},
+) where {T,A,I}
+    return Term{MA.promote_operation(*, T, T),A,I}
 end
 
 for op in (:+, :-, :*)
