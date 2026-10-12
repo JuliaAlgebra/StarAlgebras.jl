@@ -6,8 +6,21 @@ _coeff_type(::Type{<:Term{T}}) where {T} = T
 _coeff_type(a::Type) = a
 _coeff_type(a) = _coeff_type(typeof(a))
 
+function _product_coefficient_type(
+    ::Type{<:Union{AlgebraElement{T,A},Term{T,A}}},
+    ::Type{Y},
+) where {T,A,Y}
+    M = MA.promote_operation(mstructure, A)
+    C = MA.promote_operation(*, T, _coeff_type(Y))
+    return MA.promote_operation(*, value_type(M), C)
+end
+
 function algebra_promote_operation(op, args::Vararg{Type,N}) where {N}
-    T = MA.promote_operation(op, _coeff_type.(args)...)
+    T = if op === (*) && args[1] <: AlgebraElement && args[2] <: AlgebraElement
+        _product_coefficient_type(args...)
+    else
+        MA.promote_operation(op, _coeff_type.(args)...)
+    end
     if args[2] <: AlgebraElement &&
        MA.promote_operation(coeffs, args[2]) <: DenseArray # what a hack :)
         return similar_type(args[2], T)

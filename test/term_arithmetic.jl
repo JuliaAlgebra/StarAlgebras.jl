@@ -1,6 +1,14 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2026: Marek Kaluba, Benoît Legat
 
+using Test, StarAlgebras
+import StarAlgebras as SA
+import MutableArithmetics as MA
+
+if !@isdefined(biv_alg)
+    include("term.jl")
+end
+
 function SA.term_product_style(
     ::typeof(SA.mstructure(biv_alg)),
     ::typeof(grlex),
@@ -81,32 +89,39 @@ end
     @test f == expected
 end
 
-struct WeightedTermProduct{B} <:
+struct WeightedTermProduct{B,W} <:
        SA.MultiplicativeStructure{Monomial,NTuple{2,Int}}
     basis::B
+    weight::W
 end
+SA.value_type(::Type{<:WeightedTermProduct{B,W}}) where {B,W} = W
 function (ms::WeightedTermProduct)(
     a::NTuple{2,Int},
     b::NTuple{2,Int},
     ::Type{NTuple{2,Int}},
 )
-    return SA.SparseCoefficients((a .+ b,), (2,))
+    return SA.SparseCoefficients((a .+ b,), (ms.weight,))
 end
 function SA.term_product_style(::WeightedTermProduct, ::typeof(grlex))
     return SA.OrderedTermProduct()
 end
 
-@testset "Product weights and coefficient order" begin
-    alg = StarAlgebra(Monomial((0, 0)), WeightedTermProduct(biv_basis))
+@testset "Product weights and coefficient order" for weight in (2, 1 // 2)
+    alg = StarAlgebra(Monomial((0, 0)), WeightedTermProduct(biv_basis, weight))
     A, B = [1 2; 0 1], [1 0; 3 1]
     original = deepcopy((A, B))
     t = Term(alg, (1, 0), A)
     g = SA.algebra_element(Term(alg, (0, 1), B))
     for left in (true, false)
-        f = SA.algebra_element(Term(alg, (1, 1), zeros(Int, 2, 2)))
+        expected = -weight * (left ? A * B : B * A)
+        f = SA.algebra_element(Term(alg, (1, 1), zero(expected)))
         a, b = left ? (t, g) : (g, t)
-        @test MA.operate!!(MA.sub_mul, f, a, b) === f
-        @test SA.coeffs(f)[(1, 1)] == -2 * (left ? A * B : B * A)
+        product = @inferred a * b
+        @test (@inferred MA.promote_operation(*, typeof(a), typeof(b))) ===
+              typeof(product)
+        @test SA.coeffs(product)[(1, 1)] == -expected
+        @test (@inferred MA.operate!!(MA.sub_mul, f, a, b)) === f
+        @test SA.coeffs(f)[(1, 1)] == expected
         @test (coefficient(t), SA.coeffs(g)[(0, 1)]) == original
     end
 end
@@ -122,6 +137,25 @@ end
         a, b = left ? (t, g) : (g, t)
         @test MA.operate!!(op, g, a, b) === g
         @test g == expected
+    end
+    t = Term(alg, 2, 3)
+    g = SA.algebra_element(t)
+    for op in (MA.add_mul, MA.sub_mul), (a, b) in ((t, g), (g, t), (g, g))
+        expected = op(g, a, b)
+        @test (@inferred MA.promote_operation(
+            op,
+            typeof(g),
+            typeof(a),
+            typeof(b),
+        )) === typeof(expected)
+        original = copy(g)
+        output = @inferred MA.operate!!(op, g, a, b)
+        @test output isa AlgebraElement{Rational{Int}}
+        @test output == expected
+        @test g == original
+        output = zero(expected)
+        @test (@inferred MA.operate_to!(output, op, g, a, b)) === output
+        @test output == expected
     end
 end
 

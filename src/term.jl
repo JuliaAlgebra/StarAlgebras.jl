@@ -175,6 +175,25 @@ for op in (:+, :-, :*)
     end
 end
 
+for (L, R) in ((Term, Term), (Term, AlgebraElement), (AlgebraElement, Term))
+    @eval function MA.promote_operation(
+        ::typeof(*),
+        ::Type{A},
+        ::Type{B},
+    ) where {A<:$L,B<:$R}
+        return MA.promote_operation(
+            *,
+            _algebra_element_type(A),
+            _algebra_element_type(B),
+        )
+    end
+end
+
+_algebra_element_type(::Type{A}) where {A<:AlgebraElement} = A
+function _algebra_element_type(::Type{T}) where {T<:Term}
+    return Base.promote_op(algebra_element, T)
+end
+
 # Convert Term to single-entry AlgebraElement
 function algebra_element(t::Term)
     c = zero_coeffs(typeof(coefficient(t)), basis(parent(t)))

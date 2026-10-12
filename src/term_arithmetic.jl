@@ -45,7 +45,7 @@ for (L, R, left) in
             ::Type{L},
             ::Type{R},
         ) where {F<:AlgebraElement,L<:$L,R<:$R}
-            T = MA.promote_operation(*, _coeff_type(L), _coeff_type(R))
+            T = _product_coefficient_type(L, R)
             return MA.promote_operation(
                 MA.add_sub_op(op),
                 F,

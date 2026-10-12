@@ -25,6 +25,8 @@ Structure representing multiplication w.r.t its basis.
 
 Implements
 * `basis(ms::MultiplicativeStructure{T,I}) → AbstractBasis{T}`
+* `value_type(::Type{M})` gives the type of basis-product weights for `ms::M`.
+  The default infers it from `ms(i, j)`; see [`value_type`](@ref).
 * `(ms::MultiplicativeStructure{T,I})(i::V, j::V, ::Type{U}) where {V<:Union{T,I},U<:Union{T,I}} →
         Union{AbstractCoefficients, AbstractVector}`
    the product of `i` and `j` represented by coefficients in `basis(ms)`
@@ -39,6 +41,23 @@ When the product is not representable faithfully,
    `ProductNotWellDefined` exception should be thrown.
 """
 abstract type MultiplicativeStructure{T,I} end
+
+"""
+    value_type(::Type{M}) where {M<:MultiplicativeStructure}
+
+Return the coefficient type of the basis-product weights returned by `ms(i, j)`
+for `ms::M` and basis indices `i` and `j`. This type must accommodate the weights
+of every basis product, including products that expand into several terms.
+
+The default infers the coefficient-container type without evaluating a product.
+Specialize this method if inference cannot determine its coefficient type.
+Algebra multiplication uses it to promote `weight * (left_coeff * right_coeff)`.
+"""
+function value_type(::Type{M}) where {T,I,M<:MultiplicativeStructure{T,I}}
+    return value_type(Base.promote_op(_basis_product, M, I, I))
+end
+
+_basis_product(ms, i, j) = ms(i, j)
 
 abstract type TermProductStyle end
 
@@ -144,7 +163,12 @@ end
 function MA.operate!(op::UnsafeAddMul, res, A, B, α)
     for (kA, vA) in nonzero_pairs(A)
         for (kB, vB) in nonzero_pairs(B)
-            MA.operate!(op, res, op.structure(kA, kB), MA.@rewrite(α * vA * vB))
+            MA.operate!(
+                op,
+                res,
+                _basis_product(op.structure, kA, kB),
+                MA.@rewrite(α * vA * vB)
+            )
         end
     end
     return res
@@ -155,6 +179,8 @@ struct DiracMStructure{T,I,B<:AbstractBasis{T,I},Op} <:
     basis::B
     op::Op
 end
+
+value_type(::Type{<:DiracMStructure}) = Int
 
 function Base.:(==)(a::DiracMStructure, b::DiracMStructure)
     return a.op == b.op && a.basis == b.basis

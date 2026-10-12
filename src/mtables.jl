@@ -23,6 +23,10 @@ struct MTable{
     lock::Base.Threads.SpinLock
 end
 
+function value_type(::Type{<:MTable{T,I,Ms}}) where {T,I,Ms}
+    return value_type(Ms)
+end
+
 function MTable(
     mstr::MultiplicativeStructure{T,I},
     dims::NTuple{2,I},

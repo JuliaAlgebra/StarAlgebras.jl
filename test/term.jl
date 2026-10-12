@@ -47,6 +47,18 @@ function (ms::VectorTermStructure)(a, b, ::Type{NTuple{2,Int}})
     return SA.SparseCoefficients([a .+ b], [1])
 end
 
+function test_basis_weight_type(ms::M, ::Type{W}) where {M,W}
+    @test (@inferred SA.value_type(M)) === W
+    @test (@allocated SA.value_type(M)) == 0
+    return
+end
+
+function test_product_promotion_allocations(a::A, b::B) where {A,B}
+    MA.promote_operation(*, A, B)
+    @test (@allocated MA.promote_operation(*, A, B)) == 0
+    return
+end
+
 @testset "Term" begin
     @testset "Accessors" begin
         t = biv_term(3.0, (1, 2))
@@ -225,19 +237,26 @@ end
     end
 
     @testset "Term * Term → AlgebraElement" begin
+        test_basis_weight_type(SA.mstructure(biv_alg), Int)
         for T in (Int, Float64, Rational{Int}, BigInt)
             a, b = biv_term(T(2), (1, 0)), biv_term(T(3), (0, 2))
             product = @inferred a * b
             @test product isa AlgebraElement{T}
+            @test (@inferred MA.promote_operation(*, typeof(a), typeof(b))) ===
+                  typeof(product)
             @test product == SA.algebra_element(biv_term(T(6), (1, 2)))
             z = @inferred zero(a) * b
             @test z isa typeof(product)
             @test iszero(z)
             @test a == biv_term(T(2), (1, 0))
             @test b == biv_term(T(3), (0, 2))
+            if T === Int
+                test_product_promotion_allocations(a, b)
+            end
         end
         # Vector-backed basis products obey the same result-type rule.
         alg = StarAlgebra(Monomial((0, 0)), VectorTermStructure(biv_basis))
+        test_basis_weight_type(SA.mstructure(alg), Int)
         a, b = Term(alg, (1, 0), 3), Term(alg, (0, 1), 1)
         product = @inferred a * b
         @test product isa AlgebraElement{Int}
@@ -258,9 +277,44 @@ end
         @test collect(values(SA.coeffs(product))) == [3 // 1, 3 // 1]
         @test iszero(@inferred zero(a) * b)
         @test SA.coeffs(@inferred a * a)[0] == 9 // 2
-        # Shared AlgebraElement multiplication does not yet promote integer
-        # coefficients to accommodate the rational weights of this basis.
-        @test_broken SA.coeffs(Term(alg, 2, 3) * Term(alg, 2, 3))[0] == 9 // 2
+    end
+
+    @testset "Basis weight promotion" begin
+        ms = ChebyMStruct(cheby_basis())
+        for structure in (ms, SA.MTable(ms, (0, 0)))
+            test_basis_weight_type(structure, Rational{Int})
+            alg = StarAlgebra(ChebyPoly(0), structure)
+            for (T, R) in (
+                (Int, Rational{Int}),
+                (BigInt, Rational{BigInt}),
+                (Float64, Float64),
+            )
+                t = Term(alg, 2, T(3))
+                p = SA.algebra_element(t)
+                for (a, b) in ((t, t), (t, p), (p, t), (p, p))
+                    product = @inferred a * b
+                    @test product isa AlgebraElement{R}
+                    @test (@inferred MA.promote_operation(
+                        *,
+                        typeof(a),
+                        typeof(b),
+                    )) === typeof(product)
+                    @test collect(keys(SA.coeffs(product))) == [0, 4]
+                    @test collect(values(SA.coeffs(product))) == R[9//2, 9//2]
+                    z = @inferred zero(a) * b
+                    @test z isa typeof(product)
+                    @test iszero(z)
+                    if T === Int
+                        test_product_promotion_allocations(a, b)
+                    end
+                end
+                @test coefficient(t) == 3
+                @test SA.coeffs(p)[2] == 3
+                # Scalar multiplication does not multiply basis elements.
+                @test (@inferred 2 * p) isa AlgebraElement{T}
+                @test (@inferred p * 2) isa AlgebraElement{T}
+            end
+        end
     end
 
     @testset "AlgebraElement coefficient scaling" begin

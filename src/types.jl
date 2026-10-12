@@ -43,6 +43,12 @@ function StarAlgebra(object, basis::AbstractBasis)
 end
 
 mstructure(A::StarAlgebra) = A.mstructure
+function MA.promote_operation(
+    ::typeof(mstructure),
+    ::Type{StarAlgebra{O,T,M}},
+) where {O,T,M}
+    return M
+end
 basis(A::StarAlgebra) = basis(mstructure(A))
 function MA.promote_operation(
     ::typeof(basis),
