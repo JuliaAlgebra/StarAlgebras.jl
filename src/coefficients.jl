@@ -308,7 +308,9 @@ Implicit zeros are left zero, even when `f(0)` is nonzero. Zero results are
 removed from sparse storage. Set `nonzero=true` when every mapped coefficient
 is known to be nonzero to skip zero removal.
 
-For `AlgebraElement` arguments, `res` and `X` must have the same basis.
+For an `AlgebraElement` destination, an `AlgebraElement` or `Term` source is
+first promoted into the destination's basis, which must contain the source.
+Zero terms are treated as empty coefficient storage.
 Coefficient containers must support writing coefficients and canonicalization.
 The function `f` receives coefficients directly; use a nonmutating function
 when the input coefficients must be preserved.

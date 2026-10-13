@@ -2,6 +2,7 @@
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
 using Test, LinearAlgebra, StarAlgebras
+using SparseArrays
 import StarAlgebras as SA
 import MutableArithmetics as MA
 
@@ -87,6 +88,38 @@ end
 
         @test iszero(biv_term(0.0, (0, 0)))
         @test !iszero(biv_term(1, (0, 0)))
+    end
+
+    @testset "Coefficient mapping" begin
+        alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 4.0]))
+        for T in (Int, BigInt), nz in (false, true)
+            for c in (
+                T[1, 2, 3, 4],
+                sparsevec(1:4, T[1, 2, 3, 4]),
+                SA.SparseCoefficients(collect(1:4), T[1, 2, 3, 4]),
+            )
+                output = AlgebraElement(c, alg)
+                t = Term(alg, 3, c[3])
+                @test (@inferred SA.map_coefficients_to!(
+                    output,
+                    c -> 2c,
+                    t;
+                    nonzero = nz,
+                )) === output
+                @test [c[i] for i in 1:4] == [0, 0, 6, 0]
+                @test coefficient(t) == 3
+                @test SA.map_coefficients_to!(output, zero, t) === output
+                @test iszero(output)
+                @test isempty(collect(SA.nonzero_pairs(c)))
+                @test SA.map_coefficients_to!(
+                    output,
+                    _ -> error("A zero term has no stored coefficients"),
+                    zero(t);
+                    nonzero = nz,
+                ) === output
+                @test iszero(output)
+            end
+        end
     end
 
     @testset "copy / mutable_copy" begin

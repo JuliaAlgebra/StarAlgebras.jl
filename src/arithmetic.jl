@@ -130,8 +130,24 @@ function map_coefficients_to!(
     X::AlgebraElement;
     nonzero = false,
 ) where {F}
-    _assert_same_basis(map_coefficients_to!, res, X)
+    X = _promote_operand(map_coefficients_to!, res, X)
     map_coefficients_to!(coeffs(res), f, coeffs(X); nonzero)
+    return res
+end
+
+function map_coefficients_to!(
+    res::AlgebraElement,
+    f::F,
+    t::Term;
+    nonzero = false,
+) where {F}
+    t = _promote_operand(map_coefficients_to!, res, t)
+    if iszero(t)
+        return MA.operate!(zero, res)
+    end
+    single =
+        SparseCoefficients((MA.copy_if_mutable(t.index),), (coefficient(t),))
+    map_coefficients_to!(coeffs(res), f, single; nonzero)
     return res
 end
 
