@@ -16,6 +16,15 @@ function MA.operate!(::typeof(+), f::AlgebraElement, t::Term)
     return f
 end
 
+function MA.operate!(
+    ::typeof(+),
+    f::AlgebraElement{T},
+    scalar::Union{T,Number},
+) where {T}
+    index = basis(f)[one(object(parent(f)))]
+    return MA.operate!(+, f, Term(parent(f), index, scalar))
+end
+
 function _add_term!(c, t::Term)
     c[t.index] += coefficient(t)
     MA.operate!(canonical, c)

@@ -52,6 +52,7 @@ end
     include("term_arithmetic.jl")
     include("term_addition.jl")
     include("zero_for.jl")
+    include("basis_conversion.jl")
     include("merge_allocations.jl")
     include("basic.jl")
     # proof of concept

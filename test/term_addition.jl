@@ -62,6 +62,27 @@ import MutableArithmetics as MA
     end
 end
 
+@testset "In-place constant addition" begin
+    alg = SA.StarAlgebra(1, SA.FixedBasis([2, 1, 3]))
+    for T in (Int, Rational{Int}, Float64, BigInt),
+        c in
+        (T[2, 0, 0], sparsevec([1], T[2], 3), SA.SparseCoefficients([1], T[2]))
+
+        f = SA.AlgebraElement(c, alg)
+        for (value, expected) in ((3, [2, 3, 0]), (-3, [2, 0, 0]))
+            scalar = T(value)
+            @test (@inferred MA.operate!(+, f, scalar)) === f
+            @test [c[i] for i in 1:3] == expected
+            @test scalar == value
+        end
+    end
+    f = SA.AlgebraElement(SA.SparseCoefficients([1], BigInt[2]), alg)
+    scalar = big(3)
+    MA.operate!(+, f, scalar)
+    MA.operate!(+, SA.coeffs(f)[2], 1)
+    @test scalar == 3
+end
+
 function test_allocations(::Type{T}, n, cancel) where {T}
     alg = SA.StarAlgebra(1, SA.FixedBasis(collect(1:(n+1))))
     c = SA.SparseCoefficients(collect(1:n), ones(T, n))
