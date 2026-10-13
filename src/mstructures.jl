@@ -85,6 +85,9 @@ Describe multiplication of basis elements under the key comparator `lt`.
 The default is `GeneralTermProduct()`. Return `OrderedTermProduct()` only
 when its single-term and order guarantees hold on both sides. This allows
 term products to be merged with sorted coefficients without sorting again.
+It also makes multiplication of two [`Term`](@ref)s return a `Term` instead
+of an `AlgebraElement`. The style must be determined by the argument types
+so this result type can be inferred.
 
 The guarantee concerns basis keys, not the order of coefficient multiplication.
 """

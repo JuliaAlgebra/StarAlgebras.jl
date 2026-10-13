@@ -9,13 +9,6 @@ if !@isdefined(biv_alg)
     include("term.jl")
 end
 
-function SA.term_product_style(
-    ::typeof(SA.mstructure(biv_alg)),
-    ::typeof(grlex),
-)
-    return SA.OrderedTermProduct()
-end
-
 mutable struct CountingTermOrder
     comparisons::Int
 end
@@ -112,6 +105,15 @@ end
     original = deepcopy((A, B))
     t = Term(alg, (1, 0), A)
     g = SA.algebra_element(Term(alg, (0, 1), B))
+    u = Term(alg, (0, 1), B)
+    for (a, b, expected) in ((t, u, weight * (A * B)), (u, t, weight * (B * A)))
+        product = @inferred a * b
+        @test product isa Term{typeof(expected)}
+        @test product.index == (1, 1)
+        @test coefficient(product) == expected
+        @test (@inferred MA.promote_operation(*, typeof(a), typeof(b))) ===
+              typeof(product)
+    end
     for left in (true, false)
         expected = -weight * (left ? A * B : B * A)
         f = SA.algebra_element(Term(alg, (1, 1), zero(expected)))

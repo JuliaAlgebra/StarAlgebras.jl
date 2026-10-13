@@ -22,6 +22,13 @@ const biv_basis = SA.basis(biv_alg)
 # Helper: create a Term in the bivariate algebra
 biv_term(coeff, exp::NTuple{2,Int}) = Term(biv_alg, exp, coeff)
 
+function SA.term_product_style(
+    ::typeof(SA.mstructure(biv_alg)),
+    ::typeof(grlex),
+)
+    return SA.OrderedTermProduct()
+end
+
 SA.star(m::Monomial) = m
 SA.star(t::Term{Int,typeof(biv_alg)}) = Term(t.algebra, t.index, coefficient(t))
 
@@ -39,13 +46,15 @@ function Base.:*(x::MatrixCoefficient, y::MatrixCoefficient)
     return MatrixCoefficient(x.value * y.value)
 end
 
-struct VectorTermStructure{B} <:
+struct VectorTermStructure{B,S} <:
        SA.MultiplicativeStructure{Monomial,NTuple{2,Int}}
     basis::B
+    style::S
 end
 function (ms::VectorTermStructure)(a, b, ::Type{NTuple{2,Int}})
     return SA.SparseCoefficients([a .+ b], [1])
 end
+SA.term_product_style(ms::VectorTermStructure, ::typeof(grlex)) = ms.style
 
 function test_basis_weight_type(ms::M, ::Type{W}) where {M,W}
     @test (@inferred SA.value_type(M)) === W
@@ -236,15 +245,15 @@ end
         @test iszero(t1 - t1)
     end
 
-    @testset "Term * Term → AlgebraElement" begin
+    @testset "Ordered term products stay terms" begin
         test_basis_weight_type(SA.mstructure(biv_alg), Int)
         for T in (Int, Float64, Rational{Int}, BigInt)
             a, b = biv_term(T(2), (1, 0)), biv_term(T(3), (0, 2))
             product = @inferred a * b
-            @test product isa AlgebraElement{T}
+            @test product isa Term{T}
             @test (@inferred MA.promote_operation(*, typeof(a), typeof(b))) ===
                   typeof(product)
-            @test product == SA.algebra_element(biv_term(T(6), (1, 2)))
+            @test product == biv_term(T(6), (1, 2))
             z = @inferred zero(a) * b
             @test z isa typeof(product)
             @test iszero(z)
@@ -252,18 +261,35 @@ end
             @test b == biv_term(T(3), (0, 2))
             if T === Int
                 test_product_promotion_allocations(a, b)
+                @test (@allocated a * b) == 0
             end
         end
-        # Vector-backed basis products obey the same result-type rule.
-        alg = StarAlgebra(Monomial((0, 0)), VectorTermStructure(biv_basis))
-        test_basis_weight_type(SA.mstructure(alg), Int)
-        a, b = Term(alg, (1, 0), 3), Term(alg, (0, 1), 1)
-        product = @inferred a * b
-        @test product isa AlgebraElement{Int}
-        @test product == SA.algebra_element(Term(alg, (1, 1), 3))
+        # The trait decides the representation even for vector-backed products.
+        for (style, R) in (
+            (SA.OrderedTermProduct(), Term{Int}),
+            (SA.GeneralTermProduct(), AlgebraElement{Int}),
+        )
+            alg = StarAlgebra(
+                Monomial((0, 0)),
+                VectorTermStructure(biv_basis, style),
+            )
+            test_basis_weight_type(SA.mstructure(alg), Int)
+            a, b = Term(alg, (1, 0), 3), Term(alg, (0, 1), 1)
+            product = @inferred a * b
+            @test product isa R
+            expected = Term(alg, (1, 1), 3)
+            @test product == (
+                style isa SA.OrderedTermProduct ? expected :
+                SA.algebra_element(expected)
+            )
+            @test (@inferred MA.promote_operation(*, typeof(a), typeof(b))) ===
+                  typeof(product)
+            @test (@inferred zero(a) * b) isa typeof(product)
+        end
 
         alg = StarAlgebra("", SA.DiracBasis(["", "a", "b", "ab", "ba"]))
         a, b = Term(alg, "a", 2), Term(alg, "b", 3)
+        @test a * b isa AlgebraElement{Int}
         @test (@inferred a * b) == SA.algebra_element(Term(alg, "ab", 6))
         @test (@inferred b * a) == SA.algebra_element(Term(alg, "ba", 6))
     end

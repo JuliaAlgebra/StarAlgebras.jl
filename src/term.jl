@@ -15,8 +15,8 @@ and can be reconstructed via `basis(algebra)[index]`.
 Having the algebra as a field allows generic arithmetic:
 `+(::Term, ::Term)` returns an `AlgebraElement` by combining both terms
 in a common algebra (via `promote_bases`).
-`*(::Term, ::Term)` always returns an `AlgebraElement`, even when the product
-has a single term. This keeps the result representation independent of the basis.
+`*(::Term, ::Term)` returns a `Term` for [`OrderedTermProduct`](@ref),
+and an `AlgebraElement` for [`GeneralTermProduct`](@ref).
 """
 struct Term{T,A<:AbstractStarAlgebra,I} <: MA.AbstractMutable
     algebra::A
@@ -168,14 +168,45 @@ end
 
 for op in (:+, :-, :*)
     @eval begin
-        Base.$op(t1::Term, t2::Term) =
-            $op(algebra_element(t1), algebra_element(t2))
         Base.$op(t::Term, a::AlgebraElement) = $op(algebra_element(t), a)
         Base.$op(a::AlgebraElement, t::Term) = $op(a, algebra_element(t))
     end
 end
 
-for (L, R) in ((Term, Term), (Term, AlgebraElement), (AlgebraElement, Term))
+for op in (:+, :-)
+    @eval Base.$op(t1::Term, t2::Term) =
+        $op(algebra_element(t1), algebra_element(t2))
+end
+
+function Base.:*(a::Term, b::Term)
+    a, b = promote_bases(a, b)
+    ms = mstructure(parent(a))
+    style = term_product_style(ms, comparable(basis(parent(a))))
+    return _term_product(style, ms, a, b)
+end
+
+function _term_product(::OrderedTermProduct, ms, a::Term, b::Term)
+    key, weight = only(nonzero_pairs(_basis_product(ms, a.index, b.index)))
+    return Term(
+        parent(a),
+        MA.copy_if_mutable(key),
+        weight * (coefficient(a) * coefficient(b)),
+    )
+end
+
+function _term_product(::GeneralTermProduct, ms, a::Term, b::Term)
+    return algebra_element(a) * algebra_element(b)
+end
+
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{A},
+    ::Type{B},
+) where {A<:Term,B<:Term}
+    return Base.promote_op(*, A, B)
+end
+
+for (L, R) in ((Term, AlgebraElement), (AlgebraElement, Term))
     @eval function MA.promote_operation(
         ::typeof(*),
         ::Type{A},
