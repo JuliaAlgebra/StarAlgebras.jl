@@ -17,6 +17,7 @@ Having the algebra as a field allows generic arithmetic:
 in a common algebra (via `promote_bases`).
 `*(::Term, ::Term)` returns a `Term` for [`OrderedTermProduct`](@ref),
 and an `AlgebraElement` for [`GeneralTermProduct`](@ref).
+Nonnegative integer powers follow the same rule.
 """
 struct Term{T,A<:AbstractStarAlgebra,I} <: MA.AbstractMutable
     algebra::A
@@ -47,6 +48,15 @@ Base.iszero(t::Term) = iszero(coefficient(t))
 Base.isone(t::Term) = isone(coefficient(t)) && isone(basis_element(t))
 
 Base.zero(t::Term) = Term(t.algebra, t.index, zero(coefficient(t)))
+
+function Base.one(t::Term)
+    A = parent(t)
+    return Term(A, basis(A)[one(object(A))], one(coefficient(t)))
+end
+
+function MA.promote_operation(::typeof(one), ::Type{Term{T,A,I}}) where {T,A,I}
+    return Term{MA.promote_operation(one, T),A,I}
+end
 
 function remove_leading_term(t::Term)
     return zero(t)
@@ -117,7 +127,17 @@ function Base.promote_rule(
     return similar_type(P, promote_type(T, S))
 end
 
-Base.:^(x::Term, p::Integer) = algebra_element(x)^p
+# `power_by_squaring` promotes to the type of `x * x`, so the product style
+# also determines whether a power is a Term or an AlgebraElement.
+Base.:^(x::Term, p::Integer) = Base.power_by_squaring(x, p)
+
+function MA.promote_operation(
+    ::typeof(^),
+    ::Type{T},
+    ::Type{<:Integer},
+) where {T<:Term}
+    return MA.promote_operation(*, T, T)
+end
 
 Base.ndims(::Union{Type{<:Term},Term}) = 0
 Base.broadcastable(t::Term) = Ref(t)

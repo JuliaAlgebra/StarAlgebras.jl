@@ -32,6 +32,7 @@ end
 
 SA.star(m::Monomial) = m
 SA.star(t::Term{Int,typeof(biv_alg)}) = Term(t.algebra, t.index, coefficient(t))
+Base.one(::ChebyPoly) = ChebyPoly(0)
 
 function SA.promote_bases_with_maps(a::ChebyMStruct, b::ChebyMStruct)
     @assert SA.basis(a) === SA.basis(b)
@@ -66,6 +67,12 @@ end
 function test_product_promotion_allocations(a::A, b::B) where {A,B}
     MA.promote_operation(*, A, B)
     @test (@allocated MA.promote_operation(*, A, B)) == 0
+    return
+end
+
+function test_term_power_allocations(t::Term)
+    t^3
+    @test (@allocated t^3) == 0
     return
 end
 
@@ -336,6 +343,44 @@ end
         @test collect(values(SA.coeffs(product))) == [3 // 1, 3 // 1]
         @test iszero(@inferred zero(a) * b)
         @test SA.coeffs(@inferred a * a)[0] == 9 // 2
+    end
+
+    @testset "Term powers follow the product style" begin
+        for T in (Int, Float64, Rational{Int}, BigInt)
+            t = biv_term(T(2), (1, 2))
+            @test (@inferred one(t)) == biv_term(one(T), (0, 0))
+            @test (@inferred MA.promote_operation(one, typeof(t))) ===
+                  typeof(one(t))
+            for n in (0, 1, 2, 3, 8)
+                p = @inferred t^n
+                @test p isa Term{T}
+                @test (@inferred MA.promote_operation(^, typeof(t), Int)) ===
+                      typeof(p)
+                @test p == biv_term(T(2)^n, (n, 2n))
+                @test parent(p) === parent(t)
+            end
+            @test isone(@inferred zero(t)^0)
+            @test iszero(@inferred zero(t)^3)
+            if T === Int
+                test_term_power_allocations(t)
+            end
+            if T === BigInt
+                p = t^1
+                @test coefficient(p) !== coefficient(t)
+            end
+            @test t == biv_term(T(2), (1, 2))
+        end
+        # Include degree zero so the basis contains the multiplicative identity.
+        b = SA.MappedBasis(0:16, map_to_chebyshev, map_from_chebyshev)
+        alg = SA.StarAlgebra(ChebyPoly(0), ChebyMStruct(b))
+        t = Term(alg, 2, 3)
+        for n in (0, 1, 2, 3)
+            p = @inferred t^n
+            @test p isa AlgebraElement{Rational{Int}}
+            @test (@inferred MA.promote_operation(^, typeof(t), Int)) ===
+                  typeof(p)
+            @test p == SA.algebra_element(t)^n
+        end
     end
 
     @testset "Basis weight promotion" begin
