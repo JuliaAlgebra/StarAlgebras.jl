@@ -11,6 +11,32 @@ import MutableArithmetics as MA
 
 include(joinpath(@__DIR__, "..", "examples", "acoeffs.jl"))
 
+@testset "In-place one" begin
+    alg = StarAlgebra(1.0, SA.FixedBasis([2.0, 1.0, 3.0]))
+    for T in (Int, BigInt), empty in (false, true)
+        vals = empty ? zeros(T, 3) : T[2, 4, 3]
+        for c in (
+            copy(vals),
+            sparse(vals),
+            SA.SparseCoefficients(
+                findall(!iszero, vals),
+                filter(!iszero, vals),
+            ),
+        )
+            a = AlgebraElement(c, alg)
+            @test (@inferred MA.operate!(one, a)) === a
+            @test parent(a) === alg
+            @test coeffs(a) === c
+            @test isone(a)
+            @test [i => v for (i, v) in SA.nonzero_pairs(c)] == [2 => one(T)]
+        end
+    end
+    alg = StarAlgebra(1.0, SA.FixedBasis([2.0, 3.0]))
+    a = AlgebraElement([2, 3], alg)
+    @test_throws KeyError MA.operate!(one, a)
+    @test coeffs(a) == [2, 3]
+end
+
 @testset "Mutable copies and operation routing" begin
     alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 4.0]))
     for c in (

@@ -156,6 +156,14 @@ function MA.operate!(::typeof(zero), a::AlgebraElement)
     return a
 end
 
+function MA.operate!(::typeof(one), a::AlgebraElement)
+    index = basis(a)[one(object(parent(a)))]
+    value = one(eltype(a))
+    MA.operate!(zero, a)
+    coeffs(a)[index] = value
+    return a
+end
+
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
