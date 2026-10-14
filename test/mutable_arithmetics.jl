@@ -37,6 +37,40 @@ include(joinpath(@__DIR__, "..", "examples", "acoeffs.jl"))
     @test coeffs(a) == [2, 3]
 end
 
+@testset "In-place multiplication" begin
+    alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 4.0]))
+    for T in (Int, BigInt),
+        c in (
+            T[1, 2, 0],
+            sparsevec([1, 2], T[1, 2], 3),
+            SA.SparseCoefficients([1, 2], T[1, 2]),
+        )
+
+        a = AlgebraElement(c, alg)
+        b = copy(a)
+        coeffs(b)[1], coeffs(b)[2] = T(3), T(-4)
+        originals = MA.mutable_copy.((a, b))
+        for alias in (false, true)
+            output = MA.mutable_copy(a)
+            storage = coeffs(output)
+            old_values = collect(values(storage))
+            right = alias ? output : b
+            expected = alias ? T[1, 4, 4] : T[3, 2, -8]
+            @test (@inferred MA.mul!!(output, right)) === output
+            @test [coeffs(output)[i] for i in 1:3] == expected
+            @test coeffs(output) === storage
+            @test parent(output) === alg
+            @test old_values == collect(values(c))
+            @test (a, b) == originals
+        end
+        output = copy(a)
+        @test MA.mul!!(output, zero(b)) === output
+        @test iszero(output)
+        @test MA.mul!!(output, b) === output
+        @test iszero(output)
+    end
+end
+
 @testset "Mutable copies and operation routing" begin
     alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 4.0]))
     for c in (
@@ -212,6 +246,11 @@ end
     output = zero(a)
     @test (@inferred MA.operate!!(MA.add_mul, output, a, b)) === output
     @test coeffs(output)["ab"] == A * B
+    output = copy(a)
+    @test (@inferred MA.mul!!(output, b)) === output
+    @test coeffs(output)["ab"] == A * B
+    @test A == [1 2; 0 1]
+    @test B == [1 0; 3 1]
 
     a = AlgebraElement(SA.SparseCoefficients(["a"], [2]), alg)
     b = AlgebraElement(SA.SparseCoefficients(["b"], [3]), alg)
@@ -219,6 +258,10 @@ end
         output = zero(a)
         @test (@inferred MA.operate!(MA.add_mul, output, left, right)) ===
               output
+        @test keys(coeffs(output)) == [key]
+        @test values(coeffs(output)) == [6]
+        output = copy(left)
+        @test (@inferred MA.mul!!(output, right)) === output
         @test keys(coeffs(output)) == [key]
         @test values(coeffs(output)) == [6]
     end

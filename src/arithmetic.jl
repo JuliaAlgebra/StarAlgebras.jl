@@ -244,6 +244,14 @@ function MA.operate_to!(
     return res
 end
 
+function MA.operate!(::typeof(*), A::AlgebraElement, B::AlgebraElement)
+    B = _promote_operand(*, A, B)
+    # Preserve the factors while the product kernel clears the destination.
+    original = copy(A)
+    B = coeffs(A) === coeffs(B) ? original : B
+    return MA.operate_to!(A, *, original, B)
+end
+
 function MA.operate!(
     op::MA.AddSubMul,
     f::AlgebraElement,
