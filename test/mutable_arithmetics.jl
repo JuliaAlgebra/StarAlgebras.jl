@@ -416,6 +416,29 @@ end
     @test_throws MethodError MA.operate!!(-, SA.coeffs(a))
 end
 
+@testset "Key mapping" begin
+    source = SA.SparseCoefficients([[2, 1], [3, 1]], BigInt[2, 3])
+    output = copy(source)
+    storage, coefficients = keys(output), values(output)
+    shift = [1, 0]
+    @test (@inferred SA.map_keys!(Base.Fix2(-, shift), output)) === output
+    @test keys(output) == [[1, 1], [2, 1]]
+    @test keys(output) === storage
+    @test values(output) === coefficients
+    @test values(output) == BigInt[2, 3]
+    @test keys(source) == [[2, 1], [3, 1]]
+    @test shift == [1, 0]
+    empty = zero(source)
+    @test (@inferred SA.map_keys!(Base.Fix2(-, shift), empty)) === empty
+    @test iszero(empty)
+    let output = SA.SparseCoefficients([1, 3], [2, 4])
+        f = Base.Fix2(+, 1)
+        SA.map_keys!(f, output)
+        @test (@allocated SA.map_keys!(f, output)) == 0
+        @test keys(output) == [3, 5]
+    end
+end
+
 @testset "Coefficient mapping" begin
     alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 4.0]))
     for T in (Int, BigInt), alias in (false, true)

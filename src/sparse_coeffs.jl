@@ -191,6 +191,18 @@ function map_keys(f::Function, s::SparseCoefficients)
     return SparseCoefficients(map(f, s.basis_elements), s.values, s.isless)
 end
 
+"""
+    map_keys!(f, s::SparseCoefficients)
+
+Replace each key of `s` by `f(key)`, keeping the key storage and coefficients.
+The map must preserve key order and distinctness; no sorting or merging is
+performed. To preserve shared keys, `f` must not mutate its argument.
+"""
+function map_keys!(f::F, s::SparseCoefficients) where {F}
+    map!(f, keys(s), keys(s))
+    return s
+end
+
 function MA.mutability(
     ::Type{<:SparseCoefficients{K,V,Vk,Vv}},
     ::typeof(canonical),
