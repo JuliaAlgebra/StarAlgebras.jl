@@ -135,7 +135,11 @@ function SA.promote_bases_with_maps(
     return SA.maybe_promote(a, _a...), SA.maybe_promote(b, _b...)
 end
 
-function (mstr::AugmentedMStructure)(aδx::A, aδy::A, ::Type{A}) where {A<:Augmented}
+function (mstr::AugmentedMStructure)(
+    aδx::A,
+    aδy::A,
+    ::Type{A},
+) where {A<:Augmented}
     δxy = first(keys(mstr.op(aδx.elt, aδy.elt)))
     if isone(δxy)
         return SA.SparseCoefficients((aδx, aδy), (-1, -1))
