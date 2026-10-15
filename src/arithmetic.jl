@@ -285,16 +285,26 @@ function MA.operate_to!(
     return res
 end
 
-function MA.operate_to!(
-    res::AlgebraElement,
-    ::typeof(*),
-    A::AlgebraElement,
-    B::AlgebraElement,
+for (L, R) in (
+    (AlgebraElement, AlgebraElement),
+    (Term, AlgebraElement),
+    (AlgebraElement, Term),
 )
-    A, B = _promote_operands!(*, res, A, B)
-    mstr = mstructure(res)
-    MA.operate_to!(coeffs(res), mstr, coeffs(A), coeffs(B), true)
-    return res
+    @eval function MA.operate_to!(
+        res::AlgebraElement,
+        ::typeof(*),
+        A::$L,
+        B::$R,
+    )
+        A, B = _promote_operands!(*, res, A, B)
+        MA.operate_to!(
+            coeffs(res),
+            mstructure(res),
+            _term_coefficients(A),
+            _term_coefficients(B),
+        )
+        return res
+    end
 end
 
 function MA.operate!(::typeof(*), A::AlgebraElement, B::AlgebraElement)

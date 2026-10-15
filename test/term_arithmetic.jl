@@ -23,6 +23,9 @@ end
             @test [SA.coeffs(product)[i] for i in 1:3] == [0, 2, 6]
             @test typeof(product) ===
                   MA.promote_operation(*, typeof(a), typeof(b))
+            output = zero(product)
+            @test (@inferred MA.operate_to!(output, *, a, b)) === output
+            @test output == product
             @test [SA.coeffs(p)[i] for i in 1:3] == [1, 3, 0]
             @test coefficient(t) == 2
         end
