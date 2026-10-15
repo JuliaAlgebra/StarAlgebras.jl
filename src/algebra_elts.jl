@@ -206,25 +206,42 @@ function promote_bases(a, b)
     return _a[1], _b[1]
 end
 
+# Parents can have different types when their basis data is encoded in types.
+# Reuse the same promotion as values before applying coefficient promotion.
+function _promoted_types(::Type{A}, ::Type{B}) where {A,B}
+    P = Base.promote_op(promote_bases, A, B)
+    return isconcretetype(P) ? fieldtypes(P) : (Any, Any)
+end
+function _convert_parent(::Type{A}, x) where {A<:AbstractStarAlgebra}
+    target = convert(A, parent(x))
+    y, _ = promote_bases(x, target)
+    parent(y) == target || throw(InexactError(:convert, A, parent(x)))
+    return y
+end
 function _zero_prototype(x::AlgebraElement, ::Type{T}) where {T}
     return MA.operate!(zero, similar(x, T))
 end
 _zero_prototype(x::Term, ::Type{T}) where {T} = zero(T, parent(x))
 
-function _zero_for(::Type{P}, alg, prototype) where {P<:AlgebraElement}
+@inline function _zero_for(::Type{P}, alg, prototype) where {P<:AlgebraElement}
     isnothing(prototype) && return zero(P)
     z = _zero_prototype(prototype, eltype(P))
     return convert(P, first(promote_bases(z, alg)))
 end
 
-function _zero_for(
+# Scalar representations can expose their term for parent preparation.
+_algebra_operand(x) = x
+
+# Keep optional parents and prototypes unboxed across input recursion.
+@inline function _zero_for(
     ::Type{P},
     alg,
     prototype,
     input,
     inputs::Vararg{Any,N},
 ) where {P<:AlgebraElement,N}
-    for x in input
+    for operand in input
+        x = _algebra_operand(operand)
         if x isa Union{AlgebraElement,Term}
             alg =
                 isnothing(alg) ? parent(x) :

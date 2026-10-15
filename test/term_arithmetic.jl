@@ -82,6 +82,23 @@ end
     @test f == expected
 end
 
+@testset "Accumulation of two terms" begin
+    a, b = biv_term(2, (1, 0)), biv_term(3, (0, 1))
+    for order in (grlex, isless), op in (MA.add_mul, MA.sub_mul)
+        f = AlgebraElement(SA.SparseCoefficients([(0, 0)], [1], order), biv_alg)
+        original = copy(f)
+        expected = op(f, a, b)
+        output = zero(f)
+        @test (@inferred MA.operate_to!!(output, op, f, a, b)) === output
+        @test output == expected
+        @test f == original
+        @test (@inferred MA.operate!!(op, f, a, b)) === f
+        @test f == expected
+        @test a == biv_term(2, (1, 0))
+        @test b == biv_term(3, (0, 1))
+    end
+end
+
 struct WeightedTermProduct{B,W} <:
        SA.MultiplicativeStructure{Monomial,NTuple{2,Int}}
     basis::B

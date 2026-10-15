@@ -213,8 +213,13 @@ end
 
 function Base.promote_rule(
     ::Type{AlgebraElement{T,A,U}},
-    ::Type{AlgebraElement{S,A,V}},
-) where {T,S,A,U,V}
+    ::Type{AlgebraElement{S,B,V}},
+) where {T,S,A,U,B,V}
+    if A !== B
+        return promote_type(
+            _promoted_types(AlgebraElement{T,A,U}, AlgebraElement{S,B,V})...,
+        )
+    end
     C = promote_type(T, S)
     return AlgebraElement{
         C,
@@ -248,7 +253,8 @@ end
 # and `U` is `SparseCoefficients` with `Vector`
 function Base.convert(
     ::Type{AlgebraElement{T,A,U}},
-    a::AlgebraElement{S,A,V},
-) where {A,S,T,U,V}
-    return AlgebraElement(convert(U, coeffs(a)), parent(a))
+    a::AlgebraElement{S,B,V},
+) where {A,S,T,U,B,V}
+    y = A === B ? a : _convert_parent(A, a)
+    return AlgebraElement(convert(U, coeffs(y)), parent(y))
 end

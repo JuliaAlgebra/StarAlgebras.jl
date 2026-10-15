@@ -16,8 +16,15 @@ function _product_coefficient_type(
 end
 
 function algebra_promote_operation(op, args::Vararg{Type,N}) where {N}
+    if args[1] <: AlgebraElement &&
+       args[2] <: AlgebraElement &&
+       MA.promote_operation(parent, args[1]) !==
+       MA.promote_operation(parent, args[2])
+        return MA.promote_operation(op, _promoted_types(args...)...)
+    end
     T = if op === (*) && args[1] <: AlgebraElement && args[2] <: AlgebraElement
-        _product_coefficient_type(args...)
+        C = _product_coefficient_type(args...)
+        MA.promote_operation(+, C, C)
     else
         MA.promote_operation(op, _coeff_type.(args)...)
     end
@@ -26,6 +33,13 @@ function algebra_promote_operation(op, args::Vararg{Type,N}) where {N}
         return similar_type(args[2], T)
     end
     return similar_type(args[1], T)
+end
+
+function MA.promote_operation(
+    ::typeof(parent),
+    ::Type{<:AlgebraElement{T,A}},
+) where {T,A}
+    return A
 end
 
 # module structure:
@@ -59,6 +73,44 @@ function _scalar_right(op, X::AlgebraElement, a)
     return MA.operate_to!(similar(X, R), op, X, a)
 end
 Base.:*(a::Union{T,Number}, X::AlgebraElement{T}) where {T} = _scalar_lmul(a, X)
+# Algebra-valued coefficients are scalars for their containing algebra.
+# These signatures resolve the overlap with algebra-by-algebra products.
+function Base.:*(a::T, X::AlgebraElement{T}) where {T<:AlgebraElement}
+    return _scalar_lmul(a, X)
+end
+function Base.:*(X::AlgebraElement{T}, a::T) where {T<:AlgebraElement}
+    return _scalar_right(*, X, a)
+end
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{T},
+    ::Type{A},
+) where {T<:AlgebraElement,A<:AlgebraElement{T}}
+    return similar_type(A, MA.promote_operation(*, T, T))
+end
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{A},
+    ::Type{T},
+) where {T<:AlgebraElement,A<:AlgebraElement{T}}
+    return similar_type(A, MA.promote_operation(*, T, T))
+end
+function MA.operate_to!(
+    res::AlgebraElement,
+    ::typeof(*),
+    a::T,
+    X::AlgebraElement{T},
+) where {T<:AlgebraElement}
+    return map_coefficients_to!(res, Base.Fix1(*, a), X)
+end
+function MA.operate_to!(
+    res::AlgebraElement,
+    ::typeof(*),
+    X::AlgebraElement{T},
+    a::T,
+) where {T<:AlgebraElement}
+    return map_coefficients_to!(res, Base.Fix2(*, a), X)
+end
 for op in (:*, :/, ://, :div)
     @eval function Base.$op(X::AlgebraElement{T}, a::Union{T,Number}) where {T}
         return _scalar_right($op, X, a)
@@ -207,6 +259,10 @@ function MA.operate!(::typeof(+), X::AlgebraElement, Y::AlgebraElement)
     return MA.operate_to!(X, +, X, Y)
 end
 
+function MA.operate!(::typeof(-), X::AlgebraElement, Y::AlgebraElement)
+    return _scalar_add_mul!(MA.sub_mul, X, Y, identity)
+end
+
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(+),
@@ -311,6 +367,27 @@ function _prepare_fused_output!(output, op, f, a, b)
 end
 
 # Scalars use the same coefficient arithmetic as ordinary multiplication.
+function MA.operate!(
+    op::MA.AddSubMul,
+    f::AlgebraElement,
+    a::MA.Scaling,
+    b::MA.Scaling,
+    args::Vararg{MA.Scaling,N},
+) where {N}
+    product = *(map(MA.scaling_to_number, (a, b, args...))...)
+    return MA.operate!(MA.add_sub_op(op), f, product)
+end
+
+function MA.operate!(
+    op::MA.AddSubMul,
+    f::AlgebraElement,
+    a,
+    b,
+    args::Vararg{Any,N},
+) where {N}
+    return MA.operate!(MA.add_sub_op(op), f, MA.operate(*, a, b, args...))
+end
+
 for (L, R, left) in (
     (:(Union{T,Number}), :(Union{AlgebraElement{T},Term{T}}), true),
     (:(Union{AlgebraElement{T},Term{T}}), :(Union{T,Number}), false),
@@ -318,23 +395,6 @@ for (L, R, left) in (
     a, g = left ? (:a, :b) : (:b, :a)
     fix = left ? Base.Fix1 : Base.Fix2
     @eval begin
-        function MA.promote_operation(
-            op::MA.AddSubMul,
-            ::Type{F},
-            ::Type{A},
-            ::Type{B},
-        ) where {T,F<:AlgebraElement,A<:$L,B<:$R}
-            return similar_type(
-                F,
-                MA.promote_operation(
-                    op,
-                    eltype(F),
-                    _coeff_type(A),
-                    _coeff_type(B),
-                ),
-            )
-        end
-
         function MA.operate!(
             op::MA.AddSubMul,
             f::AlgebraElement,

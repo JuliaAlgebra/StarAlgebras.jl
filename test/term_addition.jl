@@ -8,9 +8,9 @@ using SparseArrays
 import StarAlgebras as SA
 import MutableArithmetics as MA
 
-@testset "In-place term addition" begin
+@testset "In-place term addition and subtraction" begin
     alg = SA.StarAlgebra(1, SA.FixedBasis([1, 2, 3, 4]))
-    for T in (Int, Float64, BigInt)
+    for T in (Int, Float64, BigInt), op in (+, -)
         for c in (
             T[1, 0, 3, 0],
             sparsevec([1, 3], T[1, 3], 4),
@@ -23,10 +23,10 @@ import MutableArithmetics as MA
                 (4, 4, [1, 2, 0, 4]),
                 (1, 0, [1, 2, 0, 4]),
             )
-                t = SA.Term(alg, index, T(value))
-                @test (@inferred MA.add!!(f, t)) === f
+                t = SA.Term(alg, index, op(T(value)))
+                @test (@inferred MA.operate!!(op, f, t)) === f
                 @test [c[i] for i in 1:4] == expected
-                @test SA.coefficient(t) == value
+                @test SA.coefficient(t) == op(value)
             end
             if c isa Union{SparseVector,SA.SparseCoefficients}
                 @test [i => v for (i, v) in SA.nonzero_pairs(c)] == [1 => 1, 2 => 2, 4 => 4]

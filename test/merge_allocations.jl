@@ -1,6 +1,14 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2026: Marek Kaluba, Benoît Legat
 
+using Test, StarAlgebras
+import StarAlgebras as SA
+import MutableArithmetics as MA
+
+if !@isdefined(biv_alg)
+    include("term.jl")
+end
+
 # Reserve destination capacity at the call site. Restore inputs after warmup
 # so aliasing and cancellation still exercise the full merge when measured.
 function test_allocation_free_merge!(

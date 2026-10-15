@@ -1,19 +1,15 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2026: Marek Kaluba, Benoît Legat
 
-function MA.promote_operation(
-    ::typeof(+),
-    ::Type{F},
-    ::Type{T},
-) where {F<:AlgebraElement,T<:Term}
-    return similar_type(F, MA.promote_operation(+, eltype(F), _coeff_type(T)))
-end
-
 function MA.operate!(::typeof(+), f::AlgebraElement, t::Term)
     t = _promote_operand(+, f, t)
     iszero(t) && return f
     _add_term!(coeffs(f), t)
     return f
+end
+
+function MA.operate!(::typeof(-), f::AlgebraElement, t::Term)
+    return MA.operate!(+, f, -t)
 end
 
 function MA.operate!(
@@ -23,6 +19,14 @@ function MA.operate!(
 ) where {T}
     index = basis(f)[one(object(parent(f)))]
     return MA.operate!(+, f, Term(parent(f), index, scalar))
+end
+
+function MA.operate!(
+    ::typeof(-),
+    f::AlgebraElement{T},
+    scalar::Union{T,Number},
+) where {T}
+    return MA.operate!(+, f, -scalar)
 end
 
 function _add_term!(c, t::Term)
@@ -43,25 +47,13 @@ function _add_term!(c::SparseCoefficients, t::Term)
 end
 
 # Keep coefficient and basis multiplication in operand order on both sides.
-for (L, R, left) in
-    ((:Term, :AlgebraElement, true), (:AlgebraElement, :Term, false))
-    G = left ? :R : :L
+for (L, R, left) in (
+    (:Term, :AlgebraElement, true),
+    (:AlgebraElement, :Term, false),
+    (:Term, :Term, true),
+)
     t, g = left ? (:a, :b) : (:b, :a)
     @eval begin
-        function MA.promote_operation(
-            op::MA.AddSubMul,
-            ::Type{F},
-            ::Type{L},
-            ::Type{R},
-        ) where {F<:AlgebraElement,L<:$L,R<:$R}
-            T = _product_coefficient_type(L, R)
-            return MA.promote_operation(
-                MA.add_sub_op(op),
-                F,
-                similar_type($G, T),
-            )
-        end
-
         function MA.operate!(op::MA.AddSubMul, f::AlgebraElement, a::$L, b::$R)
             return _term_add_mul!(op, f, $t, $g, Val($left))
         end
@@ -92,7 +84,14 @@ function _term_add_mul!(op::MA.AddSubMul, f::AlgebraElement, t::Term, g, left)
     g = _promote_operand(op, f, g)
     iszero(t) && return f
     ms = mstructure(f)
-    c, d = coeffs(f), coeffs(g)
+    c = coeffs(f)
+    d =
+        g isa Term ?
+        SparseCoefficients(
+            (g.index,),
+            (coefficient(g),),
+            comparable(basis(f)),
+        ) : coeffs(g)
     style = _term_product_style(ms, c, d)
     _term_add_mul!(style, op, c, ms, t, d, left)
     return f

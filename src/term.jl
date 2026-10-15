@@ -108,22 +108,33 @@ function Base.hash(t::Term, u::UInt)
     end
 end
 
-function Base.convert(::Type{Term{T,A,I}}, t::Term{<:Any,A,I}) where {T,A,I}
-    return Term{T,A,I}(t.algebra, t.index, convert(T, coefficient(t)))
+function Base.convert(::Type{Term{T,A,I}}, t::Term{S,B,J}) where {T,A,I,S,B,J}
+    y = A === B ? t : _convert_parent(A, t)
+    return Term{T,A,I}(
+        parent(y),
+        convert(I, y.index),
+        convert(T, coefficient(y)),
+    )
 end
 Base.convert(::Type{Term{T,A,I}}, t::Term{T,A,I}) where {T,A,I} = t
 
 function Base.promote_rule(
     ::Type{Term{T,A,I}},
-    ::Type{Term{S,A,I}},
-) where {T,S,A,I}
-    return Term{promote_type(T, S),A,I}
+    ::Type{Term{S,B,J}},
+) where {T,S,A,I,B,J}
+    if A !== B
+        return promote_type(_promoted_types(Term{T,A,I}, Term{S,B,J})...)
+    end
+    return Term{promote_type(T, S),A,promote_type(I, J)}
 end
 
 function Base.promote_rule(
     ::Type{P},
-    ::Type{Term{S,A,I}},
-) where {T,S,A,C,I,P<:AlgebraElement{T,A,C}}
+    ::Type{Term{S,B,I}},
+) where {T,S,A,C,B,I,P<:AlgebraElement{T,A,C}}
+    if A !== B
+        return promote_type(_promoted_types(P, Term{S,B,I})...)
+    end
     return similar_type(P, promote_type(T, S))
 end
 
@@ -226,14 +237,14 @@ function MA.promote_operation(
     return Base.promote_op(*, A, B)
 end
 
-for (L, R) in ((Term, AlgebraElement), (AlgebraElement, Term))
+for (L, R) in ((Term, AlgebraElement), (AlgebraElement, Term)), op in (+, -, *)
     @eval function MA.promote_operation(
-        ::typeof(*),
+        ::typeof($op),
         ::Type{A},
         ::Type{B},
     ) where {A<:$L,B<:$R}
         return MA.promote_operation(
-            *,
+            $op,
             _algebra_element_type(A),
             _algebra_element_type(B),
         )
@@ -246,8 +257,8 @@ function _algebra_element_type(::Type{T}) where {T<:Term}
 end
 
 # Convert Term to single-entry AlgebraElement
-function algebra_element(t::Term)
-    c = zero_coeffs(typeof(coefficient(t)), basis(parent(t)))
+function algebra_element(t::Term{T}) where {T}
+    c = zero_coeffs(T, basis(parent(t)))
     if !iszero(t)
         c[t.index] = coefficient(t)
     end
@@ -256,7 +267,8 @@ end
 
 function Base.convert(
     ::Type{AlgebraElement{T,A,C}},
-    t::Term{S,A,I},
-) where {T,A,C,S,I}
-    return convert(AlgebraElement{T,A,C}, algebra_element(t))
+    t::Term{S,B,I},
+) where {T,A,C,S,B,I}
+    y = A === B ? t : _convert_parent(A, t)
+    return convert(AlgebraElement{T,A,C}, algebra_element(y))
 end

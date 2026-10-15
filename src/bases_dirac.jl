@@ -60,7 +60,7 @@ function Base.getindex(db::DiracBasis{T}, x::T) where {T}
 end
 
 """
-    mutable struct MappedBasis{T,I,S,F,U} <: ImplicitBasis{T,I}
+    struct MappedBasis{T,I,S,F,U} <: ImplicitBasis{T,I}
         object::S
         map::F
         inverse_map::U
@@ -85,7 +85,7 @@ Base.isempty(::S)
 Base.length(::S)
 ```
 """
-mutable struct MappedBasis{T,I,S,F,U} <: ImplicitBasis{T,I}
+struct MappedBasis{T,I,S,F,U} <: ImplicitBasis{T,I}
     object::S
     map::F
     inverse_map::U

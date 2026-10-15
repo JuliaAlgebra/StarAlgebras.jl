@@ -481,6 +481,14 @@ end
         ae = SA.algebra_element(t)
         @test ae isa SA.AlgebraElement
         @test parent(ae) === biv_alg
+        for T in (Real, Number), value in (0, 3)
+            abstract_term =
+                Term{T,typeof(biv_alg),typeof(t.index)}(biv_alg, t.index, value)
+            converted = @inferred SA.algebra_element(abstract_term)
+            @test eltype(converted) === T
+            @test parent(converted) === biv_alg
+            @test converted == SA.algebra_element(biv_term(value, t.index))
+        end
     end
 
     @testset "various coefficient types" begin
