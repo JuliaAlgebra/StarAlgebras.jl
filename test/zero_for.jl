@@ -41,12 +41,12 @@ import MutableArithmetics as MA
         @test sum(reshape([a, a, a, a], 2, 2); dims = 1) == fill(2a, 1, 2)
         init = zero(a)
         @test MA.operate(sum, typeof(a)[]; init) === init
-        @test MA.fused_map_reduce(MA.add_mul, typeof(a)[]; init) === init
         @test sum(MA.AbstractMutable[]; init) == init
         @test sum(reshape(typeof(a)[], 0, 2); dims = 1, init) ==
               fill(init, 1, 2)
         @test [k => v for (k, v) in SA.nonzero_pairs(SA.coeffs(a))] == original
         @test_throws MethodError sum(typeof(a)[])
+        @test_throws MethodError MA.fused_map_reduce(MA.add_mul, typeof(a)[])
     end
 
     a = SA.AlgebraElement([1, 0, 2], alg)
