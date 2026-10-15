@@ -238,6 +238,14 @@ function MA.operate_to!(
     return map_coefficients_to!(res, Base.Fix2(op, a), X)
 end
 
+function MA.operate!(
+    op::Union{typeof(/),typeof(//),typeof(div)},
+    X::AlgebraElement{T},
+    a::Union{T,Number},
+) where {T}
+    return MA.operate_to!(X, op, X, a)
+end
+
 function MA.operate_to!(
     res::AlgebraElement,
     mul::Union{typeof(__lmul),typeof(__rmul)},
