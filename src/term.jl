@@ -197,16 +197,51 @@ function MA.promote_operation(
     return Term{MA.promote_operation(*, T, S),A,I}
 end
 
-for op in (:+, :-, :*)
-    @eval begin
-        Base.$op(t::Term, a::AlgebraElement) = $op(algebra_element(t), a)
-        Base.$op(a::AlgebraElement, t::Term) = $op(a, algebra_element(t))
+Base.:*(t::Term, a::AlgebraElement) = algebra_element(t) * a
+Base.:*(a::AlgebraElement, t::Term) = a * algebra_element(t)
+
+_addition_coefficients(a::AlgebraElement) = coeffs(a)
+function _addition_coefficients(t::Term)
+    b = basis(parent(t))
+    if b isa ImplicitBasis
+        return SparseCoefficients((t.index,), (coefficient(t),), comparable(b))
     end
+    return coeffs(algebra_element(t))
+end
+
+function _term_add(op::F, a, b) where {F}
+    a, b = promote_bases(a, b)
+    P = MA.promote_operation(op, typeof(a), typeof(b))
+    output = MA.zero_for(P, (a,), (b,))
+    # Use read-only term coefficients in the existing binary kernel so that
+    # coefficient arithmetic happens before conversion to the result type.
+    MA.operate_to!(
+        coeffs(output),
+        op,
+        _addition_coefficients(a),
+        _addition_coefficients(b),
+    )
+    return output
+end
+
+for (L, R) in ((Term, Term), (Term, AlgebraElement), (AlgebraElement, Term)),
+    op in (:+, :-)
+
+    @eval Base.$op(a::$L, b::$R) = _term_add($op, a, b)
+end
+
+function _constant_term(p, scalar)
+    alg = parent(p)
+    return Term(alg, basis(alg)[one(object(alg))], scalar)
 end
 
 for op in (:+, :-)
-    @eval Base.$op(t1::Term, t2::Term) =
-        $op(algebra_element(t1), algebra_element(t2))
+    @eval begin
+        Base.$op(t::Term{T}, a::Union{T,Number}) where {T} =
+            $op(t, _constant_term(t, a))
+        Base.$op(a::Union{T,Number}, t::Term{T}) where {T} =
+            $op(_constant_term(t, a), t)
+    end
 end
 
 function Base.:*(a::Term, b::Term)
@@ -237,7 +272,13 @@ function MA.promote_operation(
     return Base.promote_op(*, A, B)
 end
 
-for (L, R) in ((Term, AlgebraElement), (AlgebraElement, Term)), op in (+, -, *)
+for (L, R, ops) in (
+        (Term, Term, (+, -)),
+        (Term, AlgebraElement, (+, -, *)),
+        (AlgebraElement, Term, (+, -, *)),
+    ),
+    op in ops
+
     @eval function MA.promote_operation(
         ::typeof($op),
         ::Type{A},

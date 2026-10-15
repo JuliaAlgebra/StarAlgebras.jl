@@ -8,6 +8,85 @@ using SparseArrays
 import StarAlgebras as SA
 import MutableArithmetics as MA
 
+@testset "Term sums use shared accumulation" begin
+    for basis in (SA.FixedBasis([1.0, 2.0, 3.0]), SA.DiracBasis(1:3)),
+        T in (Int, BigInt),
+        S in (Int, Float64),
+        op in (+, -)
+
+        alg = SA.StarAlgebra(one(eltype(basis)), basis)
+        t = SA.Term(alg, 2, T(2))
+        u = SA.Term(alg, 3, S(3))
+        containers = if basis isa SA.ExplicitBasis
+            (S[0, 1, 3], sparsevec([2, 3], S[1, 3], 3))
+        else
+            (
+                SA.SparseCoefficients([2, 3], S[1, 3]),
+                SA.SparseCoefficients((2, 3), (S(1), S(3))),
+            )
+        end
+        for c in containers
+            p = SA.AlgebraElement(c, alg)
+            for (a, b, av, bv) in (
+                (t, u, [0, 2, 0], [0, 0, 3]),
+                (t, zero(u), [0, 2, 0], [0, 0, 0]),
+                (t, t, [0, 2, 0], [0, 2, 0]),
+                (t, p, [0, 2, 0], [0, 1, 3]),
+                (p, t, [0, 1, 3], [0, 2, 0]),
+            )
+                originals = MA.copy_if_mutable.((a, b))
+                result = @inferred op(a, b)
+                @test [SA.coeffs(result)[i] for i in 1:3] == op.(av, bv)
+                @test (@inferred MA.promote_operation(
+                    op,
+                    typeof(a),
+                    typeof(b),
+                )) === typeof(result)
+                @test parent(result) === alg
+                @test (a, b) == originals
+            end
+        end
+        for scalar in (S(0), S(3))
+            result = @inferred op(t, scalar)
+            @test [SA.coeffs(result)[i] for i in 1:3] == op.([0, 2, 0], [scalar, 0, 0])
+            result = @inferred op(scalar, t)
+            @test [SA.coeffs(result)[i] for i in 1:3] == op.([scalar, 0, 0], [0, 2, 0])
+            @test SA.coefficient(t) == 2
+        end
+    end
+end
+
+struct WideningCoefficient{T}
+    value::T
+end
+function Base.zero(::Type{WideningCoefficient{T}}) where {T}
+    return WideningCoefficient(zero(T))
+end
+Base.iszero(a::WideningCoefficient) = iszero(a.value)
+function Base.convert(
+    ::Type{WideningCoefficient{T}},
+    a::WideningCoefficient,
+) where {T}
+    return WideningCoefficient(convert(T, a.value))
+end
+function Base.:+(a::WideningCoefficient{T}, b::WideningCoefficient{T}) where {T}
+    return WideningCoefficient(widen(a.value + b.value))
+end
+
+@testset "Addition promotes coefficients after combining them" begin
+    alg = SA.StarAlgebra(1, SA.DiracBasis(1:3))
+    t = SA.Term(alg, 2, WideningCoefficient(2))
+    u = SA.Term(alg, 2, WideningCoefficient(3))
+    for (a, b) in
+        ((t, u), (t, SA.algebra_element(u)), (SA.algebra_element(t), u))
+        result = @inferred a + b
+        @test eltype(result) === WideningCoefficient{widen(Int)}
+        @test SA.coeffs(result)[2].value == 5
+        @test SA.coefficient(t).value == 2
+        @test SA.coefficient(u).value == 3
+    end
+end
+
 @testset "In-place term addition and subtraction" begin
     alg = SA.StarAlgebra(1, SA.FixedBasis([1, 2, 3, 4]))
     for T in (Int, Float64, BigInt), op in (+, -)

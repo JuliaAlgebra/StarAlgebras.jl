@@ -27,8 +27,7 @@ function MA.operate!(
     f::AlgebraElement{T},
     scalar::Union{T,Number},
 ) where {T}
-    index = basis(f)[one(object(parent(f)))]
-    return MA.operate!(+, f, Term(parent(f), index, scalar))
+    return MA.operate!(+, f, _constant_term(f, scalar))
 end
 
 function MA.operate!(
