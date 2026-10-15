@@ -197,11 +197,8 @@ function MA.promote_operation(
     return Term{MA.promote_operation(*, T, S),A,I}
 end
 
-Base.:*(t::Term, a::AlgebraElement) = algebra_element(t) * a
-Base.:*(a::AlgebraElement, t::Term) = a * algebra_element(t)
-
-_addition_coefficients(a::AlgebraElement) = coeffs(a)
-function _addition_coefficients(t::Term)
+_term_coefficients(a::AlgebraElement) = coeffs(a)
+function _term_coefficients(t::Term)
     b = basis(parent(t))
     if b isa ImplicitBasis
         return SparseCoefficients((t.index,), (coefficient(t),), comparable(b))
@@ -209,25 +206,30 @@ function _addition_coefficients(t::Term)
     return coeffs(algebra_element(t))
 end
 
-function _term_add(op::F, a, b) where {F}
+function _term_arithmetic(op::F, a, b) where {F}
     a, b = promote_bases(a, b)
     P = MA.promote_operation(op, typeof(a), typeof(b))
     output = MA.zero_for(P, (a,), (b,))
     # Use read-only term coefficients in the existing binary kernel so that
     # coefficient arithmetic happens before conversion to the result type.
+    kernel = op === (*) ? mstructure(output) : op
     MA.operate_to!(
         coeffs(output),
-        op,
-        _addition_coefficients(a),
-        _addition_coefficients(b),
+        kernel,
+        _term_coefficients(a),
+        _term_coefficients(b),
     )
     return output
 end
 
-for (L, R) in ((Term, Term), (Term, AlgebraElement), (AlgebraElement, Term)),
-    op in (:+, :-)
+for (L, R, ops) in (
+        (Term, Term, (:+, :-)),
+        (Term, AlgebraElement, (:+, :-, :*)),
+        (AlgebraElement, Term, (:+, :-, :*)),
+    ),
+    op in ops
 
-    @eval Base.$op(a::$L, b::$R) = _term_add($op, a, b)
+    @eval Base.$op(a::$L, b::$R) = _term_arithmetic($op, a, b)
 end
 
 function _constant_term(p, scalar)

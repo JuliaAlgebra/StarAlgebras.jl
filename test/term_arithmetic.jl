@@ -9,6 +9,26 @@ if !@isdefined(biv_alg)
     include("term.jl")
 end
 
+@testset "Term products in a finite basis" begin
+    alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 4.0]))
+    t = Term(alg, 2, 2)
+    for c in (
+        [1, 3, 0],
+        sparsevec([1, 2], [1, 3], 3),
+        SA.SparseCoefficients([1, 2], [1, 3]),
+    )
+        p = AlgebraElement(c, alg)
+        for (a, b) in ((t, p), (p, t))
+            product = @inferred a * b
+            @test [SA.coeffs(product)[i] for i in 1:3] == [0, 2, 6]
+            @test typeof(product) ===
+                  MA.promote_operation(*, typeof(a), typeof(b))
+            @test [SA.coeffs(p)[i] for i in 1:3] == [1, 3, 0]
+            @test coefficient(t) == 2
+        end
+    end
+end
+
 mutable struct CountingTermOrder
     comparisons::Int
 end
