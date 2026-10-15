@@ -6,6 +6,13 @@ using Test
 import StarAlgebras as SA
 import MutableArithmetics as MA
 
+if !@isdefined bivariate_algebra
+    include("../examples/bivariate.jl")
+end
+if !@isdefined univariate_algebra
+    include("../examples/univariate.jl")
+end
+
 @testset "Graded Lex" begin
     alg = bivariate_algebra()
     o = one(alg)
@@ -105,13 +112,13 @@ end
         @test _sub_y.keys == [(0, 2), (0, 3)]
     end
 
-    @testset "In-place operations do not promote" begin
-        # `MA.operate_to!` requires its operands to already share a basis, so
-        # it errors on `a` and `b` even though `+`, `-` and `*` promote them.
+    @testset "In-place operations require a compatible destination type" begin
+        # Promoting univariate integer keys to bivariate tuple keys changes
+        # the destination type, which requires `MA.operate!!`.
         res = zero(a)
         for op in (+, -, *)
-            err = Regex(
-                "cannot `\\$op` two `AlgebraElement`s over different bases.*promote_bases",
+            err = ArgumentError(
+                "cannot `$op` in place with a different destination type; use `MutableArithmetics.operate!!`",
             )
             @test_throws err MA.operate_to!(res, op, a, b)
         end

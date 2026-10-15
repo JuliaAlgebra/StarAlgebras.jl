@@ -1,6 +1,14 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+using Test, LinearAlgebra, SparseArrays, StarAlgebras
+import StarAlgebras as SA
+import MutableArithmetics as MA
+
+if !@isdefined FreeWords
+    include("../examples/words.jl")
+end
+
 # Without these two function barriers, we get allocations on Julia v1.12.0-rc2
 function minus_allocated_test(a, d)
     @test @allocated(MA.operate_to!(d, -, a)) == 0

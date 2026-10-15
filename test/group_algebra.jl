@@ -1,6 +1,10 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+if !@isdefined aug
+    include("group_utils.jl")
+end
+
 @testset "Permutation group algebra: arithmetic " begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
     b = SA.DiracBasis(G)
@@ -46,6 +50,24 @@
         @test eltype(c // (big(4) // 1)) == Rational{BigInt}
 
         @test (1.0a) * 1 // 2 == (0.5a) == c // 2
+    end
+
+    @testset "Scalar division with vector coefficients" begin
+        fb = SA.FixedBasis(basis(RG); n = length(basis(RG)))
+        fRG = StarAlgebra(G, fb)
+        for values in ([0, 2, 0, 4, 0, 0], sparsevec([2, 4], [2, 4], 6))
+            a = AlgebraElement(values, fRG)
+            for op in (/, //, div)
+                expected = AlgebraElement(map(x -> op(x, 2), values), fRG)
+                @test (@inferred op(a, 2)) == expected
+                output = zero(expected)
+                @test MA.operate_to!(output, op, a, 2) === output
+                @test output == expected
+                @test MA.operate_to!(output, op, output, 1) === output
+                @test output == expected
+                @test coeffs(a) == values
+            end
+        end
     end
 
     @testset "Additive structure" begin

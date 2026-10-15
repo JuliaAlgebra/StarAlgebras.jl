@@ -235,9 +235,7 @@ function MA.operate_to!(
     X::AlgebraElement{T},
     a::Union{T,Number},
 ) where {T}
-    X = _promote_operand!(op, res, X)
-    MA.operate_to!(coeffs(res), op, coeffs(X), a)
-    return res
+    return map_coefficients_to!(res, Base.Fix2(op, a), X)
 end
 
 function MA.operate_to!(

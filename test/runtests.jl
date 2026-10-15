@@ -9,24 +9,13 @@ using StarAlgebras
 import StarAlgebras as SA
 import MutableArithmetics as MA
 
-begin
-    # turning GroupsCore.GroupElement into "read-only" SparseCoefficients
-    import GroupsCore: GroupElement
-    Base.keys(g::GroupElement) = (g,)
-    Base.values(::GroupElement) = (1,)
-    SA.canonical(g::GroupElement) = g
-    # missing above: Base.isless for the SA.canonical
-    # TODO: implement sort by hashing for non-comparable elements?
-
-    # generalities for meaningful *-algebras
-    SA.star(g::GroupElement) = inv(g)
-end
-
 for file in readdir(joinpath(@__DIR__, "..", "examples"))
     if endswith(file, ".jl")
         include(joinpath(@__DIR__, "..", "examples", file))
     end
 end
+
+include("group_utils.jl")
 
 # Test that `basis` implements the vector interface
 # returns the same as `vector`

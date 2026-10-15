@@ -158,10 +158,14 @@ MA.operate!(::typeof(canonical), v::Vector) = v
 function Base.:(==)(ac1::AbstractCoefficients, ac2::AbstractCoefficients)
     MA.operate!(canonical, ac1)
     MA.operate!(canonical, ac2)
-    length(keys(ac1)) == length(keys(ac2)) || return false
-    all(x -> ==(x...), zip(keys(ac1), keys(ac2))) || return false
-    all(x -> ==(x...), zip(values(ac1), values(ac2))) || return false
-    return true
+    pairs1, pairs2 = nonzero_pairs(ac1), nonzero_pairs(ac2)
+    next1, next2 = iterate(pairs1), iterate(pairs2)
+    while next1 !== nothing && next2 !== nothing
+        first(next1) == first(next2) || return false
+        next1 = iterate(pairs1, last(next1))
+        next2 = iterate(pairs2, last(next2))
+    end
+    return next1 === nothing && next2 === nothing
 end
 
 function Base.hash(ac::AbstractCoefficients, h::UInt)
@@ -262,13 +266,7 @@ function MA.operate_to!(
     ::typeof(-),
     X::AbstractCoefficients,
 )
-    if res !== X
-        MA.operate!(zero, res)
-    end
-    for (idx, x) in nonzero_pairs(X)
-        res[idx] = -x
-    end
-    return res
+    return map_coefficients_to!(res, -, X)
 end
 
 # scalar
