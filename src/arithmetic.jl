@@ -148,30 +148,32 @@ end
 
 Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
 
-# The destination's parent cannot change during an in-place operation.
-function _assert_same_basis(
-    op,
-    A::AlgebraElement,
-    B::Union{AlgebraElement,Term},
-)
-    parent(A) == parent(B) && return
-    return throw(
-        ArgumentError(
-            "cannot `$op` in place with this destination basis. Prepare the " *
-            "destination in a common basis with `StarAlgebras.promote_bases`, " *
-            "or use the `*`, `+`, `-` operators which promote automatically.",
-        ),
-    )
+_promote_operand!(op, output, x) = x
+
+# Replace the destination's parent and keys together, without changing a parent
+# shared with other elements. Type-changing promotion belongs to operate!!.
+function _promote_operand!(op, output, x::Union{AlgebraElement,Term})
+    parent(x) == parent(output) && return x
+    promoted, x = promote_bases(output, x)
+    if typeof(promoted) !== typeof(output)
+        throw(
+            ArgumentError(
+                "cannot `$op` in place with a different destination type; use `MutableArithmetics.operate!!`",
+            ),
+        )
+    end
+    output.coeffs = coeffs(promoted)
+    output.parent = parent(promoted)
+    return x
 end
 
-_promote_operand(op, output, x) = x
+_promote_operands!(op, output) = ()
 
-# Promote operands without changing the prepared destination's parent.
-function _promote_operand(op, output, x::Union{AlgebraElement,Term})
-    parent(x) == parent(output) && return x
-    x = first(promote_bases(x, parent(output)))
-    _assert_same_basis(op, output, x)
-    return x
+function _promote_operands!(op, output, x, xs::Vararg{Any,N}) where {N}
+    x = _promote_operand!(op, output, x)
+    ys = _promote_operands!(op, output, xs...)
+    # Later operands may have enlarged the common basis again.
+    return (_promote_operand!(op, output, x), ys...)
 end
 
 # mutable API
@@ -182,7 +184,7 @@ function map_coefficients_to!(
     X::AlgebraElement;
     nonzero = false,
 ) where {F}
-    X = _promote_operand(map_coefficients_to!, res, X)
+    X = _promote_operand!(map_coefficients_to!, res, X)
     map_coefficients_to!(coeffs(res), f, coeffs(X); nonzero)
     return res
 end
@@ -193,7 +195,7 @@ function map_coefficients_to!(
     t::Term;
     nonzero = false,
 ) where {F}
-    t = _promote_operand(map_coefficients_to!, res, t)
+    t = _promote_operand!(map_coefficients_to!, res, t)
     if iszero(t)
         return MA.operate!(zero, res)
     end
@@ -222,7 +224,7 @@ function MA.operate_to!(
     a::Union{T,Number},
     X::AlgebraElement{T},
 ) where {T}
-    X = _promote_operand(*, res, X)
+    X = _promote_operand!(*, res, X)
     MA.operate_to!(coeffs(res), *, a, coeffs(X))
     return res
 end
@@ -233,7 +235,7 @@ function MA.operate_to!(
     X::AlgebraElement{T},
     a::Union{T,Number},
 ) where {T}
-    X = _promote_operand(op, res, X)
+    X = _promote_operand!(op, res, X)
     MA.operate_to!(coeffs(res), op, coeffs(X), a)
     return res
 end
@@ -244,13 +246,13 @@ function MA.operate_to!(
     a,
     X::AlgebraElement,
 )
-    X = _promote_operand(mul, res, X)
+    X = _promote_operand!(mul, res, X)
     MA.operate_to!(coeffs(res), mul, a, coeffs(X))
     return res
 end
 
 function MA.operate_to!(res::AlgebraElement, ::typeof(-), X::AlgebraElement)
-    X = _promote_operand(-, res, X)
+    X = _promote_operand!(-, res, X)
     MA.operate_to!(coeffs(res), -, coeffs(X))
     return res
 end
@@ -269,8 +271,7 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    X = _promote_operand(+, res, X)
-    Y = _promote_operand(+, res, Y)
+    X, Y = _promote_operands!(+, res, X, Y)
     MA.operate_to!(coeffs(res), +, coeffs(X), coeffs(Y))
     return res
 end
@@ -281,8 +282,7 @@ function MA.operate_to!(
     X::AlgebraElement,
     Y::AlgebraElement,
 )
-    X = _promote_operand(-, res, X)
-    Y = _promote_operand(-, res, Y)
+    X, Y = _promote_operands!(-, res, X, Y)
     MA.operate_to!(coeffs(res), -, coeffs(X), coeffs(Y))
     return res
 end
@@ -293,15 +293,14 @@ function MA.operate_to!(
     A::AlgebraElement,
     B::AlgebraElement,
 )
-    A = _promote_operand(*, res, A)
-    B = _promote_operand(*, res, B)
+    A, B = _promote_operands!(*, res, A, B)
     mstr = mstructure(res)
     MA.operate_to!(coeffs(res), mstr, coeffs(A), coeffs(B), true)
     return res
 end
 
 function MA.operate!(::typeof(*), A::AlgebraElement, B::AlgebraElement)
-    B = _promote_operand(*, A, B)
+    B = _promote_operand!(*, A, B)
     # Preserve the factors while the product kernel clears the destination.
     original = copy(A)
     B = coeffs(A) === coeffs(B) ? original : B
@@ -314,8 +313,7 @@ function MA.operate!(
     a::AlgebraElement,
     b::AlgebraElement,
 )
-    a = _promote_operand(op, f, a)
-    b = _promote_operand(op, f, b)
+    a, b = _promote_operands!(op, f, a, b)
     c, ca, cb = coeffs(f), coeffs(a), coeffs(b)
     if c === ca || c === cb
         # Preserve both factors before accumulation changes their storage.
@@ -341,9 +339,7 @@ function MA.operate_to!(
 end
 
 function _prepare_fused_output!(output, op, f, a, b)
-    f = _promote_operand(op, output, f)
-    a = _promote_operand(op, output, a)
-    b = _promote_operand(op, output, b)
+    f, a, b = _promote_operands!(op, output, f, a, b)
     if coeffs(output) !== coeffs(f)
         if (a isa AlgebraElement && coeffs(output) === coeffs(a)) ||
            (b isa AlgebraElement && coeffs(output) === coeffs(b))
@@ -388,6 +384,22 @@ function MA.operate!(
     return MA.operate!(MA.add_sub_op(op), f, MA.operate(*, a, b, args...))
 end
 
+function MA.operate_to!(
+    output::AlgebraElement,
+    op::MA.AddSubMul,
+    f::AlgebraElement,
+    a,
+    b,
+    args::Vararg{Any,N},
+) where {N}
+    return MA.operate_to!(
+        output,
+        MA.add_sub_op(op),
+        f,
+        MA.operate(*, a, b, args...),
+    )
+end
+
 for (L, R, left) in (
     (:(Union{T,Number}), :(Union{AlgebraElement{T},Term{T}}), true),
     (:(Union{AlgebraElement{T},Term{T}}), :(Union{T,Number}), false),
@@ -423,7 +435,7 @@ function _scalar_add_mul!(
     g::AlgebraElement,
     scale::F,
 ) where {F}
-    g = _promote_operand(op, f, g)
+    g = _promote_operand!(op, f, g)
     _add_scaled_coefficients!(MA.add_sub_op(op), coeffs(f), coeffs(g), scale)
     return f
 end

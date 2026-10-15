@@ -59,11 +59,11 @@ end
 object(A::StarAlgebra) = A.object
 Base.isempty(A::StarAlgebra) = isempty(basis(A))
 function Base.:(==)(a::StarAlgebra, b::StarAlgebra)
-    return a.object == b.object && a.mstructure == b.mstructure
+    return a === b || (a.object == b.object && a.mstructure == b.mstructure)
 end
 
 """
-    struct AlgebraElement{T,A<:AbstractStarAlgebra,V} <: MA.AbstractMutable
+    mutable struct AlgebraElement{T,A<:AbstractStarAlgebra,V} <: MA.AbstractMutable
         coeffs::V
         parent::A
     end
@@ -71,6 +71,9 @@ end
 Represent an element of the algebra `parent` with coefficients `coeffs`.
 The coefficients is a mapping from `keys(coeffs)` to `values(coeffs)`.
 The basis element correponding to a key `key` can be obtained via `parent[key]`.
+
+Mutable arithmetic can replace the parent and coefficient storage when basis
+promotion preserves their types. Shared parents are never modified.
 
 The coefficients are **always** in canonicalized state, meaning the coefficients are
 sorted in increasing key order without duplicate keys.
@@ -83,7 +86,7 @@ the algebra element, say `a`, should be canonicalized with
 `MA.operate!(canonical, a)` after using these unsafe operations and
 before using other operations which assumes the canonicalized state.
 """
-struct AlgebraElement{T,A<:AbstractStarAlgebra,V} <: MA.AbstractMutable
+mutable struct AlgebraElement{T,A<:AbstractStarAlgebra,V} <: MA.AbstractMutable
     coeffs::V
     parent::A
 end

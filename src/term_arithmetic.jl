@@ -2,7 +2,7 @@
 # Copyright (c) 2026: Marek Kaluba, Benoît Legat
 
 function MA.operate!(::typeof(+), f::AlgebraElement, t::Term)
-    t = _promote_operand(+, f, t)
+    t = _promote_operand!(+, f, t)
     iszero(t) && return f
     _add_term!(coeffs(f), t)
     return f
@@ -10,6 +10,16 @@ end
 
 function MA.operate!(::typeof(-), f::AlgebraElement, t::Term)
     return MA.operate!(+, f, -t)
+end
+
+function MA.operate_to!(
+    output::AlgebraElement,
+    op::Union{typeof(+),typeof(-)},
+    f::AlgebraElement,
+    t::Term,
+)
+    fused = op === (+) ? MA.add_mul : MA.sub_mul
+    return MA.operate_to!(output, fused, f, true, t)
 end
 
 function MA.operate!(
@@ -80,8 +90,7 @@ function _term_product_style(ms, f::SparseCoefficients, g::SparseCoefficients)
 end
 
 function _term_add_mul!(op::MA.AddSubMul, f::AlgebraElement, t::Term, g, left)
-    t = _promote_operand(op, f, t)
-    g = _promote_operand(op, f, g)
+    t, g = _promote_operands!(op, f, t, g)
     iszero(t) && return f
     ms = mstructure(f)
     c = coeffs(f)

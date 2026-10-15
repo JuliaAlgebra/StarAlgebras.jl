@@ -51,6 +51,7 @@ end
     include("mutable_arithmetics.jl")
     include("term_arithmetic.jl")
     include("term_addition.jl")
+    include("parent_promotion.jl")
     include("zero_for.jl")
     include("basis_conversion.jl")
     include("merge_allocations.jl")
