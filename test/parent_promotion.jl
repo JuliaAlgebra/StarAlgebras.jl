@@ -105,4 +105,82 @@ end
     end
 end
 
+# A basis with a type-level size exercises promotion that changes parent types.
+struct PowerBasis{N} <: SA.ExplicitBasis{Float64,Int} end
+
+Base.length(::PowerBasis{N}) where {N} = N
+Base.getindex(::PowerBasis, i::Int) = 2.0^(i - 1)
+Base.getindex(::PowerBasis, x::Float64) = Int(log2(x)) + 1
+Base.:(==)(a::PowerBasis, b::PowerBasis) = typeof(a) === typeof(b)
+function SA.zero_coeffs(::Type{T}, ::PowerBasis) where {T}
+    return SA.SparseCoefficients(Int[], T[])
+end
+
+function SA.promote_bases_with_maps(
+    a::PowerBasis{N},
+    b::PowerBasis{M},
+) where {N,M}
+    if N == M
+        return (a, nothing), (b, nothing)
+    end
+    common = PowerBasis{max(N, M)}()
+    return (common, identity), (common, identity)
+end
+
+function SA.promote_object(
+    object::Float64,
+    ::SA.DiracMStructure{Float64,Int,<:PowerBasis},
+    map,
+)
+    return object
+end
+
+const PowerAlgebra{N} = SA.StarAlgebra{
+    Float64,
+    Float64,
+    SA.DiracMStructure{Float64,Int,PowerBasis{N},typeof(*)},
+}
+function Base.convert(::Type{PowerAlgebra{N}}, a::PowerAlgebra) where {N}
+    return SA.StarAlgebra(SA.object(a), PowerBasis{N}())
+end
+
+@testset "Promotion between parent types" begin
+    small = SA.StarAlgebra(1.0, PowerBasis{2}())
+    large = SA.StarAlgebra(1.0, PowerBasis{4}())
+    t, u = SA.Term(small, 2, 3), SA.Term(large, 3, 2.0)
+    p, q = SA.algebra_element(t), SA.algebra_element(u)
+    promoted_t = SA.Term(large, 2, 3.0)
+    promoted_p = SA.algebra_element(promoted_t)
+    @test (@inferred SA.promote_bases_with_maps(t, u)) ==
+          ((promoted_t, identity), (u, identity))
+    for (a, b, expected_a, expected_b) in (
+        (t, u, promoted_t, u),
+        (p, q, promoted_p, q),
+        (p, u, promoted_p, q),
+        (t, q, promoted_p, q),
+    )
+        promoted = @inferred promote(a, b)
+        @test promoted == (expected_a, expected_b)
+        @test typeof(promoted[1]) === typeof(expected_a)
+        @test parent(promoted[1]) === large
+        @test (@inferred convert(typeof(expected_a), a)) == expected_a
+    end
+    for op in (+, -, *)
+        result = @inferred op(p, q)
+        @test result == op(promoted_p, q)
+        @test (@inferred MA.promote_operation(op, typeof(p), typeof(q))) ===
+              typeof(result)
+    end
+    for x in (t, p), target in (large, SA.mstructure(large), SA.basis(large))
+        promoted, common = @inferred SA.promote_bases(x, target)
+        @test parent(promoted) === large
+        @test promoted == (x isa SA.Term ? promoted_t : promoted_p)
+        @test common == target
+    end
+    @test_throws InexactError convert(typeof(t), u)
+    @test_throws InexactError convert(typeof(p), q)
+    @test parent(t) === parent(p) === small
+    @test SA.coeffs(p)[2] == 3
+end
+
 end # module

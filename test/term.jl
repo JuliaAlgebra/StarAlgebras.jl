@@ -82,6 +82,7 @@ end
         @test coefficient(t) == 3.0
         @test basis_element(t) == Monomial((1, 2))
         @test parent(t) === biv_alg
+        @test ndims(t) == ndims(typeof(t)) == 0
     end
 
     @testset "iszero / zero" begin
@@ -160,6 +161,13 @@ end
         # zero terms are equal regardless of index
         @test biv_term(0.0, (1, 0)) == biv_term(0.0, (0, 1))
         @test isequal(biv_term(0.0, (1, 0)), biv_term(0.0, (0, 1)))
+        # Equal basis elements need not have the same index in their parents.
+        a = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 4.0]))
+        b = StarAlgebra(1.0, SA.FixedBasis([2.0, 1.0, 4.0]))
+        for equal in (==, isequal)
+            @test equal(Term(a, 1, 3), Term(b, 2, 3))
+            @test !equal(Term(a, 1, 3), Term(b, 1, 3))
+        end
     end
 
     @testset "hash" begin

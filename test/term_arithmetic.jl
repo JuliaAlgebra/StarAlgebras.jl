@@ -2,6 +2,7 @@
 # Copyright (c) 2026: Marek Kaluba, Benoît Legat
 
 using Test, StarAlgebras
+using SparseArrays
 import StarAlgebras as SA
 import MutableArithmetics as MA
 
@@ -28,6 +29,15 @@ end
             @test output == product
             @test [SA.coeffs(p)[i] for i in 1:3] == [1, 3, 0]
             @test coefficient(t) == 2
+            for op in (MA.add_mul, MA.sub_mul), alias in (false, true)
+                output = MA.mutable_copy(p)
+                factor = alias ? output : p
+                left, right = a === t ? (t, factor) : (factor, t)
+                @test (@inferred MA.operate!(op, output, left, right)) ===
+                      output
+                @test [SA.coeffs(output)[i] for i in 1:3] == MA.add_sub_op(op).([1, 3, 0], [0, 2, 6])
+                @test [SA.coeffs(p)[i] for i in 1:3] == [1, 3, 0]
+            end
         end
     end
 end

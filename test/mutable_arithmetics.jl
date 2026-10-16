@@ -5,6 +5,7 @@ module TestMutableArithmetics
 
 using Test
 using SparseArrays
+using LinearAlgebra
 using StarAlgebras
 import StarAlgebras as SA
 import MutableArithmetics as MA
@@ -126,6 +127,19 @@ end
         f = make_element([1, 0, -1, 0, 0, 0])
         a = make_element([1, 2, 0, 0, 0, 0])
         b = make_element([2, 0, 3, 0, 0, 0])
+        for op in (MA.add_mul, MA.sub_mul),
+            (factors, product) in (
+                ((2, 3), make_element([6, 0, 0, 0, 0, 0])),
+                ((2I, 3, -I), make_element([-6, 0, 0, 0, 0, 0])),
+                ((a, b, 2), make_element([4, 8, 6, 0, 12, 0])),
+            )
+
+            output = MA.mutable_copy(f)
+            originals = MA.copy_if_mutable.(factors)
+            @test (@inferred MA.operate!(op, output, factors...)) === output
+            @test output == MA.add_sub_op(op)(f, product)
+            @test factors == originals
+        end
         for op in (MA.add_mul, MA.sub_mul),
             (left, right) in (
                 (a, b),
@@ -267,6 +281,33 @@ end
     end
 end
 
+@testset "Algebra-valued scalar coefficients" begin
+    inner = StarAlgebra("", SA.DiracBasis(["", "a", "b", "ab", "ba"]))
+    a = AlgebraElement(SA.SparseCoefficients(["a"], [2]), inner)
+    b = AlgebraElement(SA.SparseCoefficients(["b"], [3]), inner)
+    outer = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 4.0]))
+    p = AlgebraElement(SA.SparseCoefficients([2], [b]), outer)
+    originals = MA.mutable_copy.((a, b, p))
+    for (left, right, key) in ((a, p, "ab"), (p, a, "ba"))
+        result = @inferred left * right
+        @test (@inferred MA.promote_operation(
+            *,
+            typeof(left),
+            typeof(right),
+        )) === typeof(result)
+        @test parent(result) === outer
+        @test keys(coeffs(result)) == [2]
+        expected = AlgebraElement(SA.SparseCoefficients([key], [6]), inner)
+        @test coeffs(result)[2] == expected
+        output = zero(p)
+        @test (@inferred MA.operate_to!(output, *, left, right)) === output
+        @test output == result
+        @test (a, b, p) == originals
+        MA.operate!(MA.add_mul, coeffs(result)[2], 2, 3)
+        @test (a, b, p) == originals
+    end
+end
+
 @testset "Unsorted scaled accumulation" begin
     alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0]))
     g = AlgebraElement(SA.SparseCoefficients([3, 1, 3], [1, 2, 3], >), alg)
@@ -363,6 +404,12 @@ end
 end
 
 @testset "Sparse coefficient merge" begin
+    c = SA.SparseCoefficients([1, 3], [2, 4])
+    pairs = SA._CoefficientPairs(c)
+    @test setindex!(pairs, 2 => 7, 1) === pairs
+    @test keys(c) == [2, 3]
+    @test values(c) == [7, 4]
+
     for T in (Int, BigInt), alias in (:none, :left, :right)
         x = SA.SparseCoefficients([1, 3, 5], T[2, 3, 4])
         y = SA.SparseCoefficients([2, 3, 6], T[5, -3, 7])

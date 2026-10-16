@@ -141,18 +141,19 @@ end
     end
 end
 
-@testset "In-place constant addition" begin
+@testset "In-place constant addition and subtraction" begin
     alg = SA.StarAlgebra(1, SA.FixedBasis([2, 1, 3]))
     for T in (Int, Rational{Int}, Float64, BigInt),
+        op in (+, -),
         c in
         (T[2, 0, 0], sparsevec([1], T[2], 3), SA.SparseCoefficients([1], T[2]))
 
         f = SA.AlgebraElement(c, alg)
         for (value, expected) in ((3, [2, 3, 0]), (-3, [2, 0, 0]))
-            scalar = T(value)
-            @test (@inferred MA.operate!(+, f, scalar)) === f
+            scalar = op(T(value))
+            @test (@inferred MA.operate!(op, f, scalar)) === f
             @test [c[i] for i in 1:3] == expected
-            @test scalar == value
+            @test scalar == op(value)
         end
     end
     f = SA.AlgebraElement(SA.SparseCoefficients([1], BigInt[2]), alg)

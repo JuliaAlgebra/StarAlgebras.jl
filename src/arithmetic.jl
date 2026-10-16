@@ -2,12 +2,10 @@
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
 _coeff_type(::Type{A}) where {A<:AlgebraElement} = eltype(A)
-_coeff_type(::Type{<:Term{T}}) where {T} = T
 _coeff_type(a::Type) = a
-_coeff_type(a) = _coeff_type(typeof(a))
 
 function _product_coefficient_type(
-    ::Type{<:Union{AlgebraElement{T,A},Term{T,A}}},
+    ::Type{<:AlgebraElement{T,A}},
     ::Type{Y},
 ) where {T,A,Y}
     M = MA.promote_operation(mstructure, A)
