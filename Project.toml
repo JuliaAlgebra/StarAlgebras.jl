@@ -11,7 +11,4 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 [compat]
 MutableArithmetics = "1.4.5"
 SparseArrays = "1"
-julia = "1.6"
-
-[sources]
-MutableArithmetics = {url = "https://github.com/jump-dev/MutableArithmetics.jl", rev = "main"}
+julia = "1.10"
