@@ -5,6 +5,7 @@ module TestZeroFor
 
 using Test
 using SparseArrays
+using LinearAlgebra
 import StarAlgebras as SA
 import MutableArithmetics as MA
 
@@ -61,6 +62,27 @@ import MutableArithmetics as MA
     z = @inferred MA.zero_for(typeof(zero(Int, alg)), (t,))
     @test parent(z) === alg
     @test iszero(z)
+end
+
+@testset "Diagonal zero preparation" begin
+    alg = SA.StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0]))
+    a = SA.AlgebraElement([1, 0, 2], alg)
+    P = typeof(a)
+    for entries in ([a, a], sparsevec([2], [a], 2))
+        D = Diagonal(entries)
+        z = @inferred MA.zero_for(P, MA._zero_entries(D))
+        @test iszero(z)
+        @test parent(z) === alg
+        @test SA.coeffs(z) !== SA.coeffs(a)
+
+        output = Vector{P}(undef, 2)
+        @test MA._zero_for!(output, D) === output
+        @test all(iszero, output)
+        @test all(x -> parent(x) === alg, output)
+        SA.coeffs(output[1])[1] = 3
+        @test iszero(output[2])
+        @test SA.coeffs(a) == [1, 0, 2]
+    end
 end
 
 function test_zero_allocations(prototype, inputs::Vararg{Any,N}) where {N}
