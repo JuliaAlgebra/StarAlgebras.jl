@@ -15,4 +15,5 @@ GroupsCore = "0.5"
 PermutationGroups = "0.6"
 
 [sources]
+MutableArithmetics = {url = "https://github.com/jump-dev/MutableArithmetics.jl", rev = "main"}
 StarAlgebras = {path = ".."}

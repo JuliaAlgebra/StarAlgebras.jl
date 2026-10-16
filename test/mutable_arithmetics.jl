@@ -480,8 +480,10 @@ end
     @test values(out) == [10, 4]
 
     input = AlgebraElement(c, alg)
-    other = AlgebraElement(copy(c), StarAlgebra(2.0, basis(alg)))
+    other_alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 5.0]))
+    other = AlgebraElement(copy(c), other_alg)
     @test_throws ArgumentError SA.map_coefficients_to!(other, zero, input)
+    @test parent(other) === other_alg
     @test values(SA.coeffs(other)) == [1, 2, 3]
 end
 

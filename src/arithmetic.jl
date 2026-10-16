@@ -95,6 +95,22 @@ function MA.promote_operation(
 ) where {T<:AlgebraElement,A<:AlgebraElement{T}}
     return similar_type(A, MA.promote_operation(*, T, T))
 end
+# Array-valued coefficients are scalars for their containing algebra, too.
+# Resolve the overlap with MA's array-scalar multiplication promotion.
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{T},
+    ::Type{A},
+) where {S,T<:AbstractArray{S},A<:AlgebraElement{T}}
+    return similar_type(A, MA.promote_operation(*, T, T))
+end
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{A},
+    ::Type{T},
+) where {S,T<:AbstractArray{S},A<:AlgebraElement{T}}
+    return similar_type(A, MA.promote_operation(*, T, T))
+end
 function MA.operate_to!(
     res::AlgebraElement,
     ::typeof(*),
