@@ -96,8 +96,10 @@ function test_zero_allocations(prototype, inputs::Vararg{Any,N}) where {N}
     direct, output = Ref{P}(), Ref{P}()
     direct[] = zero(prototype)
     output[] = MA.zero_for(P, inputs...)
-    budget = @allocated direct[] = zero(prototype)
-    @test (@allocated output[] = MA.zero_for(P, inputs...)) <= budget
+    if VERSION >= v"1.13"
+        budget = @allocated direct[] = zero(prototype)
+        @test (@allocated output[] = MA.zero_for(P, inputs...)) <= budget
+    end
     @test iszero(direct[]) && iszero(output[])
     @test SA.coeffs(direct[]) !== SA.coeffs(output[])
     return

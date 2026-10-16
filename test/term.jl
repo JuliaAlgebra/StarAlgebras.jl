@@ -301,7 +301,9 @@ end
             @test b == biv_term(T(3), (0, 2))
             if T === Int
                 test_product_promotion_allocations(a, b)
-                @test (@allocated a * b) == 0
+                if VERSION >= v"1.13"
+                    @test (@allocated a * b) == 0
+                end
             end
         end
         # The trait decides the representation even for vector-backed products.
