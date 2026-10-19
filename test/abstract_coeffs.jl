@@ -1,6 +1,14 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+if !@isdefined aug
+    include("group_utils.jl")
+end
+
+if !@isdefined ACoeffs
+    include("../examples/acoeffs.jl")
+end
+
 struct Wrap{T}
     x::T
 end
@@ -10,6 +18,18 @@ wrap(x) = Wrap(x)
 unwrap(w::Wrap) = w.x
 
 @testset "Abstract coefficients" begin
+    @testset "Equality with filtered iterators" begin
+        a = ACoeffs([1, 0, 2])
+        @test a == ACoeffs([1, 0, 2, 0])
+        @test a != ACoeffs([1, 2, 0])
+        @test a != ACoeffs([1, 0, 3])
+        for b in (ACoeffs([1]), ACoeffs(Int[]))
+            @test a != b
+            @test b != a
+        end
+        @test ACoeffs(Int[]) == ACoeffs([0])
+    end
+
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
     RG = StarAlgebra(G, SA.DiracBasis(G))
     wRG = StarAlgebra(G, SA.MappedBasis(G, wrap, unwrap))

@@ -5,6 +5,10 @@ using Test
 using PermutationGroups
 import Random
 import StarAlgebras as SA
+if !@isdefined aug
+    include("group_utils.jl")
+end
+
 @testset "POC: group algebra" begin
     G = PermGroup(perm"(1,2,3,4,5,6)", perm"(1,2)")
     g = Permutation(perm"(1,4,3,6)(2,5)", G)
@@ -219,6 +223,10 @@ import StarAlgebras as SA
         @test coeffs(ar + as, basis(aRG)) isa AbstractVector
 
         @test_throws ArgumentError one(aRG)
-        @test_throws ArgumentError isone(ar)
+        if iszero(ar)
+            @test !isone(ar)
+        else
+            @test_throws ArgumentError isone(ar)
+        end
     end
 end

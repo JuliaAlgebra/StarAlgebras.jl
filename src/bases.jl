@@ -80,7 +80,13 @@ Translate coefficients `cfs` in `source::AbstractBasis` to basis
 function coeffs(cfs, source::AbstractBasis, target::AbstractBasis)
     source === target && return cfs
     source == target && return cfs
-    res = zero_coeffs(value_type(cfs), target)
+    T = promote_coefficient_type(
+        coeffs,
+        value_type(cfs),
+        typeof(source),
+        typeof(target),
+    )
+    res = zero_coeffs(T, target)
     return coeffs!(res, cfs, source, target)
 end
 
@@ -101,8 +107,39 @@ Return `A' * cfs` where `A` is the linear map applied by
 function adjoint_coeffs(cfs, source::AbstractBasis, target::AbstractBasis)
     source === target && return cfs
     source == target && return cfs
-    res = zero_coeffs(value_type(cfs), source)
+    T = promote_coefficient_type(
+        adjoint_coeffs,
+        value_type(cfs),
+        typeof(source),
+        typeof(target),
+    )
+    res = zero_coeffs(T, source)
     return adjoint_coeffs!(res, cfs, source, target)
+end
+
+"""
+    promote_coefficient_type(op, T, S, D)
+
+Return the coefficient type to allocate for `op(cfs, source, target)`, where
+`T` is the value type of `cfs`, `source::S`, and `target::D`.
+Here `op` is [`coeffs`](@ref) or [`adjoint_coeffs`](@ref).
+
+The default returns `T`, as reindexing does not change coefficient values.
+Weighted conversions should specialize this method to account for their
+weights and accumulation, using `MA.promote_operation` for scalar operations.
+For `adjoint_coeffs`, use the adjoint of the same forward conversion from
+`S` to `D`, not the inverse conversion. Its coefficient type may differ.
+
+This method only determines the value type; SA chooses and allocates storage.
+Conversions between equal bases return `cfs` directly without calling it.
+"""
+function promote_coefficient_type(
+    ::Union{typeof(coeffs),typeof(adjoint_coeffs)},
+    ::Type{T},
+    ::Type{<:AbstractBasis},
+    ::Type{<:AbstractBasis},
+) where {T}
+    return T
 end
 
 function adjoint_coeffs!(res, cfs, source::AbstractBasis, target::AbstractBasis)

@@ -25,7 +25,7 @@ end
 Base.one(m::UniMono) = UniMono(m.first_variable, 0)
 function Base.:*(a::UniMono, b::UniMono)
     @assert a.first_variable == b.first_variable
-    UniMono(a.first_variable, a.exponent + b.exponent)
+    return UniMono(a.first_variable, a.exponent + b.exponent)
 end
 
 unimono(first, exp) = UniMono(first, exp)
@@ -45,7 +45,9 @@ function bivariate_lift(first, deg)
     return first ? (deg, 0) : (0, deg)
 end
 
-UniType = typeof(SA.MappedBasis(UnivariateIterator(), Base.Fix1(unimono, true), exponent))
+UniType = typeof(
+    SA.MappedBasis(UnivariateIterator(), Base.Fix1(unimono, true), exponent),
+)
 function SA.promote_bases_with_maps(a::UniType, b::UniType)
     if a.map.x == b.map.x
         return (a, nothing), (b, nothing)

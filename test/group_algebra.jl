@@ -1,6 +1,10 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+if !@isdefined aug
+    include("group_utils.jl")
+end
+
 @testset "Permutation group algebra: arithmetic " begin
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
     b = SA.DiracBasis(G)
@@ -46,6 +50,39 @@
         @test eltype(c // (big(4) // 1)) == Rational{BigInt}
 
         @test (1.0a) * 1 // 2 == (0.5a) == c // 2
+    end
+
+    @testset "Scalar division with vector coefficients" begin
+        fb = SA.FixedBasis(basis(RG); n = length(basis(RG)))
+        fRG = StarAlgebra(G, fb)
+        for values in (
+            [0, 2, 0, 4, 0, 0],
+            sparsevec([2, 4], [2, 4], 6),
+            SA.SparseCoefficients([2, 4], [2, 4]),
+        )
+            a = AlgebraElement(values, fRG)
+            for op in (/, //, div)
+                expected_coeffs = if values isa SA.SparseCoefficients
+                    SA.SparseCoefficients([2, 4], [op(2, 2), op(4, 2)])
+                else
+                    map(x -> op(x, 2), values)
+                end
+                expected = AlgebraElement(expected_coeffs, fRG)
+                @test (@inferred op(a, 2)) == expected
+                output = similar(a, eltype(expected))
+                @test MA.operate_to!(output, op, a, 2) === output
+                @test output == expected
+                @test MA.operate_to!(output, op, output, 1) === output
+                @test output == expected
+                @test (@inferred MA.operate!(op, output, 2)) === output
+                @test output == op(expected, 2)
+                result = copy(output)
+                @test (@inferred MA.operate!!(op, result, 1)) === result
+                @test result == output
+                @test coeffs(a) == values
+            end
+            @test (@inferred MA.operate!!(/, copy(a), 2)) == a / 2
+        end
     end
 
     @testset "Additive structure" begin

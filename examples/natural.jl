@@ -10,4 +10,6 @@ Base.iterate(::NaturalNumbers, state) = (state + 1, state + 1)
 Base.in(i::Int, ::NaturalNumbers) = i >= 1
 Base.one(::NaturalNumbers) = 1
 
-function Base.require_one_based_indexing(::SA.MappedBasis{T,Int,NaturalNumbers}) where {T} end
+function Base.require_one_based_indexing(
+    ::SA.MappedBasis{T,Int,NaturalNumbers},
+) where {T} end

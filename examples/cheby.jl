@@ -14,7 +14,8 @@ end
 
 SA.star(a::ChebyPoly) = a
 
-struct ChebyMStruct{T,I,B<:SA.AbstractBasis{T,I}} <: SA.MultiplicativeStructure{T,I}
+struct ChebyMStruct{T,I,B<:SA.AbstractBasis{T,I}} <:
+       SA.MultiplicativeStructure{T,I}
     basis::B
 end
 
@@ -27,10 +28,7 @@ function (m::ChebyMStruct)(a::Int, b::Int, ::Type{ChebyPoly})
 end
 
 function (m::ChebyMStruct)(a::Int, b::Int, ::Type{Int})
-    return SA.SparseCoefficients(
-        (abs(a - b), a + b),
-        (1 // 2, 1 // 2),
-    )
+    return SA.SparseCoefficients((abs(a - b), a + b), (1 // 2, 1 // 2))
 end
 
 # Define the mapping from `Int` to `ChebyPoly`
@@ -45,5 +43,9 @@ end
 
 # Create a `MappedBasis` that maps `NaturalNumbers` to `ChebyPoly`s
 function cheby_basis()
-    return SA.MappedBasis(NaturalNumbers(), map_to_chebyshev, map_from_chebyshev)
+    return SA.MappedBasis(
+        NaturalNumbers(),
+        map_to_chebyshev,
+        map_from_chebyshev,
+    )
 end

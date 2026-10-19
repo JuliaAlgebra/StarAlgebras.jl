@@ -10,6 +10,41 @@ end
 
 Base.copy(a::AlgebraElement) = AlgebraElement(copy(coeffs(a)), parent(a))
 
+function MA.mutability(::Type{<:AlgebraElement{T,A,C}}) where {T,A,C}
+    return _coefficients_mutability(C)
+end
+
+function MA.mutable_copy(a::AlgebraElement)
+    return AlgebraElement(MA.mutable_copy(coeffs(a)), parent(a))
+end
+
+function MA.promote_operation(
+    ::typeof(zero),
+    ::Type{A},
+) where {A<:AlgebraElement}
+    return similar_type(A, eltype(A))
+end
+
+function remove_leading_term(a::AlgebraElement)
+    return MA.operate!(remove_leading_term, copy(a))
+end
+
+function MA.operate!(::typeof(remove_leading_term), a::AlgebraElement)
+    MA.operate!(remove_leading_term, coeffs(a))
+    return a
+end
+
+function MA.operate(::typeof(remove_leading_term), a::AlgebraElement)
+    return remove_leading_term(a)
+end
+
+function MA.promote_operation(
+    ::typeof(remove_leading_term),
+    ::Type{A},
+) where {A<:AlgebraElement}
+    return A
+end
+
 function Base.deepcopy_internal(a::AlgebraElement, id::IdDict)
     if !haskey(id, a)
         id[a] = AlgebraElement(Base.deepcopy_internal(coeffs(a), id), parent(a))
@@ -120,6 +155,7 @@ end
 function promote_bases_with_maps end
 
 function promote_bases_with_maps(a::StarAlgebra, b::StarAlgebra)
+    a == b && return ((a, nothing), (b, nothing))
     _a, _b = promote_bases_with_maps(mstructure(a), mstructure(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
@@ -140,13 +176,20 @@ function promote_with_map(a::AlgebraElement, alg, map)
     return AlgebraElement(c, alg), map
 end
 
-function promote_bases_with_maps(a::AlgebraElement, b::AlgebraElement)
+function promote_with_map(t::Term, alg, map)
+    return Term(alg, map(t.index), coefficient(t)), map
+end
+
+function promote_bases_with_maps(
+    a::Union{AlgebraElement,Term},
+    b::Union{AlgebraElement,Term},
+)
     _a, _b = promote_bases_with_maps(parent(a), parent(b))
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
 
 function promote_bases_with_maps(
-    a::AlgebraElement,
+    a::Union{AlgebraElement,Term},
     b::Union{StarAlgebra,MultiplicativeStructure,AbstractBasis},
 )
     _a, _b = promote_bases_with_maps(parent(a), b)
@@ -161,4 +204,65 @@ Same as `promote_bases_with_maps` but without the key maps.
 function promote_bases(a, b)
     _a, _b = promote_bases_with_maps(a, b)
     return _a[1], _b[1]
+end
+
+# Parents can have different types when their basis data is encoded in types.
+# Reuse the same promotion as values before applying coefficient promotion.
+function _promoted_types(::Type{A}, ::Type{B}) where {A,B}
+    P = Base.promote_op(promote_bases, A, B)
+    return isconcretetype(P) ? fieldtypes(P) : (Any, Any)
+end
+function _convert_parent(::Type{A}, x) where {A<:AbstractStarAlgebra}
+    target = convert(A, parent(x))
+    y, _ = promote_bases(x, target)
+    parent(y) == target || throw(InexactError(:convert, A, parent(x)))
+    return y
+end
+function _zero_prototype(x::AlgebraElement, ::Type{T}) where {T}
+    return MA.operate!(zero, similar(x, T))
+end
+_zero_prototype(x::Term, ::Type{T}) where {T} = zero(T, parent(x))
+
+@inline function _zero_for(::Type{P}, alg, prototype) where {P<:AlgebraElement}
+    isnothing(prototype) && return zero(P)
+    z = _zero_prototype(prototype, eltype(P))
+    return convert(P, first(promote_bases(z, alg)))
+end
+
+# Scalar representations can expose their term for parent preparation.
+_algebra_operand(x) = x
+
+# Keep optional parents and prototypes unboxed across input recursion.
+@inline function _zero_for(
+    ::Type{P},
+    alg,
+    prototype,
+    input,
+    inputs::Vararg{Any,N},
+) where {P<:AlgebraElement,N}
+    for operand in input
+        x = _algebra_operand(operand)
+        if x isa Union{AlgebraElement,Term}
+            alg =
+                isnothing(alg) ? parent(x) :
+                first(promote_bases(alg, parent(x)))
+            # Prefer an element with the promoted coefficient storage, e.g.
+            # dense storage when mixing sparse and dense coefficients.
+            if isnothing(prototype) || (
+                x isa AlgebraElement &&
+                similar_type(typeof(x), eltype(P)) === P
+            )
+                prototype = x
+            end
+        end
+    end
+    # Recurse over the tuple so each input's iterator type stays concrete.
+    return _zero_for(P, alg, prototype, inputs...)
+end
+
+function MA.zero_for(
+    ::Type{P},
+    inputs::Vararg{Any,N},
+) where {P<:AlgebraElement,N}
+    return _zero_for(P, nothing, nothing, inputs...)
 end

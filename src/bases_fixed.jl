@@ -89,7 +89,13 @@ Base.iterate(b::FixedBasis, state) = iterate(b.elts, state)
 Base.IndexStyle(::Type{<:FixedBasis{T,I,V}}) where {T,I,V} = Base.IndexStyle(V)
 
 function promote_bases_with_maps(a::FixedBasis, b::FixedBasis)
-    @assert a == b # Promotion not supported, they need to be equal
+    if a != b
+        throw(
+            ArgumentError(
+                "Promotion of different fixed bases is not supported",
+            ),
+        )
+    end
     return (a, nothing), (b, nothing)
 end
 

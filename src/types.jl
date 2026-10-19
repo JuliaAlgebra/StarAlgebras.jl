@@ -43,6 +43,12 @@ function StarAlgebra(object, basis::AbstractBasis)
 end
 
 mstructure(A::StarAlgebra) = A.mstructure
+function MA.promote_operation(
+    ::typeof(mstructure),
+    ::Type{StarAlgebra{O,T,M}},
+) where {O,T,M}
+    return M
+end
 basis(A::StarAlgebra) = basis(mstructure(A))
 function MA.promote_operation(
     ::typeof(basis),
@@ -53,11 +59,11 @@ end
 object(A::StarAlgebra) = A.object
 Base.isempty(A::StarAlgebra) = isempty(basis(A))
 function Base.:(==)(a::StarAlgebra, b::StarAlgebra)
-    return a.object == b.object && a.mstructure == b.mstructure
+    return a === b || (a.object == b.object && a.mstructure == b.mstructure)
 end
 
 """
-    struct AlgebraElement{T,A<:AbstractStarAlgebra,V} <: MA.AbstractMutable
+    mutable struct AlgebraElement{T,A<:AbstractStarAlgebra,V} <: MA.AbstractMutable
         coeffs::V
         parent::A
     end
@@ -65,6 +71,9 @@ end
 Represent an element of the algebra `parent` with coefficients `coeffs`.
 The coefficients is a mapping from `keys(coeffs)` to `values(coeffs)`.
 The basis element correponding to a key `key` can be obtained via `parent[key]`.
+
+Mutable arithmetic can replace the parent and coefficient storage when basis
+promotion preserves their types. Shared parents are never modified.
 
 The coefficients are **always** in canonicalized state, meaning the coefficients are
 sorted in increasing key order without duplicate keys.
@@ -77,7 +86,7 @@ the algebra element, say `a`, should be canonicalized with
 `MA.operate!(canonical, a)` after using these unsafe operations and
 before using other operations which assumes the canonicalized state.
 """
-struct AlgebraElement{T,A<:AbstractStarAlgebra,V} <: MA.AbstractMutable
+mutable struct AlgebraElement{T,A<:AbstractStarAlgebra,V} <: MA.AbstractMutable
     coeffs::V
     parent::A
 end
@@ -179,6 +188,7 @@ end
 Base.one(a::AlgebraElement) = one(eltype(a), parent(a))
 
 function Base.isone(a::AlgebraElement)
+    iszero(a) && return false
     A = parent(a)
     id = one(object(A))
     if id in basis(A)
@@ -202,6 +212,23 @@ end
 
 function similar_type(::Type{AlgebraElement{T,A,V}}, ::Type{C}) where {A,T,V,C}
     return AlgebraElement{C,A,similar_type(V, C)}
+end
+
+function Base.promote_rule(
+    ::Type{AlgebraElement{T,A,U}},
+    ::Type{AlgebraElement{S,B,V}},
+) where {T,S,A,U,B,V}
+    if A !== B
+        return promote_type(
+            _promoted_types(AlgebraElement{T,A,U}, AlgebraElement{S,B,V})...,
+        )
+    end
+    C = promote_type(T, S)
+    return AlgebraElement{
+        C,
+        A,
+        promote_type(similar_type(U, C), similar_type(V, C)),
+    }
 end
 
 function Base.similar(X::AlgebraElement, T = eltype(X))
@@ -229,7 +256,8 @@ end
 # and `U` is `SparseCoefficients` with `Vector`
 function Base.convert(
     ::Type{AlgebraElement{T,A,U}},
-    a::AlgebraElement{T,A,V},
-) where {A,T,U,V}
-    return AlgebraElement(convert(U, coeffs(a)), parent(a))
+    a::AlgebraElement{S,B,V},
+) where {A,S,T,U,B,V}
+    y = A === B ? a : _convert_parent(A, a)
+    return AlgebraElement(convert(U, coeffs(y)), parent(y))
 end
