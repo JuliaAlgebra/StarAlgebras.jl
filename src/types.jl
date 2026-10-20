@@ -208,7 +208,6 @@ function Base.isone(a::AlgebraElement)
 end
 
 (A::AbstractStarAlgebra{O,T})(elt::T) where {O,T} = __coerce(A, (elt => 1))
-(A::AbstractStarAlgebra)(x::Number) = __coerce(A, (one(object(A)) => x))
 
 function similar_type(::Type{AlgebraElement{T,A,V}}, ::Type{C}) where {A,T,V,C}
     return AlgebraElement{C,A,similar_type(V, C)}

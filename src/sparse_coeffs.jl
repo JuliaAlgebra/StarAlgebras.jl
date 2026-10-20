@@ -212,12 +212,6 @@ function MA.mutability(
     return MA.mutability(Vk)
 end
 
-### temporary convenience? how to handle this?
-function __prealloc(X::SparseCoefficients, a::Number, op)
-    T = MA.promote_operation(op, value_type(X), typeof(a))
-    return similar(X, T)
-end
-
 function __prealloc(X::SparseCoefficients, Y::SparseCoefficients, op)
     # this is not even correct for op = *
     T = MA.promote_operation(op, value_type(X), value_type(Y))

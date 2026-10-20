@@ -45,23 +45,6 @@ end
 function Base.:-(X::AlgebraElement)
     return MA.operate_to!(similar(X, MA.promote_operation(-, eltype(X))), -, X)
 end
-function MA.promote_operation(
-    ::typeof(*),
-    ::Type{S},
-    ::Type{A},
-) where {T,A<:AlgebraElement{T},S<:Union{T,Number}}
-    return similar_type(A, MA.promote_operation(*, S, T))
-end
-function MA.promote_operation(
-    op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
-    ::Type{A},
-    ::Type{S},
-) where {T,A<:AlgebraElement{T},S<:Union{T,Number}}
-    if op === (//)
-        return similar_type(A, Base.promote_op(op, T, S))
-    end
-    return algebra_promote_operation(op, A, S)
-end
 function _scalar_lmul(a, X::AlgebraElement)
     P = MA.promote_operation(*, typeof(a), typeof(X))
     return MA.operate_to!(MA.zero_for(P, (X,)), *, a, X)
@@ -70,7 +53,6 @@ function _scalar_right(op, X::AlgebraElement, a)
     R = eltype(MA.promote_operation(op, typeof(X), typeof(a)))
     return MA.operate_to!(similar(X, R), op, X, a)
 end
-Base.:*(a::Union{T,Number}, X::AlgebraElement{T}) where {T} = _scalar_lmul(a, X)
 # Algebra-valued coefficients are scalars for their containing algebra.
 # These signatures resolve the overlap with algebra-by-algebra products.
 function Base.:*(a::T, X::AlgebraElement{T}) where {T<:AlgebraElement}
@@ -124,11 +106,6 @@ function MA.operate_to!(
     a::T,
 ) where {T<:AlgebraElement}
     return map_coefficients_to!(res, Base.Fix2(*, a), X)
-end
-for op in (:*, :/, ://, :div)
-    @eval function Base.$op(X::AlgebraElement{T}, a::Union{T,Number}) where {T}
-        return _scalar_right($op, X, a)
-    end
 end
 function Base.:*(
     a::T,
@@ -230,34 +207,6 @@ function MA.operate!(::typeof(one), a::AlgebraElement)
     MA.operate!(zero, a)
     coeffs(a)[index] = value
     return a
-end
-
-function MA.operate_to!(
-    res::AlgebraElement,
-    ::typeof(*),
-    a::Union{T,Number},
-    X::AlgebraElement{T},
-) where {T}
-    X = _promote_operand!(*, res, X)
-    MA.operate_to!(coeffs(res), *, a, coeffs(X))
-    return res
-end
-
-function MA.operate_to!(
-    res::AlgebraElement,
-    op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
-    X::AlgebraElement{T},
-    a::Union{T,Number},
-) where {T}
-    return map_coefficients_to!(res, Base.Fix2(op, a), X)
-end
-
-function MA.operate!(
-    op::Union{typeof(/),typeof(//),typeof(div)},
-    X::AlgebraElement{T},
-    a::Union{T,Number},
-) where {T}
-    return MA.operate_to!(X, op, X, a)
 end
 
 function MA.operate_to!(
@@ -428,35 +377,6 @@ function MA.operate_to!(
         f,
         MA.operate(*, a, b, args...),
     )
-end
-
-for (L, R, left) in (
-    (:(Union{T,Number}), :(Union{AlgebraElement{T},Term{T}}), true),
-    (:(Union{AlgebraElement{T},Term{T}}), :(Union{T,Number}), false),
-)
-    a, g = left ? (:a, :b) : (:b, :a)
-    fix = left ? Base.Fix1 : Base.Fix2
-    @eval begin
-        function MA.operate!(
-            op::MA.AddSubMul,
-            f::AlgebraElement,
-            a::$L,
-            b::$R,
-        ) where {T}
-            return _scalar_add_mul!(op, f, $g, $fix(*, $a))
-        end
-
-        function MA.operate_to!(
-            output::AlgebraElement,
-            op::MA.AddSubMul,
-            f::AlgebraElement,
-            a::$L,
-            b::$R,
-        ) where {T}
-            a, b = _prepare_fused_output!(output, op, f, a, b)
-            return MA.operate!(op, output, a, b)
-        end
-    end
 end
 
 function _scalar_add_mul!(

@@ -22,22 +22,6 @@ function MA.operate_to!(
     return MA.operate_to!(output, fused, f, true, t)
 end
 
-function MA.operate!(
-    ::typeof(+),
-    f::AlgebraElement{T},
-    scalar::Union{T,Number},
-) where {T}
-    return MA.operate!(+, f, _constant_term(f, scalar))
-end
-
-function MA.operate!(
-    ::typeof(-),
-    f::AlgebraElement{T},
-    scalar::Union{T,Number},
-) where {T}
-    return MA.operate!(+, f, -scalar)
-end
-
 function _add_term!(c, t::Term)
     c[t.index] += coefficient(t)
     MA.operate!(canonical, c)

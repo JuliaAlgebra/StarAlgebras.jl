@@ -1,0 +1,11 @@
+# This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
+# Copyright (c) 2026: Marek Kaluba, Benoît Legat
+
+module StarAlgebrasMathOptInterfaceExt
+
+import MathOptInterface
+import StarAlgebras
+
+StarAlgebras.@scalar_arithmetic MathOptInterface.AbstractScalarFunction
+
+end
