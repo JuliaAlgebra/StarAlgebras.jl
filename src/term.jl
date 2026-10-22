@@ -173,30 +173,6 @@ end
 Base.:+(x::Union{AlgebraElement,Term}) = x
 Base.:*(x::Union{AlgebraElement,Term}) = x
 
-function Base.:*(a::Union{T,Number}, t::Term{T}) where {T}
-    return Term(parent(t), MA.copy_if_mutable(t.index), a * coefficient(t))
-end
-
-function Base.:*(t::Term{T}, a::Union{T,Number}) where {T}
-    return Term(parent(t), MA.copy_if_mutable(t.index), coefficient(t) * a)
-end
-
-function MA.promote_operation(
-    ::typeof(*),
-    ::Type{S},
-    ::Type{Term{T,A,I}},
-) where {T,A,I,S<:Union{T,Number}}
-    return Term{MA.promote_operation(*, S, T),A,I}
-end
-
-function MA.promote_operation(
-    ::typeof(*),
-    ::Type{Term{T,A,I}},
-    ::Type{S},
-) where {T,A,I,S<:Union{T,Number}}
-    return Term{MA.promote_operation(*, T, S),A,I}
-end
-
 _term_coefficients(a::AlgebraElement) = coeffs(a)
 function _term_coefficients(t::Term)
     b = basis(parent(t))
@@ -235,15 +211,6 @@ end
 function _constant_term(p, scalar)
     alg = parent(p)
     return Term(alg, basis(alg)[one(object(alg))], scalar)
-end
-
-for op in (:+, :-)
-    @eval begin
-        Base.$op(t::Term{T}, a::Union{T,Number}) where {T} =
-            $op(t, _constant_term(t, a))
-        Base.$op(a::Union{T,Number}, t::Term{T}) where {T} =
-            $op(_constant_term(t, a), t)
-    end
 end
 
 function Base.:*(a::Term, b::Term)
