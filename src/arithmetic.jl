@@ -169,12 +169,17 @@ end
 
 """
     map_coefficients(f, X::AlgebraElement; nonzero=false)
+    map_coefficients(f, t::Term; nonzero=false)
 
 Return an algebra element with the same parent as `X` and coefficients mapped
 by `f`. The result's coefficient type is inferred from `f` and `eltype(X)`.
 Implicit zeros are left zero. Zero results are removed from sparse storage;
 set `nonzero=true` when the mapping is known to preserve nonzero coefficients
 to skip this removal.
+
+For a `Term`, return a `Term` with the same parent and basis index and
+coefficient `f(coefficient(t))`, including when the original coefficient is
+zero. The `nonzero` keyword does not affect term mapping.
 
 See also [`map_coefficients!`](@ref) and [`map_coefficients_to!`](@ref).
 """

@@ -8,13 +8,12 @@ import StarAlgebras as SA
 
 SA.@scalar_arithmetic JuMP.AbstractJuMPScalar
 
-function JuMP.value(f::Function, t::SA.Term{<:JuMP.AbstractJuMPScalar})
-    return SA.Term(parent(t), t.index, JuMP.value(f, SA.coefficient(t)))
-end
-
 function JuMP.value(
     f::Function,
-    p::SA.AlgebraElement{<:JuMP.AbstractJuMPScalar},
+    p::Union{
+        SA.Term{<:JuMP.AbstractJuMPScalar},
+        SA.AlgebraElement{<:JuMP.AbstractJuMPScalar},
+    },
 )
     value = Base.Fix1(JuMP.value, f)
     return SA.map_coefficients(value, p)

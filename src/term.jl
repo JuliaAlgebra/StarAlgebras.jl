@@ -49,6 +49,10 @@ Base.isone(t::Term) = isone(coefficient(t)) && isone(basis_element(t))
 
 Base.zero(t::Term) = Term(t.algebra, t.index, zero(coefficient(t)))
 
+function map_coefficients(f::F, t::Term; nonzero = false) where {F}
+    return Term(parent(t), t.index, f(coefficient(t)))
+end
+
 function Base.one(t::Term)
     A = parent(t)
     return Term(A, basis(A)[one(object(A))], one(coefficient(t)))
