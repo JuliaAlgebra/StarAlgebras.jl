@@ -101,6 +101,16 @@ end
     @testset "Coefficient mapping" begin
         alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 4.0]))
         for T in (Int, BigInt), nz in (false, true)
+            t = Term(alg, 3, T(3))
+            mapped =
+                @inferred SA.map_coefficients(Base.Fix2(//, 2), t; nonzero = nz)
+            @test mapped isa Term{Rational{T}}
+            @test coefficient(mapped) == 3 // 2
+            @test parent(mapped) === parent(t)
+            @test mapped.index === t.index
+            @test coefficient(t) == 3
+            @test iszero(SA.map_coefficients(zero, t))
+            @test SA.map_coefficients(one, zero(t)) == Term(alg, 3, one(T))
             for c in (
                 T[1, 2, 3, 4],
                 sparsevec(1:4, T[1, 2, 3, 4]),

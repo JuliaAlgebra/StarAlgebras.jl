@@ -41,6 +41,7 @@ end
     include("term_arithmetic.jl")
     include("term_addition.jl")
     include("scalar_arithmetic.jl")
+    include("extensions.jl")
     include("parent_promotion.jl")
     include("zero_for.jl")
     include("basis_conversion.jl")
