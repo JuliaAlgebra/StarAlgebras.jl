@@ -17,8 +17,7 @@ function JuMP.value(
     p::SA.AlgebraElement{<:JuMP.AbstractJuMPScalar},
 )
     value = Base.Fix1(JuMP.value, f)
-    output = similar(p, Base.promote_op(value, eltype(p)))
-    return SA.map_coefficients_to!(output, value, p)
+    return SA.map_coefficients(value, p)
 end
 
 function JuMP.value(
