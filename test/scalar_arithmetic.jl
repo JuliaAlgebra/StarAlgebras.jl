@@ -75,6 +75,15 @@ function test_scalar(a, values)
                 p isa SA.Term ? [zero(values[2]), values[2], zero(values[2])] :
                 values
             original = MA.copy_if_mutable(p)
+            C = MA.promote_operation(+, eltype(values), typeof(a))
+            P = @inferred promote_type(typeof(p), typeof(a))
+            @test isconcretetype(P)
+            @test (@inferred promote_type(typeof(a), typeof(p))) === P
+            promoted = @inferred convert(P, p)
+            @test promoted isa
+                  (p isa SA.Term ? SA.Term{C} : SA.AlgebraElement{C})
+            @test parent(promoted) === alg
+            check_coefficients(promoted, pv)
             for op in (+, -, *), left in (false, true)
                 args = left ? (a, p) : (p, a)
                 result = @inferred op(args...)
@@ -173,6 +182,10 @@ end
     end
     @test_throws MethodError p * "unregistered scalar"
     @test_throws MethodError SA.Term(alg, (1, 0), 2) + "unregistered scalar"
+    for x in (p, SA.Term(alg, (1, 0), 2))
+        @test promote_type(typeof(x), String) === Any
+        @test promote_type(String, typeof(x)) === Any
+    end
 end
 
 @testset "Rewritten scalar arithmetic" begin

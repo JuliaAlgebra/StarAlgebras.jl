@@ -243,11 +243,16 @@ StarAlgebras uses this registration for its built-in scalar arithmetic too.
 
 This defines addition, subtraction and multiplication on both sides; right
 division (`/`, `//`, `div`) of algebra elements; scalar construction via an
-algebra; and the corresponding MutableArithmetics promotion and accumulation
-methods. Coefficient containers use the same scalar multiplication and division.
+algebra; scalar type promotion; and the corresponding MutableArithmetics
+promotion and accumulation methods. Coefficient containers use the same scalar
+multiplication and division.
 Each operation requires the corresponding coefficient operation and its
 `MutableArithmetics.promote_operation` to be defined. Multiplication preserves
 operand order. Addition and subtraction require a basis containing the identity.
+
+Scalar type promotion preserves the algebra type and promotes coefficients as
+for addition. Construct scalar constants with `A(c)`, where `A` is the algebra:
+the algebra generally cannot be recovered from its type for `convert`.
 
 Use this macro at module scope, typically in a package extension. Register
 disjoint scalar families; values of the existing coefficient type are already
@@ -256,6 +261,23 @@ supported without registration. This does not make arbitrary objects scalars.
 macro scalar_arithmetic(Scalar)
     return quote
         $(_scalar_arithmetic(:(Union{T,$(esc(Scalar))})))
+
+        # Scalar indices need a coefficient type that can also represent
+        # numeric constants, as when adding the scalar to an algebra element.
+        function Base.promote_rule(
+            ::Type{Term{T,A,I}},
+            ::Type{C},
+        ) where {T,A,I,C<:$(esc(Scalar))}
+            return Term{MA.promote_operation(+, T, C),A,I}
+        end
+
+        function Base.promote_rule(
+            ::Type{P},
+            ::Type{C},
+        ) where {T,P<:AlgebraElement{T},C<:$(esc(Scalar))}
+            return similar_type(P, MA.promote_operation(+, T, C))
+        end
+
         function (A::AbstractStarAlgebra)(x::$(esc(Scalar)))
             return __coerce(A, (one(object(A)) => x))
         end
