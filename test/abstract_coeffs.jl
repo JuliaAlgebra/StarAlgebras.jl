@@ -1,6 +1,10 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+using Test, LinearAlgebra, StarAlgebras
+using PermutationGroups
+import StarAlgebras as SA
+
 if !@isdefined aug
     include("group_utils.jl")
 end
@@ -111,4 +115,11 @@ unwrap(w::Wrap) = w.x
     Z = RG(1) + RG(s1)
     @test s2 * Z == RG(s2) + RG(s2 * s1)
     @test Z * s2 == RG(s2) + RG(s1 * s2)
+end
+
+@testset "Tuple coefficients" begin
+    @test SA.key_type((1, 2)) == Int
+    @test SA.value_type((1, 2)) == Int
+    @test SA.value_type((1.0,)) == Float64
+    @test SA.value_type(NTuple{3,Rational{Int}}) == Rational{Int}
 end

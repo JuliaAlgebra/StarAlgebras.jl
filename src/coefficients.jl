@@ -82,9 +82,11 @@ key_type(::Tuple) = Int
 value_type(coeffs) = valtype(coeffs)
 # `valtype` is not defined for `Tuple` so we need to define
 # our own function `value_type` as defining `valtype` for
-# tuples would be type piracy
-value_type(::Type{NTuple{N,T}}) where {N,T} = T
-value_type(::NTuple{N,T}) where {N,T} = T
+# tuples would be type piracy.
+# We use `Tuple{T,Vararg{T}}` instead of `NTuple{N,T}` as `T` would be unbound
+# for `N = 0`.
+value_type(::Type{Tuple{T,Vararg{T}}}) where {T} = T
+value_type(::Tuple{T,Vararg{T}}) where {T} = T
 
 Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
 
