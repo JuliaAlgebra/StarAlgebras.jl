@@ -47,6 +47,8 @@ Base.iszero(x::MatrixCoefficient) = iszero(x.value)
 function Base.:*(x::MatrixCoefficient, y::MatrixCoefficient)
     return MatrixCoefficient(x.value * y.value)
 end
+# Coefficients are only scalars if their type is registered
+SA.@scalar_arithmetic MatrixCoefficient
 
 struct VectorTermStructure{B,S} <:
        SA.MultiplicativeStructure{Monomial,NTuple{2,Int}}
