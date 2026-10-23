@@ -91,17 +91,36 @@ function MA.operate_to!(
 ) where {T<:AlgebraElement}
     return map_coefficients_to!(res, Base.Fix2(*, a), X)
 end
-function Base.:*(
-    a::T,
-    X::AlgebraElement{C,A},
-) where {T,C,O,A<:AbstractStarAlgebra{O,T}}
-    return MA.operate_to!(similar(X), __lmul, a, X)
-end
-function Base.:*(
-    X::AlgebraElement{C,A},
-    a::T,
-) where {C,T,O,A<:AbstractStarAlgebra{O,T}}
-    return MA.operate_to!(similar(X), __rmul, a, X)
+
+"""
+    @object_arithmetic Object
+
+Allow values of `Object` to multiply the basis elements of
+[`AlgebraElement`](@ref)s of algebras whose object elements are of type
+`T<:Object`. The product `a * X` (resp. `X * a`) replaces each basis element
+`k` of `X` by `a * k` (resp. `k * a`) and keeps its coefficient. In contrast,
+[`@scalar_arithmetic`](@ref) multiplies the coefficients and keeps the basis
+elements.
+
+These methods are only defined for registered types as, for an arbitrary object
+type, they would accept any type and invalidate calls such as
+`*(::Any, ::String)` compiled by other packages.
+"""
+macro object_arithmetic(Object)
+    return quote
+        function Base.:*(
+            a::T,
+            X::AlgebraElement{C,A},
+        ) where {T<:$(esc(Object)),C,O,A<:AbstractStarAlgebra{O,T}}
+            return MA.operate_to!(similar(X), __lmul, a, X)
+        end
+        function Base.:*(
+            X::AlgebraElement{C,A},
+            a::T,
+        ) where {T<:$(esc(Object)),C,O,A<:AbstractStarAlgebra{O,T}}
+            return MA.operate_to!(similar(X), __rmul, a, X)
+        end
+    end
 end
 
 for op in [:+, :-, :*]
