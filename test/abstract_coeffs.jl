@@ -122,4 +122,5 @@ end
     @test SA.value_type((1, 2)) == Int
     @test SA.value_type((1.0,)) == Float64
     @test SA.value_type(NTuple{3,Rational{Int}}) == Rational{Int}
+    @test SA.value_type(NTuple{2,Integer}) == Integer
 end

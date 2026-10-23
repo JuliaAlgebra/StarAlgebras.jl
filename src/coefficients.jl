@@ -83,10 +83,10 @@ value_type(coeffs) = valtype(coeffs)
 # `valtype` is not defined for `Tuple` so we need to define
 # our own function `value_type` as defining `valtype` for
 # tuples would be type piracy.
-# We use `Tuple{T,Vararg{T}}` instead of `NTuple{N,T}` as `T` would be unbound
-# for `N = 0`.
-value_type(::Type{Tuple{T,Vararg{T}}}) where {T} = T
-value_type(::Tuple{T,Vararg{T}}) where {T} = T
+# We use `eltype` instead of dispatching on `NTuple{N,T}` as `T` would be
+# unbound for `N = 0`.
+value_type(::Type{T}) where {T<:Tuple} = eltype(T)
+value_type(t::Tuple) = value_type(typeof(t))
 
 Base.iszero(ac::AbstractCoefficients) = isempty(keys(ac))
 
