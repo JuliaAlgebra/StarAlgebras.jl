@@ -1,3 +1,7 @@
+using Test
+using PermutationGroups
+import StarAlgebras as SA
+
 @testset "merge_sorted" begin
     dedup_kw = (; combine = SA.first_of, filter = _ -> true)
     @testset "Vector dedup merge" begin

@@ -77,14 +77,19 @@ function _merge_sorted!(
     return result
 end
 
+# `FirstOf` is not a subtype of `Function` so that its `promote_operation`
+# method does not invalidate `MA.promote_operation(::Function, ...)` calls.
+struct FirstOf end
+(::FirstOf)(a, _) = a
+MA.promote_operation(::FirstOf, ::Type{T}, ::Type) where {T} = T
+
 """
     first_of(a, b)
 
 Return the first argument. Useful as a `combine` function for [`merge_sorted`](@ref)
 to deduplicate without combining values.
 """
-first_of(a, _) = a
-MA.promote_operation(::typeof(first_of), ::Type{T}, ::Type) where {T} = T
+const first_of = FirstOf()
 
 """
     merge_sorted(v1::AbstractVector, v2::AbstractVector; lt, combine, filter, rev=false)
