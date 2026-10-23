@@ -36,8 +36,10 @@ function _scalar_sum_to!(output, op, p, a, left::Val{L}) where {L}
     return output
 end
 
-# Generate the same methods for the coefficient type and registered scalar
-# families. The coefficient-type methods resolve intersections between families.
+# Generate the methods for a registered scalar family `S`. `S` must not be a
+# free type parameter such as the coefficient type `T` as the methods would
+# then accept any type and invalidate calls such as `*(::Any, ::String)`
+# compiled by other packages.
 function _scalar_arithmetic(S)
     code = quote
         function Base.:*(a::$S, t::Term{T}) where {T}
@@ -72,17 +74,6 @@ function _scalar_arithmetic(S)
             ::Type{P},
         ) where {T,P<:AlgebraElement{T},C<:$S}
             return similar_type(P, MA.promote_operation(*, C, T))
-        end
-
-        function MA.promote_operation(
-            op::Union{typeof(*),typeof(/),typeof(//),typeof(div)},
-            ::Type{P},
-            ::Type{C},
-        ) where {T,P<:AlgebraElement{T},C<:$S}
-            R =
-                op === (//) ? Base.promote_op(op, T, C) :
-                MA.promote_operation(op, T, C)
-            return similar_type(P, R)
         end
 
         function MA.operate_to!(
@@ -148,6 +139,20 @@ function _scalar_arithmetic(S)
             quote
                 function Base.$op(p::AlgebraElement{T}, a::$S) where {T}
                     return _scalar_right($op, p, a)
+                end
+
+                # One method per operation so that it is more specific than
+                # the `MA.promote_operation(::typeof(*), ::Type, ::Type)`
+                # method for arrays when `$S` is an array type.
+                function MA.promote_operation(
+                    ::typeof($op),
+                    ::Type{P},
+                    ::Type{C},
+                ) where {T,P<:AlgebraElement{T},C<:$S}
+                    R =
+                        $op === (//) ? Base.promote_op($op, T, C) :
+                        MA.promote_operation($op, T, C)
+                    return similar_type(P, R)
                 end
 
                 function Base.$op(
@@ -255,12 +260,13 @@ for addition. Construct scalar constants with `A(c)`, where `A` is the algebra:
 the algebra generally cannot be recovered from its type for `convert`.
 
 Use this macro at module scope, typically in a package extension. Register
-disjoint scalar families; values of the existing coefficient type are already
-supported without registration. This does not make arbitrary objects scalars.
+disjoint scalar families. Values of the coefficient type are only scalars if
+their type is registered, for instance, polynomial coefficients require
+registering the polynomial type. This does not make arbitrary objects scalars.
 """
 macro scalar_arithmetic(Scalar)
     return quote
-        $(_scalar_arithmetic(:(Union{T,$(esc(Scalar))})))
+        $(_scalar_arithmetic(esc(Scalar)))
 
         # Scalar indices need a coefficient type that can also represent
         # numeric constants, as when adding the scalar to an algebra element.
@@ -284,5 +290,4 @@ macro scalar_arithmetic(Scalar)
     end
 end
 
-@eval $(_scalar_arithmetic(:T))
 @scalar_arithmetic Number

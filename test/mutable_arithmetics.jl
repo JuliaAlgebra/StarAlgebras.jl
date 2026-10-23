@@ -235,6 +235,9 @@ end
     end
 end
 
+# Coefficients are only scalars if their type is registered
+SA.@scalar_arithmetic Matrix{Int}
+
 @testset "Scalar coefficient order and ownership" begin
     alg = StarAlgebra("", SA.DiracBasis(["", "a", "b", "ab", "ba"]))
     A, B = [1 2; 0 1], [1 0; 3 1]
