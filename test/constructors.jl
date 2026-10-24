@@ -1,6 +1,15 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
+using Test, LinearAlgebra, SparseArrays
+using StarAlgebras
+import StarAlgebras as SA
+import MutableArithmetics as MA
+
+if !@isdefined FreeWords
+    include("../examples/words.jl")
+end
+
 struct CustomLaTeXPrint
     s::String
 end
@@ -131,6 +140,13 @@ end
     @test sprint(show, 1e-9 * one(RG)) == "1.0e-9·(id)"
     @test sprint((io, x) -> show(io, "text/latex", x), 1e-9 * one(RG)) ==
           "\$\$ 1.0 \\cdot 10^{-9} \\cdot (id) \$\$"
+    latex(x) = sprint((io, x) -> show(io, "text/latex", x), x)
+    @test latex(1 // 2 * one(RG) - 3 // 4 * RG(p)) ==
+          "\$\$ \\frac{1}{2} \\cdot (id) - \\frac{3}{4} \\cdot b·c \$\$"
+    @test latex(-1 // 2 * one(RG)) == "\$\$ -\\frac{1}{2} \\cdot (id) \$\$"
+    @test latex(2 // 1 * one(RG) + 1 // 3 * RG(p)) ==
+          "\$\$ 2 \\cdot (id) + \\frac{1}{3} \\cdot b·c \$\$"
+    @test sprint(show, 1 // 2 * one(RG)) == "1//2·(id)"
 
     @test LinearAlgebra.norm(a, 1) == 3
 
