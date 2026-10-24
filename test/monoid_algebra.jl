@@ -67,9 +67,7 @@ end
             fY = AlgebraElement(coeffs(Y, basis(fRG)), fRG)
 
             @test dot(X, Y) == dot(fX, fY) == dot(coeffs(X), coeffs(Y))
-            @test dot(fX, coeffs(fY)) ==
-                  dot(coeffs(fX), fY) ==
-                  dot(coeffs(fX), coeffs(fY))
+            @test dot(fX, fY) == dot(coeffs(fX), coeffs(fY))
 
             @test dot(X, X) ≈ norm(X)^2 ≈ dot(coeffs(X), coeffs(X))
             @test dot(fX, fX) ≈ norm(fX)^2 ≈ dot(coeffs(fX), coeffs(fX))

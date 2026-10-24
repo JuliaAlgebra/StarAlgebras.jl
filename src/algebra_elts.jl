@@ -71,16 +71,6 @@ function LinearAlgebra.dot(a::AlgebraElement, b::AlgebraElement)
     return LinearAlgebra.dot(coeffs(a), coeffs(b))
 end
 
-# Retained for v0.3 compatibility; these methods can be removed as a breaking
-# change in v0.4. Call dot on the coefficient vectors instead.
-function LinearAlgebra.dot(w::AbstractVector, b::AlgebraElement)
-    return LinearAlgebra.dot(w, coeffs(b))
-end
-function LinearAlgebra.dot(a::AlgebraElement, w::AbstractVector)
-    @assert key_type(basis(parent(a))) <: Integer
-    return LinearAlgebra.dot(coeffs(a), w)
-end
-
 """
     promote_object(object, mstructure, map)
 
