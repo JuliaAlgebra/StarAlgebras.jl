@@ -15,6 +15,16 @@ __needs_parens(a::AlgebraElement) = true
 # We could add a check with `showable` if a `Real` subtype supports it and
 # the feature is requested.
 print_coefficient(io::IO, ::MIME, coeff::Real) = print(io, coeff)
+function print_coefficient(io::IO, mime::MIME"text/latex", coeff::Rational)
+    if isone(denominator(coeff))
+        return print_coefficient(io, mime, numerator(coeff))
+    end
+    if isnegative(coeff)
+        print(io, '-')
+    end
+    num = abs(numerator(coeff))
+    return print(io, "\\frac{", num, "}{", denominator(coeff), "}")
+end
 # Scientific notation does not display well in LaTeX so we rewrite it
 function print_coefficient(io::IO, ::MIME"text/latex", coeff::AbstractFloat)
     s = string(coeff)
