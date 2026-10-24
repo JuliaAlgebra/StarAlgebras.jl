@@ -8,7 +8,6 @@ Base.keys(g::GroupElement) = (g,)
 Base.values(::GroupElement) = (1,)
 SA.canonical(g::GroupElement) = g
 SA.star(g::GroupElement) = inv(g)
-SA.@object_arithmetic GroupElement
 
 if !@isdefined aug
     include("../examples/diracs_augmented.jl")
