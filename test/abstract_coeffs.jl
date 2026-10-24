@@ -113,8 +113,8 @@ unwrap(w::Wrap) = w.x
     s1, s2 = PermutationGroups.gens(G)
     @assert s1 * s2 ≠ s2 * s1
     Z = RG(1) + RG(s1)
-    @test s2 * Z == RG(s2) + RG(s2 * s1)
-    @test Z * s2 == RG(s2) + RG(s1 * s2)
+    @test s2 * Z == RG(s2) * Z == RG(s2) + RG(s2 * s1)
+    @test Z * s2 == Z * RG(s2) == RG(s2) + RG(s1 * s2)
 end
 
 @testset "Tuple coefficients" begin

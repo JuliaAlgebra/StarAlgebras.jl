@@ -9,17 +9,20 @@ MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [weakdeps]
+GroupsCore = "d5909c97-4eac-4ecc-a3dc-fdd0858a4120"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 
 [extensions]
+StarAlgebrasGroupsCoreExt = "GroupsCore"
 StarAlgebrasJuMPExt = "JuMP"
 StarAlgebrasMathOptInterfaceExt = "MathOptInterface"
 
 [compat]
+GroupsCore = "0.5"
 JuMP = "1"
 LinearAlgebra = "1.10"
 MathOptInterface = "1"
-MutableArithmetics = "1.9"
+MutableArithmetics = "1.9.1"
 SparseArrays = "1.10"
 julia = "1.10"
