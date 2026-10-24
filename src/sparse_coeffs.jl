@@ -112,28 +112,46 @@ Base.axes(sc::SparseCoefficients) = (sc.basis_elements,)
 #Base.Broadcast.BroadcastStyle(::Type{<:SparseCoefficients{K}}) where {K} = SparseArrays.HigherOrderFns.SparseVecStyle()
 #SparseArrays.HigherOrderFns.nonscalararg(::SparseCoefficients) = true
 
-# `_get_arg` and `getindex` are inspired from `JuMP.Containers.SparseAxisArray`
-_getindex(x::SparseCoefficients, index) = getindex(x, index)
+# `_get_arg` and `_getindex` are inspired from `JuMP.Containers.SparseAxisArray`.
+# We do not implement `Base.getindex` for `Broadcasted` and use our own `copy`
+# and `copyto!` instead as `getindex(::Broadcasted{<:BroadcastStyle}, key)`
+# would invalidate `getindex(::Broadcasted, ::Any)` calls compiled by `Base`
+# and `LinearAlgebra`.
+_getindex(x::SparseCoefficients, key) = getindex(x, key)
 _getindex(x::Any, ::Any) = x
 _getindex(x::Ref, ::Any) = x[]
+function _getindex(bc::Broadcast.Broadcasted, key)
+    return bc.f(_get_arg(bc.args, key)...)
+end
 
-function _get_arg(args::Tuple, index)
-    return (_getindex(first(args), index), _get_arg(Base.tail(args), index)...)
+function _get_arg(args::Tuple, key)
+    return (_getindex(first(args), key), _get_arg(Base.tail(args), key)...)
 end
 _get_arg(::Tuple{}, _) = ()
 
-function Base.getindex(bc::Broadcast.Broadcasted{<:BroadcastStyle}, index)
-    return bc.f(_get_arg(bc.args, index)...)
+function Base.copy(bc::Broadcast.Broadcasted{<:BroadcastStyle})
+    keys = only(axes(bc))
+    return SparseCoefficients(
+        collect(keys),
+        [_getindex(bc, key) for key in keys],
+        _first_sparse_coeffs(bc.args...).isless,
+    )
 end
 
-function Base.similar(
+function Base.copyto!(
+    dest::SparseCoefficients,
     bc::Broadcast.Broadcasted{<:BroadcastStyle},
-    ::Type{T},
-) where {T}
-    return similar(_first_sparse_coeffs(bc.args...), T)
+)
+    for key in only(axes(bc))
+        dest[key] = _getindex(bc, key)
+    end
+    return dest
 end
 
 _first_sparse_coeffs(c::SparseCoefficients, args...) = c
+function _first_sparse_coeffs(bc::Broadcast.Broadcasted, args...)
+    return _first_sparse_coeffs(bc.args..., args...)
+end
 _first_sparse_coeffs(_, args...) = _first_sparse_coeffs(args...)
 
 function Base.zero(sc::SparseCoefficients)

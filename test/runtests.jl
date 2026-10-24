@@ -47,6 +47,7 @@ end
     include("basis_conversion.jl")
     include("merge_allocations.jl")
     include("basic.jl")
+    include("broadcast.jl")
     # proof of concept
     using PermutationGroups
     include("merge_sorted.jl")
