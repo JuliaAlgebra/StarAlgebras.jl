@@ -68,4 +68,6 @@ end
     lexord(a, b) = isless(Groups.word(a), Groups.word(b))
     SA.comparable(::Type{<:Groups.FPGroupElement}) = lexord
     include("sum_of_squares.jl")
+
+    include("invalidations.jl")
 end
