@@ -197,28 +197,28 @@ function LinearAlgebra.norm(sc::AbstractCoefficients, p::Real)
 end
 
 function LinearAlgebra.dot(ac::AbstractCoefficients, bc::AbstractCoefficients)
+    T = MA.promote_operation(LinearAlgebra.dot, value_type(ac), value_type(bc))
     if isempty(values(ac)) || isempty(values(bc))
-        return zero(MA.promote_sum_mul(value_type(ac), value_type(bc)))
-    else
-        return sum(c * star(bc[i]) for (i, c) in nonzero_pairs(ac))
+        return zero(T)
+    end
+    return sum(nonzero_pairs(ac); init = zero(T)) do (i, c)
+        return LinearAlgebra.dot(c, bc[i])
     end
 end
 
 function LinearAlgebra.dot(w::AbstractVector, ac::AbstractCoefficients)
     @assert key_type(ac) <: Integer
-    if isempty(values(ac))
-        return zero(MA.promote_sum_mul(eltype(w), value_type(ac)))
-    else
-        return sum(w[i] * v for (i, v) in nonzero_pairs(ac))
+    T = MA.promote_operation(LinearAlgebra.dot, eltype(w), value_type(ac))
+    return sum(nonzero_pairs(ac); init = zero(T)) do (i, c)
+        return LinearAlgebra.dot(w[i], c)
     end
 end
 
 function LinearAlgebra.dot(ac::AbstractCoefficients, w::AbstractVector)
     @assert key_type(ac) <: Integer
-    if isempty(values(ac))
-        return zero(MA.promote_sum_mul(eltype(w), value_type(ac)))
-    else
-        return sum(v * star(w[i]) for (i, v) in nonzero_pairs(ac))
+    T = MA.promote_operation(LinearAlgebra.dot, value_type(ac), eltype(w))
+    return sum(nonzero_pairs(ac); init = zero(T)) do (i, c)
+        return LinearAlgebra.dot(c, w[i])
     end
 end
 
