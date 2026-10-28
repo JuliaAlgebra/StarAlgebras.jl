@@ -3,11 +3,12 @@
 
 module TestExtensions
 
-using Test
+using Test, LinearAlgebra
 using SparseArrays
 import JuMP
 import MathOptInterface as MOI
 import StarAlgebras as SA
+import MutableArithmetics as MA
 
 include("../examples/bivariate.jl")
 SA.star(m::Monomial) = m
@@ -62,6 +63,38 @@ function test_value()
     return
 end
 
+function test_coefficient_dot()
+    model = JuMP.Model()
+    JuMP.@variable(model, x[1:3])
+    for a in ([2.0, 3.0, 4.0], [x[1] + 1, 2x[2], 3x[3]]),
+        b in ([3.0, 5.0, 2.0], [2x[1], x[2] + 1, -x[3]])
+
+        ac = SA.SparseCoefficients([1, 3], a[[1, 3]])
+        bc = SA.SparseCoefficients([1, 2], b[[1, 2]])
+        saved_a, saved_b = copy.(a), copy.(b)
+        for (left, right, expected) in (
+            (ac, bc, dot(a[1], b[1])),
+            (a, bc, dot(a[1:2], b[1:2])),
+            (ac, b, dot(a[[1, 3]], b[[1, 3]])),
+        )
+            result = @inferred dot(left, right)
+            @test MA.isequal_canonical(result, expected)
+        end
+        @test all(MA.isequal_canonical.(a, saved_a))
+        @test all(MA.isequal_canonical.(b, saved_b))
+    end
+    # Repeated coefficients keep the result size fixed, so allocation should
+    # depend only on the result, not on the number of accumulated products.
+    allocations = map((4, 256)) do n
+        ac = SA.SparseCoefficients(collect(1:n), fill(2x[1] + 1, n))
+        bc = SA.SparseCoefficients(collect(1:n), fill(3x[1] + 2, n))
+        dot(ac, bc)
+        return @allocated dot(ac, bc)
+    end
+    @test allocations[2] <= allocations[1] + 64
+    return
+end
+
 function test_printing()
     alg = SA.StarAlgebra(1, SA.FixedBasis([1, 2]))
     p = SA.AlgebraElement([1, 2], alg)
@@ -96,6 +129,7 @@ end
 
 @testset "JuMP and MOI extensions" begin
     test_value()
+    test_coefficient_dot()
     test_printing()
     test_without_indices()
 end

@@ -4,6 +4,7 @@
 using Test, LinearAlgebra, StarAlgebras
 using PermutationGroups
 import StarAlgebras as SA
+import MutableArithmetics as MA
 
 if !@isdefined aug
     include("group_utils.jl")
@@ -20,6 +21,11 @@ Base.:*(a::Wrap, b::Wrap) = Wrap(a.x * b.x)
 
 wrap(x) = Wrap(x)
 unwrap(w::Wrap) = w.x
+
+function coefficient_dot_allocations(a, b)
+    dot(a, b)
+    return @allocated dot(a, b)
+end
 
 @testset "Abstract coefficients" begin
     @testset "Equality with filtered iterators" begin
@@ -63,6 +69,28 @@ unwrap(w::Wrap) = w.x
         a = SA.SparseCoefficients([1], [[1 + 2im, 3]])
         b = SA.SparseCoefficients([1], [[4 + 5im, 6]])
         @test dot(a, b) == dot(only(values(a)), only(values(b))) == 32 - 3im
+    end
+
+    @testset "Mutable coefficient dot" begin
+        allocations = map((4, 256)) do n
+            a, b = fill(big(2), n), fill(big(3), n)
+            ac = SA.SparseCoefficients(collect(1:n), a)
+            bc = SA.SparseCoefficients(collect(1:n), b)
+            return map(((ac, bc), (a, bc), (ac, b))) do (left, right)
+                result = @inferred dot(left, right)
+                @test result == 6n
+                # Only the result may be mutated, even with shared inputs.
+                MA.operate!(+, result, big(1))
+                @test all(==(2), a)
+                @test all(==(3), b)
+                @test (@inferred dot(ac, ac)) == 4n
+                @test all(==(2), a)
+                return coefficient_dot_allocations(left, right)
+            end
+        end
+        # The accumulator and multiplication buffer are allocated once.
+        # More matching coefficients must not add per-entry allocations.
+        @test all(allocations[2] .<= allocations[1] .+ 64)
     end
 
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
