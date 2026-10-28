@@ -196,30 +196,41 @@ function LinearAlgebra.norm(sc::AbstractCoefficients, p::Real)
     return sum(abs(v)^p for v in values(sc))^(1 / p)
 end
 
+# Keep the coefficient types explicit: these iterators can have unknown eltype.
+function _dot(::Type{A}, ::Type{B}, pairs) where {A,B}
+    T = MA.promote_operation(LinearAlgebra.dot, A, B)
+    output = zero(T)
+    buffer = MA.buffer_for(MA.add_dot, T, A, B)
+    for (a, b) in pairs
+        output = MA.buffered_operate!!(buffer, MA.add_dot, output, a, b)
+    end
+    return output
+end
+
 function LinearAlgebra.dot(ac::AbstractCoefficients, bc::AbstractCoefficients)
-    T = MA.promote_operation(LinearAlgebra.dot, value_type(ac), value_type(bc))
+    A, B = value_type(ac), value_type(bc)
     if isempty(values(ac)) || isempty(values(bc))
-        return zero(T)
+        return zero(MA.promote_operation(LinearAlgebra.dot, A, B))
     end
-    return sum(nonzero_pairs(ac); init = zero(T)) do (i, c)
-        return LinearAlgebra.dot(c, bc[i])
-    end
+    return _dot(A, B, ((c, bc[i]) for (i, c) in nonzero_pairs(ac)))
 end
 
 function LinearAlgebra.dot(w::AbstractVector, ac::AbstractCoefficients)
     @assert key_type(ac) <: Integer
-    T = MA.promote_operation(LinearAlgebra.dot, eltype(w), value_type(ac))
-    return sum(nonzero_pairs(ac); init = zero(T)) do (i, c)
-        return LinearAlgebra.dot(w[i], c)
-    end
+    return _dot(
+        eltype(w),
+        value_type(ac),
+        ((w[i], c) for (i, c) in nonzero_pairs(ac)),
+    )
 end
 
 function LinearAlgebra.dot(ac::AbstractCoefficients, w::AbstractVector)
     @assert key_type(ac) <: Integer
-    T = MA.promote_operation(LinearAlgebra.dot, value_type(ac), eltype(w))
-    return sum(nonzero_pairs(ac); init = zero(T)) do (i, c)
-        return LinearAlgebra.dot(c, w[i])
-    end
+    return _dot(
+        value_type(ac),
+        eltype(w),
+        ((c, w[i]) for (i, c) in nonzero_pairs(ac)),
+    )
 end
 
 Base.zero(X::AbstractCoefficients) = MA.operate!(zero, similar(X))
