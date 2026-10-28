@@ -34,6 +34,37 @@ unwrap(w::Wrap) = w.x
         @test ACoeffs(Int[]) == ACoeffs([0])
     end
 
+    @testset "Coefficient dot products" begin
+        sparse_coefficients(v) =
+            SA.SparseCoefficients(findall(!iszero, v), filter(!iszero, v))
+        for T in (Float32, Float64, ComplexF32, ComplexF64)
+            a, b = T[1, 0, 2], T[3, 5, -2]
+            if T <: Complex
+                a += T[2im, 0, -im]
+                b += T[4im, -im, 3im]
+            end
+            for av in (a, zero(a)),
+                bv in (b, zero(b)),
+                make_a in (ACoeffs, sparse_coefficients),
+                make_b in (ACoeffs, sparse_coefficients)
+
+                ac, bc = make_a(av), make_b(bv)
+                @test (@inferred dot(ac, bc)) === dot(av, bv)
+                @test (@inferred dot(bc, ac)) === dot(bv, av)
+                @test (@inferred dot(av, bc)) === dot(av, bv)
+                @test (@inferred dot(ac, bv)) === dot(av, bv)
+            end
+            empty_coeffs = SA.SparseCoefficients(Int[], T[])
+            @test dot(empty_coeffs, empty_coeffs) === zero(T)
+            @test dot(T[], empty_coeffs) === zero(T)
+            @test dot(empty_coeffs, T[]) === zero(T)
+        end
+        # Dot recursively pairs coefficient values, including array values.
+        a = SA.SparseCoefficients([1], [[1 + 2im, 3]])
+        b = SA.SparseCoefficients([1], [[4 + 5im, 6]])
+        @test dot(a, b) == dot(only(values(a)), only(values(b))) == 32 - 3im
+    end
+
     G = PermGroup(perm"(1,2,3)", perm"(1,2)")
     RG = StarAlgebra(G, SA.DiracBasis(G))
     wRG = StarAlgebra(G, SA.MappedBasis(G, wrap, unwrap))

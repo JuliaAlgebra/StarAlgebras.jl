@@ -68,6 +68,7 @@ function LinearAlgebra.norm(a::AlgebraElement, p::Real = 2)
 end
 
 function LinearAlgebra.dot(a::AlgebraElement, b::AlgebraElement)
+    a, b = promote_bases(a, b)
     return LinearAlgebra.dot(coeffs(a), coeffs(b))
 end
 
