@@ -41,6 +41,7 @@ include("star.jl")
 include("arithmetic.jl")
 include("term_arithmetic.jl")
 include("scalar_arithmetic.jl")
+include("det.jl")
 include("quadratic_form.jl")
 include("show.jl")
 
