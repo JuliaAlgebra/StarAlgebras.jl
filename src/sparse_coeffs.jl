@@ -354,14 +354,13 @@ function _merge_coefficients!(
     transform::F = identity,
     only_b::G = _CopyValue(res === Y),
 ) where {F,G}
-    x = Iterators.Reverse(_CoefficientPairs(X))
-    y = Iterators.map(transform, Iterators.Reverse(_CoefficientPairs(Y)))
     _merge_sorted!(
         _CoefficientPairs(res),
-        x,
-        y;
+        _CoefficientPairs(X),
+        _CoefficientPairs(Y);
         lt = res.isless,
         by = first,
+        map_b = transform,
         combine = (a, b) -> first(a) => last(a) + last(b),
         filter = p -> !iszero(last(p)),
         only_a = _CopyValue(res === X),

@@ -71,7 +71,7 @@ end
         a, b = left ? (t, g) : (g, t)
         expected = op(f, a, b)
         buffer = MA.buffer_for(op, typeof(f), typeof(a), typeof(b))
-        @test buffer === nothing
+        @test typeof(buffer) == typeof(MA.buffer_for(op, T, T, T))
         out = zero(f)
         f_original = deepcopy(f)
         @test MA.buffered_operate_to!!(buffer, out, op, f, a, b) === out
@@ -89,6 +89,14 @@ end
         # Backwards merging must preserve unread entries even when f === g.
         expected = left ? op(f, t, f) : op(f, f, t)
         a, b = left ? (t, f) : (f, t)
+        @test MA.buffered_operate!(buffer, op, f, a, b) === f
+        @test f == expected
+
+        # The coefficients of `f` are modified in place so the coefficient of
+        # the term must not be one of them.
+        s = Term(biv_alg, (1, 0), SA.coeffs(f)[(1, 0)])
+        expected = left ? op(f, deepcopy(s), g) : op(f, g, deepcopy(s))
+        a, b = left ? (s, g) : (g, s)
         @test MA.buffered_operate!(buffer, op, f, a, b) === f
         @test f == expected
     end
