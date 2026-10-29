@@ -106,16 +106,6 @@ end
 
 _coefficient_type(::Type{<:Union{AlgebraElement{T},Term{T}}}) where {T} = T
 
-# `c` multiplies every term so it must not be one of the coefficients of `f`
-# that are modified in place.
-function _not_in_values(c, f)
-    if MA.mutability(typeof(c)) isa MA.IsMutable &&
-       any(Base.Fix1(===, c), values(f))
-        return MA.copy_if_mutable(c)
-    end
-    return c
-end
-
 function _term_add_mul!(
     op::MA.AddSubMul,
     f::AlgebraElement,
@@ -171,7 +161,7 @@ function _term_add_mul!(
     buffer,
 ) where {left}
     key_product = left ? Base.Fix1(ms, t.index) : Base.Fix2(ms, t.index)
-    c = _not_in_values(coefficient(t), f)
+    c = coefficient(t)
     factors = left ? Base.Fix1(tuple, c) : Base.Fix2(tuple, c)
     add = MA.add_sub_op(op)
     # Keep the coefficient of `g` so that the product is only computed once
@@ -180,7 +170,9 @@ function _term_add_mul!(
         k, scale = only(nonzero_pairs(key_product(first(p))))
         return k => (scale, last(p))
     end
-    # `f` owns its coefficients so they can be modified in place.
+    # `f` owns its coefficients so they can be modified in place. Checking that
+    # `c` or the coefficients of `g` are not one of them would cost a scan of
+    # `f`, so they are assumed not to alias, as documented in `MA.operate!`.
     combine = function (a, b)
         scale, v = last(b)
         l, r = factors(v)

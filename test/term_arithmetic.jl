@@ -91,14 +91,6 @@ end
         a, b = left ? (t, f) : (f, t)
         @test MA.buffered_operate!(buffer, op, f, a, b) === f
         @test f == expected
-
-        # The coefficients of `f` are modified in place so the coefficient of
-        # the term must not be one of them.
-        s = Term(biv_alg, (1, 0), SA.coeffs(f)[(1, 0)])
-        expected = left ? op(f, deepcopy(s), g) : op(f, g, deepcopy(s))
-        a, b = left ? (s, g) : (g, s)
-        @test MA.buffered_operate!(buffer, op, f, a, b) === f
-        @test f == expected
     end
 
     lt = CountingTermOrder(0)
