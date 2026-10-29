@@ -63,6 +63,7 @@ end
 
     include("caching_allocations.jl")
     include("graded_lex.jl")
+    include("det.jl")
 
     # some applications:
     using Groups
