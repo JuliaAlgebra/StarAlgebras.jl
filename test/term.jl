@@ -31,7 +31,6 @@ function SA.term_product_style(
 end
 
 SA.star(m::Monomial) = m
-SA.star(t::Term{Int,typeof(biv_alg)}) = Term(t.algebra, t.index, coefficient(t))
 Base.one(::ChebyPoly) = ChebyPoly(0)
 
 function SA.promote_bases_with_maps(a::ChebyMStruct, b::ChebyMStruct)
@@ -513,6 +512,29 @@ end
         end
     end
 
+    @testset "Scalar dot products" begin
+        t = biv_term(1 + 2im, (1, 0))
+        u = biv_term(3 + 4im, (0, 1))
+        expected = SA.algebra_element(biv_term(11 - 2im, (1, 1)))
+        for a in (t, SA.algebra_element(t)), b in (u, SA.algebra_element(u))
+            result = @inferred dot(a, b)
+            @test (result isa Term ? SA.algebra_element(result) : result) ==
+                  expected
+            @test (@inferred MA.promote_operation(
+                dot,
+                typeof(a),
+                typeof(b),
+            )) === typeof(result)
+        end
+        for convert in (identity, SA.algebra_element)
+            a = convert.([t t; 2t 3t])
+            b = convert.([u 2u; 3u 4u])
+            @test (@inferred dot(a, b)) == 21expected
+            @test (@inferred MA.operate(dot, a, b)) == 21expected
+            @test dot(vec(a), vec(b)) == 21expected
+        end
+    end
+
     @testset "various coefficient types" begin
         # Float64
         t = biv_term(2.5, (1, 1))
@@ -525,7 +547,7 @@ end
         @test !iszero(tc)
         @test iszero(zero(tc))
         @test coefficient(zero(tc)) == 0 + 0im
-        @test LinearAlgebra.dot(tc, tc) == 5
+        @test LinearAlgebra.dot(tc, tc) == biv_term(5, (0, 2))
 
         # Rational
         tr = biv_term(3 // 4, (2, 0))

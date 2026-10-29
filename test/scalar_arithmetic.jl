@@ -3,7 +3,7 @@
 
 module TestScalarArithmetic
 
-using Test
+using Test, LinearAlgebra
 using SparseArrays
 import StarAlgebras as SA
 import MutableArithmetics as MA
@@ -26,6 +26,7 @@ Base.one(::Scalar) = one(Scalar)
 Base.oneunit(::Type{Scalar}) = one(Scalar)
 Base.iszero(a::Scalar) = iszero(a.value)
 Base.broadcastable(a::Scalar) = Ref(a)
+Base.adjoint(a::Scalar) = a
 Base.:(==)(a::Scalar, b::Scalar) = a.value == b.value
 Base.convert(::Type{Scalar}, a::Number) = Scalar(a)
 Base.promote_rule(::Type{Scalar}, ::Type{<:Number}) = Scalar
@@ -156,6 +157,20 @@ end
         test_scalar(a, [v + 1, 2v, v + 3])
     end
     test_scalar(Scalar(2), Scalar.([1, 2, 3]))
+end
+
+@testset "Scalar dot products" begin
+    model = JuMP.Model()
+    JuMP.@variable(model, x)
+    t = SA.Term(bivariate_algebra(), (1, 0), 2)
+    for a in (2, 1 + 2im, Scalar(2), x, 2x + 1), p in (t, SA.algebra_element(t))
+        left = @inferred dot(a, p)
+        right = @inferred dot(p, a)
+        check_coefficients(left, [0, 2adjoint(a), 0])
+        check_coefficients(right, [0, 2a, 0])
+        @test MA.promote_operation(dot, typeof(a), typeof(p)) === typeof(left)
+        @test MA.promote_operation(dot, typeof(p), typeof(a)) === typeof(right)
+    end
 end
 
 @testset "Scalar division and coefficient containers" begin
