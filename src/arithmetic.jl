@@ -45,6 +45,13 @@ end
 function Base.:-(X::AlgebraElement)
     return MA.operate_to!(similar(X, MA.promote_operation(-, eltype(X))), -, X)
 end
+function MA.promote_operation(::typeof(-), ::Type{A}) where {A<:AlgebraElement}
+    return similar_type(A, MA.promote_operation(-, eltype(A)))
+end
+function MA.operate!(::typeof(-), X::AlgebraElement)
+    map_coefficients!(Base.Fix1(MA.operate!!, -), coeffs(X); nonzero = true)
+    return X
+end
 function _scalar_lmul(a, X::AlgebraElement)
     P = MA.promote_operation(*, typeof(a), typeof(X))
     return MA.operate_to!(MA.zero_for(P, (X,)), *, a, X)
