@@ -203,6 +203,23 @@ end
     end
 end
 
+# Regression for DynamicPolynomials.jl#168 and #199.
+@testset "Promotion with Any" begin
+    t = SA.Term(bivariate_algebra(), (1, 0), 1)
+    p = SA.algebra_element(t)
+    for T in (
+        SA.Term,
+        SA.AlgebraElement,
+        typeof(t),
+        typeof(0.5 * t),
+        typeof(p),
+        typeof(p / 2),
+    )
+        @test promote_type(T, Any) === Any
+        @test promote_type(Any, T) === Any
+    end
+end
+
 @testset "Rewritten scalar arithmetic" begin
     model = JuMP.Model()
     JuMP.@variable(model, x)
