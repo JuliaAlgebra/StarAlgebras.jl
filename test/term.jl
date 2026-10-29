@@ -99,6 +99,12 @@ end
         @test !iszero(biv_term(1, (0, 0)))
     end
 
+    @testset "algebra_element" begin
+        p = SA.algebra_element(biv_term(3, (1, 0)))
+        @test SA.algebra_element(p) === p
+        @test MA.promote_operation(SA.algebra_element, typeof(p)) == typeof(p)
+    end
+
     @testset "Coefficient mapping" begin
         alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 4.0]))
         for T in (Int, BigInt), nz in (false, true)
