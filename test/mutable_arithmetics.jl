@@ -468,6 +468,45 @@ _shares_values(a, b) = any(v -> any(Base.Fix1(===, v), values(b)), values(a))
     @test values(x) == [1]
 end
 
+@testset "In-place negation" begin
+    alg = StarAlgebra(1.0, SA.FixedBasis([2.0, 1.0, 3.0]))
+    for T in (Int, BigInt), empty in (false, true)
+        vals = empty ? zeros(T, 3) : T[2, 0, 3]
+        for c in (
+            copy(vals),
+            sparse(vals),
+            SA.SparseCoefficients(
+                findall(!iszero, vals),
+                filter(!iszero, vals),
+            ),
+        )
+            a = AlgebraElement(c, alg)
+            @test MA.promote_operation(-, typeof(a)) == typeof(a)
+            pairs = [i => v for (i, v) in SA.nonzero_pairs(c)]
+            expected = [i => -v for (i, v) in pairs]
+            @test (@inferred MA.operate!!(-, a)) === a
+            @test coeffs(a) === c
+            negated = [i => v for (i, v) in SA.nonzero_pairs(c)]
+            @test negated == expected
+            if T == BigInt
+                # The `BigInt` coefficients are negated in place.
+                @test all(last.(negated) .=== last.(pairs))
+            end
+        end
+    end
+    # Negation promotes `Bool` coefficients so it cannot be done in place.
+    a = AlgebraElement([true, false, true], alg)
+    @test MA.promote_operation(-, typeof(a)) == typeof(-a)
+    b = MA.operate!!(-, a)
+    @test b == -a
+    @test coeffs(a) == [true, false, true]
+    # Tuple storage is immutable.
+    a = AlgebraElement(SA.SparseCoefficients((1, 3), (2, 3)), alg)
+    b = MA.operate!!(-, a)
+    @test b == -a
+    @test values(coeffs(a)) == (2, 3)
+end
+
 @testset "Custom coefficient storage" begin
     alg = StarAlgebra(1.0, SA.FixedBasis{Float64,UInt32}([1.0, 2.0, 3.0, 4.0]))
     a = AlgebraElement(ACoeffs(BigInt[1, 0, 3, 0]), alg)
