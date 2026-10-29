@@ -29,6 +29,7 @@ end
 # with either input underlying the iterators `a` and `b`:
 # https://stackoverflow.com/a/4553321
 # Backwards iterators also allow lazy term products, computed once per entry.
+# Entries found in only one input are mapped by `only_a` or `only_b`.
 function _merge_sorted!(
     result,
     a,
@@ -38,26 +39,28 @@ function _merge_sorted!(
     filter,
     rev = false,
     by = identity,
-)
+    only_a::FA = identity,
+    only_b::FB = identity,
+) where {FA,FB}
     # Capture the original iterator bounds before resizing aliased storage.
     x, y = iterate(a), iterate(b)
     resize!(result, length(a) + length(b))
     i = lastindex(result)
     while x !== nothing || y !== nothing
         if y === nothing
-            value = x[1]
+            value = only_a(x[1])
             x = iterate(a, x[2])
         elseif x === nothing
-            value = y[1]
+            value = only_b(y[1])
             y = iterate(b, y[2])
         elseif by(x[1]) == by(y[1])
             value = combine(x[1], y[1])
             x, y = iterate(a, x[2]), iterate(b, y[2])
         elseif xor(lt(by(x[1]), by(y[1])), rev)
-            value = y[1]
+            value = only_b(y[1])
             y = iterate(b, y[2])
         else
-            value = x[1]
+            value = only_a(x[1])
             x = iterate(a, x[2])
         end
         if filter(value)
