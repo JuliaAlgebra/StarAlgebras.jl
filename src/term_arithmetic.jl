@@ -125,5 +125,5 @@ function _term_add_mul!(
         k, scale = only(nonzero_pairs(key_product(first(p))))
         return k => add(scale * value_product(last(p)))
     end
-    return _merge_coefficients!(f, f, g, product)
+    return _merge_coefficients!(f, f, g, product, identity)
 end

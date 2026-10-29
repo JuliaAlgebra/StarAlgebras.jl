@@ -406,6 +406,9 @@ end
     @test iszero(b)
 end
 
+# Whether `a` stores one of the mutable values of `b`
+_shares_values(a, b) = any(v -> any(Base.Fix1(===, v), values(b)), values(a))
+
 @testset "Sparse coefficient merge" begin
     c = SA.SparseCoefficients([1, 3], [2, 4])
     pairs = SA._CoefficientPairs(c)
@@ -422,6 +425,11 @@ end
         @test values(out) == [2, 5, 4, 7]
         alias === :left || @test values(x) == [2, 3, 4]
         alias === :right || @test values(y) == [5, -3, 7]
+        if T == BigInt
+            # Modifying `out` in place must not modify the inputs.
+            alias === :left || @test !_shares_values(out, x)
+            alias === :right || @test !_shares_values(out, y)
+        end
         @test MA.operate!!(+, out, out) === out
         @test values(out) == [4, 10, 8, 14]
         @test MA.operate!!(+, out, -out) === out
@@ -436,6 +444,21 @@ end
     @test values(x) == [3]
     @test keys(y) == [2, 1]
     @test values(y) == [3, -2]
+
+    # Unsorted storage takes another path, the result must also own its values
+    for alias in (:none, :left, :right)
+        x = SA.SparseCoefficients([3, 1], big.([1, 2]))
+        y = SA.SparseCoefficients([2], big.([3]))
+        out = alias === :left ? x : alias === :right ? y : zero(x)
+        @test MA.operate_to!(out, +, x, y) === out
+        @test collect(SA.nonzero_pairs(out)) == [1 => 2, 2 => 3, 3 => 1]
+        alias === :left || @test !_shares_values(out, x)
+        alias === :right || @test !_shares_values(out, y)
+    end
+    out = SA.SparseCoefficients(Int[], BigInt[])
+    y = SA.SparseCoefficients([2], big.([3]))
+    @test MA.operate!(SA.UnsafeAdd(), out, y) === out
+    @test !_shares_values(out, y)
 
     x = SA.SparseCoefficients([1], [1])
     y = SA.SparseCoefficients([1, 2], [0.5, 2.5])

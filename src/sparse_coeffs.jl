@@ -336,7 +336,24 @@ function map_coefficients_to!(
     return res
 end
 
-function _merge_coefficients!(res, X, Y, transform::F = identity) where {F}
+# The result owns its values so that modifying them in place, e.g., with
+# `MA.operate!(*, value, 2)`, does not modify the inputs.
+struct _CopyValue
+    skip::Bool
+end
+function (c::_CopyValue)(p::Pair)
+    return c.skip ? p : first(p) => MA.copy_if_mutable(last(p))
+end
+
+# Entries of `Y` that are not combined are mapped by `only_b` after
+# `transform`, pass `identity` if `transform` already returns owned values.
+function _merge_coefficients!(
+    res,
+    X,
+    Y,
+    transform::F = identity,
+    only_b::G = _CopyValue(res === Y),
+) where {F,G}
     x = Iterators.Reverse(_CoefficientPairs(X))
     y = Iterators.map(transform, Iterators.Reverse(_CoefficientPairs(Y)))
     _merge_sorted!(
@@ -347,6 +364,8 @@ function _merge_coefficients!(res, X, Y, transform::F = identity) where {F}
         by = first,
         combine = (a, b) -> first(a) => last(a) + last(b),
         filter = p -> !iszero(last(p)),
+        only_a = _CopyValue(res === X),
+        only_b,
     )
     return res
 end
@@ -379,16 +398,17 @@ function MA.operate_to!(
        _strictly_sorted(Y)
         return _merge_coefficients!(res, X, Y)
     end
+    copied(c) = Iterators.map(MA.copy_if_mutable, c.values)
     if res === X
         append!(res.basis_elements, Y.basis_elements)
-        append!(res.values, Y.values)
+        append!(res.values, copied(Y))
     elseif res === Y
         append!(res.basis_elements, X.basis_elements)
-        append!(res.values, X.values)
+        append!(res.values, copied(X))
     else
         MA.operate!(zero, res)
         append!(res.basis_elements, X.basis_elements, Y.basis_elements)
-        append!(res.values, X.values, Y.values)
+        append!(res.values, copied(X), copied(Y))
     end
     MA.operate!(canonical, res)
     return res

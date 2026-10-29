@@ -157,6 +157,14 @@ function MA.operate!(::UnsafeAdd, res, b)
     return res
 end
 
+# `res` stores the pushed values so it must own them.
+function MA.operate!(::UnsafeAdd, res::SparseCoefficients, b)
+    for (k, v) in nonzero_pairs(b)
+        unsafe_push!(res, k, MA.copy_if_mutable(v))
+    end
+    return res
+end
+
 function MA.operate!(::UnsafeAddMul, res, A, α)
     for (k, v) in nonzero_pairs(A)
         unsafe_push!(res, k, v * α)
