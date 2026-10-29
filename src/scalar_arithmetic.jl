@@ -42,6 +42,14 @@ end
 # compiled by other packages.
 function _scalar_arithmetic(S)
     code = quote
+        function LinearAlgebra.dot(a::$S, p::Union{AlgebraElement,Term})
+            return adjoint(a) * p
+        end
+
+        function LinearAlgebra.dot(p::Union{AlgebraElement,Term}, a::$S)
+            return adjoint(p) * a
+        end
+
         function Base.:*(a::$S, t::Term{T}) where {T}
             return Term(parent(t), MA.copy_if_mutable(t.index), a * coefficient(t))
         end
@@ -246,9 +254,9 @@ Allow values of `Scalar` to act as coefficients of [`Term`](@ref) and
 [`AlgebraElement`](@ref), independently of their current coefficient type.
 StarAlgebras uses this registration for its built-in scalar arithmetic too.
 
-This defines addition, subtraction and multiplication on both sides; right
-division (`/`, `//`, `div`) of algebra elements; scalar construction via an
-algebra; scalar type promotion; and the corresponding MutableArithmetics
+This defines addition, subtraction, multiplication and dot products on both
+sides; right division (`/`, `//`, `div`) of algebra elements; scalar construction
+via an algebra; scalar type promotion; and the corresponding MutableArithmetics
 promotion and accumulation methods. Coefficient containers use the same scalar
 multiplication and division.
 Each operation requires the corresponding coefficient operation and its

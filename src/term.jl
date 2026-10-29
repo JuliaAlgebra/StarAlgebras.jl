@@ -166,8 +166,19 @@ function MA.mutable_copy(t::Term)
     )
 end
 
-function LinearAlgebra.dot(t1::Term, t2::Term)
-    return LinearAlgebra.dot(algebra_element(t1), algebra_element(t2))
+"""
+    LinearAlgebra.dot(a::Union{AlgebraElement,Term}, b::Union{AlgebraElement,Term})
+
+Treat algebra elements and terms as scalars: return `adjoint(a) * b`.
+Array dot products sum these algebra-valued products entry by entry.
+For the coefficient inner product of algebra elements, first use `promote_bases`
+to put them in a common basis, then use `dot(coeffs(a), coeffs(b))`.
+"""
+function LinearAlgebra.dot(
+    a::Union{AlgebraElement,Term},
+    b::Union{AlgebraElement,Term},
+)
+    return adjoint(a) * b
 end
 
 function Base.:-(t::Term)

@@ -1,12 +1,20 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-Base.adjoint(a::AlgebraElement) = star(a)
+Base.adjoint(a::Union{AlgebraElement,Term}) = star(a)
 star(x::Any) = x'
 
 function star(X::AlgebraElement)
     res = star(mstructure(X), coeffs(X))
     return AlgebraElement(res, parent(X))
+end
+
+function star(t::Term)
+    return Term(
+        parent(t),
+        star(basis(parent(t)), t.index),
+        star(coefficient(t)),
+    )
 end
 
 star(mstr::MultiplicativeStructure, x) = star(basis(mstr), x)
@@ -17,6 +25,10 @@ function star(b::AbstractBasis, d::SparseCoefficients)
     k = star.(Ref(b), keys(d))
     v = star.(values(d))
     return SparseCoefficients(k, v, d.isless)
+end
+
+function star(b::MappedBasis{T,I}, i::I) where {T,I}
+    return b[star(b[i])]
 end
 
 function star(b::FixedBasis, i::Integer)

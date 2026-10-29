@@ -42,18 +42,21 @@ function element(elements, values)
     )
 end
 
-@testset "Dot promotes coefficient keys" begin
-    a = element([2.0], ComplexF32[1+2im])
-    b = element([1.0], ComplexF32[3+4im])
-    c = element([1.0, 2.0], ComplexF32[0, 3+4im])
+@testset "Dot promotes operands" begin
+    a = element([2.0, 4.0], ComplexF32[1+2im])
+    b = element([1.0, 4.0], ComplexF32[3+4im])
+    c = element([1.0, 2.0, 4.0], ComplexF32[0, 3+4im])
     alg_a, alg_b, alg_c = parent(a), parent(b), parent(c)
     # Key 1 denotes different basis elements in a and b.
-    @test (@inferred dot(a, b)) === 0.0f0 + 0.0f0im
-    @test (@inferred dot(a, c)) === 11.0f0 - 2.0f0im
-    @test (@inferred dot(c, a)) === 11.0f0 + 2.0f0im
-    @test (@inferred dot(a, a)) === 5.0f0 + 0.0f0im
-    @test dot(zero(a), c) === 0.0f0 + 0.0f0im
-    @test dot(a, zero(c)) === 0.0f0 + 0.0f0im
+    @test (@inferred dot(a, b)) ==
+          element([1.0, 2.0, 4.0], ComplexF32[0, 11-2im])
+    @test (@inferred dot(a, c)) ==
+          element([1.0, 2.0, 4.0], ComplexF32[0, 0, 11-2im])
+    @test (@inferred dot(c, a)) ==
+          element([1.0, 2.0, 4.0], ComplexF32[0, 0, 11+2im])
+    @test (@inferred dot(a, a)) == element([2.0, 4.0], ComplexF32[0, 5])
+    @test iszero(dot(zero(a), c))
+    @test iszero(dot(a, zero(c)))
     @test parent(a) === alg_a
     @test parent(b) === alg_b
     @test parent(c) === alg_c
@@ -170,9 +173,10 @@ end
     p, q = SA.algebra_element(t), SA.algebra_element(u)
     promoted_t = SA.Term(large, 2, 3.0)
     promoted_p = SA.algebra_element(promoted_t)
-    @test (@inferred dot(p, q)) === 0.0
-    @test (@inferred dot(p, promoted_p)) === 9.0
-    @test (@inferred dot(t, u)) === 0.0
+    @test (@inferred dot(p, q)) == SA.algebra_element(SA.Term(large, 4, 6.0))
+    @test (@inferred dot(p, promoted_p)) ==
+          SA.algebra_element(SA.Term(large, 3, 9.0))
+    @test (@inferred dot(t, u)) == SA.algebra_element(SA.Term(large, 4, 6.0))
     @test (@inferred SA.promote_bases_with_maps(t, u)) ==
           ((promoted_t, identity), (u, identity))
     for (a, b, expected_a, expected_b) in (

@@ -66,11 +66,22 @@ end
             fX = AlgebraElement(coeffs(X, basis(fRG)), fRG)
             fY = AlgebraElement(coeffs(Y, basis(fRG)), fRG)
 
-            @test dot(X, Y) == dot(fX, fY) == dot(coeffs(X), coeffs(Y))
-            @test dot(fX, fY) == dot(coeffs(fX), coeffs(fY))
+            for alg in (RG, fRG)
+                t = SA.Term(alg, basis(alg)[g], 1 + 2im)
+                expected = SA.Term(alg, basis(alg)[star(g)], 1 - 2im)
+                @test (@inferred adjoint(t)) == expected
+                @test SA.algebra_element(adjoint(t)) ==
+                      adjoint(SA.algebra_element(t))
+                @test (@inferred dot(t, t)) == 5 * alg(star(g) * g)
+            end
 
-            @test dot(X, X) ≈ norm(X)^2 ≈ dot(coeffs(X), coeffs(X))
-            @test dot(fX, fX) ≈ norm(fX)^2 ≈ dot(coeffs(fX), coeffs(fX))
+            @test dot(X, Y) == X' * Y
+            @test dot(fX, fY) == fX' * fY
+            @test coeffs(dot(X, Y), basis(fRG)) == coeffs(dot(fX, fY))
+            @test dot(coeffs(X), coeffs(Y)) == dot(coeffs(fX), coeffs(fY))
+
+            @test norm(X)^2 ≈ dot(coeffs(X), coeffs(X))
+            @test norm(fX)^2 ≈ dot(coeffs(fX), coeffs(fX))
 
             @test coeffs(fX) ==
                   coeffs(coeffs(fX, basis(RG)), basis(RG), basis(fRG))

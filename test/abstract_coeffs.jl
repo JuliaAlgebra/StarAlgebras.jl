@@ -167,7 +167,10 @@ end
 
     @test norm(fP2m) == norm(P2m) == norm(fP2m)
     v = coeffs(P2m, basis(fRG)) # an honest vector
-    @test dot(fP2m, fP2m) == dot(coeffs(fP2m), v) == dot(v, coeffs(fP2m))
+    @test dot(fP2m, fP2m) == adjoint(fP2m) * fP2m
+    @test dot(coeffs(fP2m), coeffs(fP2m)) ==
+          dot(coeffs(fP2m), v) ==
+          dot(v, coeffs(fP2m))
 
     s1, s2 = PermutationGroups.gens(G)
     @assert s1 * s2 ≠ s2 * s1
