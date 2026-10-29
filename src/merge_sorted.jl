@@ -20,48 +20,53 @@ function merge_sorted!(
     filter,
     rev = false,
 )
-    a = Iterators.Reverse(v1)
-    b = Iterators.Reverse(v2)
-    return _merge_sorted!(result, a, b; lt, combine, filter, rev)
+    return _merge_sorted!(result, v1, v2; lt, combine, filter, rev)
 end
 
 # Merging backwards preserves unread entries when `result` shares storage
-# with either input underlying the iterators `a` and `b`:
-# https://stackoverflow.com/a/4553321
-# Backwards iterators also allow lazy term products, computed once per entry.
+# with either input `a` and `b`: https://stackoverflow.com/a/4553321
+# The entries of `b` are mapped by `map_b` when they are read, which allows
+# lazy term products, computed once per entry.
 # Entries found in only one input are mapped by `only_a` or `only_b`.
+# Indices are used instead of `iterate` as an iteration state that is not
+# `isbits` would be allocated on the heap, e.g., for `BigInt` values.
 function _merge_sorted!(
     result,
-    a,
-    b;
+    a::AbstractVector,
+    b::AbstractVector;
     lt,
     combine,
     filter,
     rev = false,
     by = identity,
+    map_b::FM = identity,
     only_a::FA = identity,
     only_b::FB = identity,
-) where {FA,FB}
-    # Capture the original iterator bounds before resizing aliased storage.
-    x, y = iterate(a), iterate(b)
+) where {FM,FA,FB}
+    # Capture the original bounds before resizing aliased storage.
+    ia, ib = lastindex(a), lastindex(b)
     resize!(result, length(a) + length(b))
     i = lastindex(result)
-    while x !== nothing || y !== nothing
-        if y === nothing
-            value = only_a(x[1])
-            x = iterate(a, x[2])
-        elseif x === nothing
-            value = only_b(y[1])
-            y = iterate(b, y[2])
-        elseif by(x[1]) == by(y[1])
-            value = combine(x[1], y[1])
-            x, y = iterate(a, x[2]), iterate(b, y[2])
-        elseif xor(lt(by(x[1]), by(y[1])), rev)
-            value = only_b(y[1])
-            y = iterate(b, y[2])
+    while ia >= firstindex(a) || ib >= firstindex(b)
+        if ib < firstindex(b)
+            value = only_a(a[ia])
+            ia -= 1
+        elseif ia < firstindex(a)
+            value = only_b(map_b(b[ib]))
+            ib -= 1
         else
-            value = only_a(x[1])
-            x = iterate(a, x[2])
+            x, y = a[ia], map_b(b[ib])
+            if by(x) == by(y)
+                value = combine(x, y)
+                ia -= 1
+                ib -= 1
+            elseif xor(lt(by(x), by(y)), rev)
+                value = only_b(y)
+                ib -= 1
+            else
+                value = only_a(x)
+                ia -= 1
+            end
         end
         if filter(value)
             result[i] = value

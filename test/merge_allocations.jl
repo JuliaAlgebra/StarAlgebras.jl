@@ -155,3 +155,54 @@ end
         )
     end
 end
+
+# The keys of `g`, shifted by the key of the term, are all keys of `f` so every
+# product is combined with a coefficient of `f`. With the coefficient `3` of
+# the term, none of them cancels, even after several operations.
+function _bigint_term_accumulation(op, left, alias, n)
+    c = SA.SparseCoefficients(
+        [(i, 0) for i in 0:(n-1)],
+        BigInt.(collect(1:n)),
+        grlex,
+    )
+    # The merge temporarily holds both supports.
+    sizehint!(keys(c), 2n)
+    sizehint!(values(c), 2n)
+    f = AlgebraElement(c, biv_alg)
+    if alias
+        g, t = f, biv_term(big(3), (0, 0))
+    else
+        d = SA.SparseCoefficients(
+            [(i, 0) for i in 0:(n-2)],
+            BigInt.(collect(1:(n-1))),
+            grlex,
+        )
+        g, t = AlgebraElement(d, biv_alg), biv_term(big(3), (1, 0))
+    end
+    return f, left ? (t, g) : (g, t)
+end
+
+function _bigint_term_accumulation_allocs(op, left, alias, n)
+    f, (a, b) = _bigint_term_accumulation(op, left, alias, n)
+    buffer = MA.buffer_for(op, typeof(f), typeof(a), typeof(b))
+    # GMP allocates the limbs of a new `BigInt` the first time it is modified.
+    MA.buffered_operate!(buffer, op, f, a, b)
+    return @allocated MA.buffered_operate!(buffer, op, f, a, b)
+end
+
+@testset "Allocation-free ordered term accumulation of BigInt" begin
+    # Mutable coefficients are modified in place, using the buffer for the
+    # products.
+    for op in (MA.add_mul, MA.sub_mul),
+        left in (true, false),
+        alias in (false, true)
+
+        f, (a, b) = _bigint_term_accumulation(op, left, alias, 100)
+        expected = op(f, a, b)
+        buffer = MA.buffer_for(op, typeof(f), typeof(a), typeof(b))
+        @test buffer isa BigInt
+        @test MA.buffered_operate!(buffer, op, f, a, b) === f
+        @test f == expected
+        @test _bigint_term_accumulation_allocs(op, left, alias, 100) == 0
+    end
+end

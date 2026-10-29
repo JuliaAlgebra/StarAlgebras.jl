@@ -71,7 +71,7 @@ end
         a, b = left ? (t, g) : (g, t)
         expected = op(f, a, b)
         buffer = MA.buffer_for(op, typeof(f), typeof(a), typeof(b))
-        @test buffer === nothing
+        @test typeof(buffer) == typeof(MA.buffer_for(op, T, T, T))
         out = zero(f)
         f_original = deepcopy(f)
         @test MA.buffered_operate_to!!(buffer, out, op, f, a, b) === out

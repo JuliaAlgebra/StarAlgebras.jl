@@ -48,7 +48,27 @@ for (L, R, left) in (
     t, g = left ? (:a, :b) : (:b, :a)
     @eval begin
         function MA.operate!(op::MA.AddSubMul, f::AlgebraElement, a::$L, b::$R)
-            return _term_add_mul!(op, f, $t, $g, Val($left))
+            buffer = MA.buffer_for(op, typeof(f), typeof(a), typeof(b))
+            return MA.buffered_operate!(buffer, op, f, a, b)
+        end
+
+        function MA.buffer_for(
+            op::MA.AddSubMul,
+            ::Type{F},
+            ::Type{A},
+            ::Type{B},
+        ) where {F<:AlgebraElement,A<:$L,B<:$R}
+            return MA.buffer_for(op, _coefficient_type.((F, A, B))...)
+        end
+
+        function MA.buffered_operate!(
+            buffer,
+            op::MA.AddSubMul,
+            f::AlgebraElement,
+            a::$L,
+            b::$R,
+        )
+            return _term_add_mul!(op, f, $t, $g, Val($left), buffer)
         end
 
         function MA.operate_to!(
@@ -58,8 +78,20 @@ for (L, R, left) in (
             a::$L,
             b::$R,
         )
+            buffer = MA.buffer_for(op, typeof(f), typeof(a), typeof(b))
+            return MA.buffered_operate_to!(buffer, output, op, f, a, b)
+        end
+
+        function MA.buffered_operate_to!(
+            buffer,
+            output::AlgebraElement,
+            op::MA.AddSubMul,
+            f::AlgebraElement,
+            a::$L,
+            b::$R,
+        )
             a, b = _prepare_fused_output!(output, op, f, a, b)
-            return _term_add_mul!(op, output, $t, $g, Val($left))
+            return _term_add_mul!(op, output, $t, $g, Val($left), buffer)
         end
     end
 end
@@ -72,7 +104,16 @@ function _term_product_style(ms, f::SparseCoefficients, g::SparseCoefficients)
     return GeneralTermProduct()
 end
 
-function _term_add_mul!(op::MA.AddSubMul, f::AlgebraElement, t::Term, g, left)
+_coefficient_type(::Type{<:Union{AlgebraElement{T},Term{T}}}) where {T} = T
+
+function _term_add_mul!(
+    op::MA.AddSubMul,
+    f::AlgebraElement,
+    t::Term,
+    g,
+    left,
+    buffer = nothing,
+)
     t, g = _promote_operands!(op, f, t, g)
     iszero(t) && return f
     ms = mstructure(f)
@@ -85,7 +126,7 @@ function _term_add_mul!(op::MA.AddSubMul, f::AlgebraElement, t::Term, g, left)
             comparable(basis(f)),
         ) : coeffs(g)
     style = _term_product_style(ms, c, d)
-    _term_add_mul!(style, op, c, ms, t, d, left)
+    _term_add_mul!(style, op, c, ms, t, d, left, buffer)
     return f
 end
 
@@ -97,6 +138,7 @@ function _term_add_mul!(
     t,
     g,
     ::Val{left},
+    _,
 ) where {left}
     # Accumulation may grow or overwrite the storage being read.
     g = f === g ? MA.mutable_copy(g) : g
@@ -116,14 +158,45 @@ function _term_add_mul!(
     t,
     g,
     ::Val{left},
+    buffer,
 ) where {left}
     key_product = left ? Base.Fix1(ms, t.index) : Base.Fix2(ms, t.index)
-    value_product =
-        left ? Base.Fix1(*, coefficient(t)) : Base.Fix2(*, coefficient(t))
+    c = coefficient(t)
+    factors = left ? Base.Fix1(tuple, c) : Base.Fix2(tuple, c)
     add = MA.add_sub_op(op)
-    product = function (p)
+    # Keep the coefficient of `g` so that the product is only computed once
+    # we know whether it is added to a coefficient of `f`.
+    keyed = function (p)
         k, scale = only(nonzero_pairs(key_product(first(p))))
-        return k => add(scale * value_product(last(p)))
+        return k => (scale, last(p))
     end
-    return _merge_coefficients!(f, f, g, product, identity)
+    # `f` owns its coefficients so they can be modified in place. Checking that
+    # `c` or the coefficients of `g` are not one of them would cost a scan of
+    # `f`, so they are assumed not to alias, as documented in `MA.operate!`.
+    combine = function (a, b)
+        scale, v = last(b)
+        l, r = factors(v)
+        if isone(scale)
+            value = MA.buffered_operate!!(buffer, op, last(a), l, r)
+        else
+            value = MA.operate!!(op, last(a), scale * l, r)
+        end
+        return first(a) => value
+    end
+    new_term = function (b)
+        scale, v = last(b)
+        return first(b) => add(scale * *(factors(v)...))
+    end
+    _merge_sorted!(
+        _CoefficientPairs(f),
+        _CoefficientPairs(f),
+        _CoefficientPairs(g);
+        lt = f.isless,
+        by = first,
+        map_b = keyed,
+        combine,
+        filter = p -> !iszero(last(p)),
+        only_b = new_term,
+    )
+    return f
 end
