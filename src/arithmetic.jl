@@ -139,7 +139,9 @@ for op in [:+, :-, :*]
         ) where {X<:AlgebraElement,Y<:AlgebraElement}
             return algebra_promote_operation($op, X, Y)
         end
-        function Base.$op(X::AlgebraElement, Y::AlgebraElement)
+        # Inlining this wrapper crashes Julia 1.13 for sparse-dense matrices
+        # of typed polynomials. Keep the arithmetic kernels optimized.
+        Base.@noinline function Base.$op(X::AlgebraElement, Y::AlgebraElement)
             _X, _Y = promote_bases(X, Y)
             P = MA.promote_operation($op, typeof(_X), typeof(_Y))
             return MA.operate_to!(MA.zero_for(P, (_X,), (_Y,)), $op, _X, _Y)
