@@ -290,6 +290,15 @@ function algebra_element(t::Term{T}) where {T}
     return AlgebraElement(c, parent(t))
 end
 
+# Already an algebra element
+algebra_element(a::AlgebraElement) = a
+function MA.promote_operation(
+    ::typeof(algebra_element),
+    ::Type{A},
+) where {A<:AlgebraElement}
+    return A
+end
+
 function Base.convert(
     ::Type{AlgebraElement{T,A,C}},
     t::Term{S,B,I},
