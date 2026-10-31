@@ -203,6 +203,27 @@ end
     end
 end
 
+# Regression for MultivariatePolynomials.jl#153: the coefficients that are not
+# stored would become `0 / 0`.
+@testset "Division by zero" begin
+    alg = bivariate_algebra()
+    c = SA.SparseCoefficients([(0, 0), (1, 0)], [3, 5], grlex)
+    for coeffs in
+        (c, SA.SparseCoefficients(empty(c.basis_elements), Int[], grlex))
+        p = SA.AlgebraElement(coeffs, alg)
+        for (a, ops) in
+            ((0, (/, //, div)), (0.0, (/, div)), (Scalar(0), (/, //, div))),
+            op in ops
+
+            @test_throws DivideError op(p, a)
+            @test_throws DivideError op(coeffs, a)
+            @test_throws DivideError MA.operate_to!(zero(op(p, 1)), op, p, a)
+            @test_throws DivideError MA.operate!(op, MA.mutable_copy(p), a)
+        end
+        @test iszero(p * 0)
+    end
+end
+
 # Regression for DynamicPolynomials.jl#168 and #199.
 @testset "Promotion with Any" begin
     t = SA.Term(bivariate_algebra(), (1, 0), 1)

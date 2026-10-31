@@ -36,6 +36,14 @@ function _scalar_sum_to!(output, op, p, a, left::Val{L}) where {L}
     return output
 end
 
+# The coefficients that are not stored are zero and would become `0 / 0`, which
+# cannot be represented.
+_check_divisor(::typeof(*), _) = nothing
+function _check_divisor(_, a)
+    iszero(a) && throw(DivideError())
+    return
+end
+
 # Generate the methods for a registered scalar family `S`. `S` must not be a
 # free type parameter such as the coefficient type `T` as the methods would
 # then accept any type and invalidate calls such as `*(::Any, ::String)`
@@ -99,6 +107,7 @@ function _scalar_arithmetic(S)
             p::AlgebraElement{T},
             a::$S,
         ) where {T}
+            _check_divisor(op, a)
             return map_coefficients_to!(output, Base.Fix2(op, a), p)
         end
 
@@ -130,6 +139,7 @@ function _scalar_arithmetic(S)
             c::AbstractCoefficients{K,T},
             a::$S,
         ) where {K,T}
+            _check_divisor(op, a)
             return map_coefficients_to!(output, Base.Fix2(op, a), c)
         end
 
