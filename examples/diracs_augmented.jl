@@ -142,12 +142,14 @@ function (mstr::AugmentedMStructure)(
 ) where {A<:Augmented}
     δxy = first(keys(mstr.op(aδx.elt, aδy.elt)))
     if isone(δxy)
-        return SA.SparseCoefficients((aδx, aδy), (-1, -1))
+        k, v = [aδx, aδy], [-1, -1]
     else
         aδxy = Augmented(δxy)
         #(x-1)*(y-1) = 1 - x - y + xy = -1·(x-1) - 1·(y-1) + 1·(xy-1)
-        return SA.SparseCoefficients((aδx, aδy, aδxy), (-1, -1, 1))
+        k, v = [aδx, aδy, aδxy], [-1, -1, 1]
     end
+    # The keys may be unsorted or repeated
+    return SA.sparse_coefficients(k, v)
 end
 
 function SA.coeffs!(

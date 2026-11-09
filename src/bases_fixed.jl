@@ -173,6 +173,7 @@ function sub_basis(basis::ImplicitBasis, keys::AbstractVector)
 end
 
 Base.parent(sub::SubBasis) = sub.parent_basis
+comparable(sub::SubBasis) = comparable(parent(sub))
 
 function Base.:(==)(a::SubBasis, b::SubBasis)
     return a.parent_basis == b.parent_basis && a.keys == b.keys

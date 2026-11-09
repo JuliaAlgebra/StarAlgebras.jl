@@ -98,6 +98,7 @@ end
     @testset "SubBasis" begin
         sub_x = SA.SubBasis(bas_x, [1, 3])
         sub_y = SA.SubBasis(bas_y, [2, 3])
+        @test SA.comparable(SA.SubBasis(bas_bi, [(1, 0)])) == grlex
         _sub_x, _y = SA.promote_bases(sub_x, bas_y)
         @test parent(_sub_x) == bas_bi
         @test _sub_x.keys == [(1, 0), (3, 0)]

@@ -29,14 +29,23 @@ function _add_term!(c, t::Term)
 end
 
 function _add_term!(c::SparseCoefficients, t::Term)
-    # Reuse the sorted merge without allocating a single-term polynomial.
+    # Find the position with a binary search instead of merging so that adding
+    # `n` terms one by one does `O(n log(n))` comparisons.
     # Inserted mutable keys and coefficients must remain independent of `t`.
-    single = SparseCoefficients(
-        (MA.copy_if_mutable(t.index),),
-        (MA.copy_if_mutable(coefficient(t)),),
-        c.isless,
-    )
-    return MA.operate!(+, c, single)
+    k = searchsortedfirst(keys(c), t.index; lt = c.isless)
+    if k in eachindex(keys(c)) && keys(c)[k] == t.index
+        v = values(c)[k] + coefficient(t)
+        if iszero(v)
+            deleteat!(keys(c), k)
+            deleteat!(values(c), k)
+        else
+            values(c)[k] = v
+        end
+    else
+        insert!(keys(c), k, MA.copy_if_mutable(t.index))
+        insert!(values(c), k, MA.copy_if_mutable(coefficient(t)))
+    end
+    return c
 end
 
 # Keep coefficient and basis multiplication in operand order on both sides.

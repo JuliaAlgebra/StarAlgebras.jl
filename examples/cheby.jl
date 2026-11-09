@@ -28,7 +28,11 @@ function (m::ChebyMStruct)(a::Int, b::Int, ::Type{ChebyPoly})
 end
 
 function (m::ChebyMStruct)(a::Int, b::Int, ::Type{Int})
-    return SA.SparseCoefficients((abs(a - b), a + b), (1 // 2, 1 // 2))
+    # `T_0 * T_n = T_n` and otherwise `T_a * T_b = (T_|a-b| + T_(a+b)) / 2`
+    if iszero(a) || iszero(b)
+        return SA.SparseCoefficients([a + b], [1 // 1])
+    end
+    return SA.SparseCoefficients([abs(a - b), a + b], [1 // 2, 1 // 2])
 end
 
 # Define the mapping from `Int` to `ChebyPoly`

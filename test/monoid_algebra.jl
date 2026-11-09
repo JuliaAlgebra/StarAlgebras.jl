@@ -25,6 +25,19 @@ end
     RG = StarAlgebra(A★, B)
     @test basis(RG) === B
 
+    @testset "star reorders the keys" begin
+        ac, b = Word(alph, [1, 3]), Word(alph, [2])
+        x = AlgebraElement(SA.SparseCoefficients([ac, b], [1, 2]), RG)
+        # `star(ac) = cb` and `star(b) = a`
+        cb, a = Word(alph, [3, 2]), Word(alph, [1])
+        @test keys(coeffs(star(x))) == [a, cb]
+        @test values(coeffs(star(x))) == [2, 1]
+        @test star(x) + x == AlgebraElement(
+            SA.SparseCoefficients([a, ac, b, cb], [2, 1, 2, 1]),
+            RG,
+        )
+    end
+
     # no caching
     fB = SA.FixedBasis(basis(RG); n = nwords(A★, 0, 8))
 
@@ -111,16 +124,12 @@ end
         a = let l = 12, R = 7
             support = [Word(alph, rand(1:length(alph), rand(0:R))) for _ in 1:l]
             vals = rand(-3:3, l)
-            c = SA.SparseCoefficients(support, vals)
-            MA.operate!(SA.canonical, c)
-            AlgebraElement(c, RG)
+            AlgebraElement(SA.sparse_coefficients(support, vals), RG)
         end
         b = let l = 7, R = 3
             support = [Word(alph, rand(1:length(alph), rand(0:R))) for _ in 1:l]
             vals = rand(-3:3, l)
-            c = SA.SparseCoefficients(support, vals)
-            MA.operate!(SA.canonical, c)
-            AlgebraElement(c, RG)
+            AlgebraElement(SA.sparse_coefficients(support, vals), RG)
         end
 
         let d = deepcopy(a)
