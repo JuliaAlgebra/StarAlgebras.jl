@@ -169,6 +169,23 @@ end
 
         @test dx * dy == SA.AlgebraElement(SA.coeffs(x * y, SA.basis(RG)), RG)
 
+        @test SA.implicit_basis(SA.basis(sbRG)) === SA.basis(RG)
+        @test SA.implicit_basis(SA.basis(RG)) === SA.basis(RG)
+        @test SA.implicit(x) == dx
+        @test parent(SA.implicit(x)) == RG
+        @test SA.implicit(dx) === dx
+        @test typeof(SA.implicit(x)) ==
+              MA.promote_operation(SA.implicit, typeof(x))
+        @test MA.promote_operation(SA.implicit_basis, typeof(SA.basis(sbRG))) ==
+              typeof(SA.basis(RG))
+        @test MA.promote_operation(SA.implicit_basis, typeof(SA.basis(RG))) ==
+              typeof(SA.basis(RG))
+        ts = SA.Term(sbRG, 1, 2)
+        @test SA.implicit(ts).algebra == RG
+        @test SA.basis_element(SA.implicit(ts)) == SA.basis_element(ts)
+        @test SA.coefficient(SA.implicit(ts)) == 2
+        @test SA.implicit(SA.implicit(ts)) === SA.implicit(ts)
+
         # Arithmetic between a term of the algebra of the parent basis and an
         # element of the algebra of a `SubBasis`
         t = SA.Term(RG, SA.basis(RG)[S1[1]], 2)
