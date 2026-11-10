@@ -13,7 +13,7 @@ end
     @test contains(sprint(show, RG), "*-algebra of")
 
     @testset "Module structure" begin
-        sc = SA.SparseCoefficients(
+        sc = SA.sparse_coefficients(
             collect(SA.object(RG)),
             ones(Int, length(basis(RG))),
         )
@@ -86,7 +86,7 @@ end
     end
 
     @testset "Additive structure" begin
-        sc = SA.SparseCoefficients(
+        sc = SA.sparse_coefficients(
             collect(SA.object(RG)),
             ones(Int, length(basis(RG))),
         )
@@ -95,7 +95,7 @@ end
 
         @test a == sum(RG(g) for g in G)
 
-        @test 1 / 2 * (coeffs(a + b)) == SA.SparseCoefficients(
+        @test 1 / 2 * (coeffs(a + b)) == SA.sparse_coefficients(
             collect(SA.object(RG)),
             [1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
         )

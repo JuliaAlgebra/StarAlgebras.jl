@@ -21,12 +21,12 @@ end
     @test db[g] == g
     @test db[db[g]] == g
 
-    xcfs = SA.SparseCoefficients([one(G), g], [1, -1])
-    ycfs = SA.SparseCoefficients([one(G), inv(g)], [1, -1])
-    xycfs = SA.SparseCoefficients([one(G), g, inv(g)], [2, -1, -1])
+    xcfs = SA.sparse_coefficients([one(G), g], [1, -1])
+    ycfs = SA.sparse_coefficients([one(G), inv(g)], [1, -1])
+    xycfs = SA.sparse_coefficients([one(G), g, inv(g)], [2, -1, -1])
 
-    zcfs = SA.SparseCoefficients([one(G), h], [1, -1])
-    xzcfs = SA.SparseCoefficients([one(G), g, h, g * h], [1, -1, -1, 1])
+    zcfs = SA.sparse_coefficients([one(G), h], [1, -1])
+    xzcfs = SA.sparse_coefficients([one(G), g, h, g * h], [1, -1, -1, 1])
 
     RG = SA.StarAlgebra(G, mstr)
 
@@ -77,9 +77,9 @@ end
 
     @testset "Random elements (seed=$seed)" for seed in 0:20
         Random.seed!(seed)
-        rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+        rcfs = SA.sparse_coefficients(rand(G, 10), rand(-2:2, 10))
         r = SA.AlgebraElement(rcfs, RG)
-        scfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+        scfs = SA.sparse_coefficients(rand(G, 10), rand(-2:2, 10))
         s = SA.AlgebraElement(scfs, RG)
 
         @test aug(r * s) == aug(r) * aug(s)
@@ -94,9 +94,9 @@ end
 
         @testset "seed=$seed" for seed in 0:20
             Random.seed!(seed)
-            rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+            rcfs = SA.sparse_coefficients(rand(G, 10), rand(-2:2, 10))
             r = SA.algebra_element(rcfs, RG)
-            scfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+            scfs = SA.sparse_coefficients(rand(G, 10), rand(-2:2, 10))
             s = SA.algebra_element(scfs, RG)
 
             @test coeffs(r, basis(fRG)) isa SparseVector
@@ -118,7 +118,7 @@ end
         @test a ≤ b
 
         @test Random.seed!(0) isa Any
-        rcfs = SA.SparseCoefficients(rand(G, 10), rand(-2:2, 10))
+        rcfs = SA.sparse_coefficients(rand(G, 10), rand(-2:2, 10))
         r = SA.AlgebraElement(rcfs, RG)
         fr = SA.AlgebraElement(coeffs(r, basis(fRG)), fRG)
 

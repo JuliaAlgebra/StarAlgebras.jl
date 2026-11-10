@@ -60,8 +60,7 @@ end
     x = let A = alph, n = 7
         elts = [Word(A, rand(1:length(A), rand(0:7))) for _ in 1:n]
         vals = rand(-5:5, n)
-        coeffs = SA.SparseCoefficients(elts, vals)
-        MA.operate!(SA.canonical, coeffs)
+        SA.sparse_coefficients(elts, vals)
     end
 
     err = ArgumentError(

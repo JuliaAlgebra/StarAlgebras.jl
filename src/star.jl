@@ -24,7 +24,8 @@ star(::AbstractBasis, x) = star(x)
 function star(b::AbstractBasis, d::SparseCoefficients)
     k = star.(Ref(b), keys(d))
     v = star.(values(d))
-    return SparseCoefficients(k, v, d.isless)
+    # `star` may not preserve the order of the keys, e.g., it reverses words.
+    return sparse_coefficients(k, v, d.isless)
 end
 
 function star(b::MappedBasis{T,I}, i::I) where {T,I}

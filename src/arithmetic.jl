@@ -444,7 +444,7 @@ function _add_scaled_coefficients!(
     scale::F,
 ) where {F}
     product = p -> MA.copy_if_mutable(first(p)) => add(scale(last(p)))
-    if f.isless == g.isless && _strictly_sorted(f) && _strictly_sorted(g)
+    if f.isless == g.isless
         return _merge_coefficients!(f, f, g, product, identity)
     end
     # Capture the original range so this also works when f === g.

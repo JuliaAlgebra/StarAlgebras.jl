@@ -311,15 +311,15 @@ end
     end
 end
 
-@testset "Unsorted scaled accumulation" begin
+@testset "Scaled accumulation with different orderings" begin
     alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0]))
-    g = AlgebraElement(SA.SparseCoefficients([3, 1, 3], [1, 2, 3], >), alg)
+    g = AlgebraElement(SA.SparseCoefficients([3, 1], [4, 2], >), alg)
     f = AlgebraElement(SA.SparseCoefficients([1, 3], [1, 2]), alg)
     @test (@inferred MA.operate!(MA.sub_mul, f, 2, g)) === f
     @test keys(coeffs(f)) == [1, 3]
     @test values(coeffs(f)) == [-3, -6]
-    @test keys(coeffs(g)) == [3, 1, 3]
-    @test values(coeffs(g)) == [1, 2, 3]
+    @test keys(coeffs(g)) == [3, 1]
+    @test values(coeffs(g)) == [4, 2]
     @test MA.operate!(MA.add_mul, g, g, 2) === g
     @test keys(coeffs(g)) == [3, 1]
     @test values(coeffs(g)) == [12, 6]
@@ -409,6 +409,17 @@ end
 # Whether `a` stores one of the mutable values of `b`
 _shares_values(a, b) = any(v -> any(Base.Fix1(===, v), values(b)), values(a))
 
+@testset "sparse_coefficients" begin
+    c = SA.sparse_coefficients([3, 1, 3], [1, 2, 3])
+    @test c isa SA.SparseCoefficients
+    @test keys(c) == [1, 3]
+    @test values(c) == [2, 4]
+    c = SA.sparse_coefficients([1, 3, 1], [1, 2, -1], >)
+    @test c.isless === >
+    @test keys(c) == [3]
+    @test values(c) == [2]
+end
+
 @testset "Sparse coefficient merge" begin
     c = SA.SparseCoefficients([1, 3], [2, 4])
     pairs = SA._CoefficientPairs(c)
@@ -437,21 +448,21 @@ _shares_values(a, b) = any(v -> any(Base.Fix1(===, v), values(b)), values(a))
         @test isempty(values(out))
     end
 
-    x = SA.SparseCoefficients([3, 1, 3], [1, 2, -1])
+    x = SA.SparseCoefficients([1, 3], [2, 1])
     y = SA.SparseCoefficients([2, 1], [3, -2], >)
     @test MA.operate!!(+, x, y) === x
-    @test keys(x) == [2]
-    @test values(x) == [3]
+    @test keys(x) == [2, 3]
+    @test values(x) == [3, 1]
     @test keys(y) == [2, 1]
     @test values(y) == [3, -2]
 
-    # Unsorted storage takes another path, the result must also own its values
+    # Different orderings take another path, the result must also own its values
     for alias in (:none, :left, :right)
-        x = SA.SparseCoefficients([3, 1], big.([1, 2]))
-        y = SA.SparseCoefficients([2], big.([3]))
+        x = SA.SparseCoefficients([1, 3], big.([2, 1]))
+        y = SA.SparseCoefficients([2], big.([3]), >)
         out = alias === :left ? x : alias === :right ? y : zero(x)
         @test MA.operate_to!(out, +, x, y) === out
-        @test collect(SA.nonzero_pairs(out)) == [1 => 2, 2 => 3, 3 => 1]
+        @test sort(collect(SA.nonzero_pairs(out))) == [1 => 2, 2 => 3, 3 => 1]
         alias === :left || @test !_shares_values(out, x)
         alias === :right || @test !_shares_values(out, y)
     end
@@ -586,10 +597,6 @@ end
     @test keys(out) == [3, 2, 1]
     @test values(out) == [1.5, 1.0, 0.5]
     @test values(c) == [1, 2, 3]
-    repeated = SA.SparseCoefficients([3, 1, 3], [1, 2, 3])
-    @test SA.map_coefficients_to!(out, c -> c^2, repeated) === out
-    @test keys(out) == [3, 1]
-    @test values(out) == [10, 4]
 
     input = AlgebraElement(c, alg)
     other_alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0, 5.0]))

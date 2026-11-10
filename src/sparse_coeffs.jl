@@ -7,12 +7,32 @@ struct SparseCoefficients{K,V,Vk,Vv,L} <: AbstractCoefficients{K,V}
     isless::L
 end
 
+"""
+    SparseCoefficients(keys, values, isless = isless)
+
+Coefficients `values[i]` of the basis elements `keys[i]`.
+
+The `keys` must be strictly increasing for `isless`, which is not checked.
+Use [`sparse_coefficients`](@ref) instead if the `keys` are not known to be
+strictly increasing.
+"""
 function SparseCoefficients(elts::Ks, vals::Vs, isless = isless) where {Ks,Vs}
     return SparseCoefficients{eltype(elts),eltype(vals),Ks,Vs,typeof(isless)}(
         elts,
         vals,
         isless,
     )
+end
+
+"""
+    sparse_coefficients(keys, values, isless = isless)
+
+Same as `SparseCoefficients(keys, values, isless)` but also canonicalizes the
+coefficients, i.e., sorts the `keys`, combines the values of equal keys and
+removes the zero values.
+"""
+function sparse_coefficients(elts, vals, isless = isless)
+    return MA.operate!(canonical, SparseCoefficients(elts, vals, isless))
 end
 
 Base.keys(sc::SparseCoefficients) = sc.basis_elements
@@ -330,7 +350,7 @@ function map_coefficients_to!(
     if !nonzero
         filter!(p -> !iszero(last(p)), output)
     end
-    if !_strictly_sorted(res)
+    if res.isless != X.isless
         MA.operate!(canonical, res)
     end
     return res
@@ -369,13 +389,6 @@ function _merge_coefficients!(
     return res
 end
 
-# Read-only coefficients returned by a multiplicative structure can contain
-# unsorted or repeated keys. Preserve the canonicalizing addition for those.
-function _strictly_sorted(c::SparseCoefficients)
-    k = keys(c)
-    return all(i -> c.isless(k[i], k[i+1]), firstindex(k):(lastindex(k)-1))
-end
-
 function MA.operate!(::typeof(+), X::SparseCoefficients, Y::SparseCoefficients)
     return MA.operate_to!(X, +, X, Y)
 end
@@ -392,9 +405,7 @@ function MA.operate_to!(
     X::SparseCoefficients,
     Y::SparseCoefficients,
 )
-    if res.isless == X.isless == Y.isless &&
-       _strictly_sorted(X) &&
-       _strictly_sorted(Y)
+    if res.isless == X.isless == Y.isless
         return _merge_coefficients!(res, X, Y)
     end
     copied(c) = Iterators.map(MA.copy_if_mutable, c.values)

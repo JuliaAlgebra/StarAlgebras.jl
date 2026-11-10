@@ -99,7 +99,7 @@ end
 
     for basis in [RG, wRG]
         A = SA.AlgebraElement(
-            SA.SparseCoefficients(collect(G), Float64.(1:6)),
+            SA.sparse_coefficients(collect(G), Float64.(1:6)),
             basis,
         )
         B = SA.AlgebraElement(
