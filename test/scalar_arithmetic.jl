@@ -255,7 +255,7 @@ end
             MA.@rewrite(p + a * p),
             MA.@rewrite(p - p * a),
             MA.@rewrite(a + p),
-            MA.@rewrite(p - a)
+            MA.@rewrite(p - a),
         )
             @test parent(result) === alg
         end
