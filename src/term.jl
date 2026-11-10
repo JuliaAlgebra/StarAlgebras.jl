@@ -198,7 +198,7 @@ function _term_coefficients(t::Term)
 end
 
 function _term_arithmetic(op::F, a, b) where {F}
-    a, b = promote_bases(a, b)
+    a, b = _promote_operands(a, b)
     P = MA.promote_operation(op, typeof(a), typeof(b))
     output = MA.zero_for(P, (a,), (b,))
     # Use read-only term coefficients in the existing binary kernel so that

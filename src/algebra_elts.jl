@@ -1,10 +1,20 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-Base.hash(a::AlgebraElement, h::UInt) = hash(coeffs(a), hash(parent(a), h))
+# An element of an algebra whose basis is a `SubBasis` is equal to the
+# corresponding element of the algebra whose basis is its parent so the hash
+# is computed from the latter.
+function Base.hash(a::AlgebraElement, h::UInt)
+    b = _implicit_operand(a)
+    return hash(coeffs(b), hash(parent(b), h))
+end
 
 function Base.:(==)(X::AlgebraElement, Y::AlgebraElement)
-    parent(X) == parent(Y) || return false
+    if parent(X) != parent(Y)
+        X = _implicit_operand(X)
+        Y = _implicit_operand(Y)
+        parent(X) == parent(Y) || return false
+    end
     return coeffs(X) == coeffs(Y)
 end
 
@@ -214,10 +224,31 @@ function promote_bases(a, b)
     return _a[1], _b[1]
 end
 
+# The result of an arithmetic operation involving an element of an algebra
+# whose basis is a `SubBasis` is generally not in the span of this `SubBasis`
+# so we move it to the algebra whose basis is the parent of the `SubBasis`.
+# This only depends on the type of the basis so that the type of the result
+# can be inferred.
+_implicit_operand(a) = a
+_implicit_operand(a::AlgebraElement) = _implicit_operand(a, basis(a))
+_implicit_operand(a::AlgebraElement, ::AbstractBasis) = a
+function _implicit_operand(a::AlgebraElement, sub::SubBasis)
+    mstr, _ = promote_with_map(mstructure(parent(a)), parent(sub), identity)
+    # The object of the algebra does not depend on its basis
+    alg = StarAlgebra(object(parent(a)), mstr)
+    return AlgebraElement(coeffs(a, basis(alg)), alg)
+end
+
+_has_sub_basis(::Type{A}) where {A} = Base.promote_op(basis, A) <: SubBasis
+
+function _promote_operands(a, b)
+    return promote_bases(_implicit_operand(a), _implicit_operand(b))
+end
+
 # Parents can have different types when their basis data is encoded in types.
 # Reuse the same promotion as values before applying coefficient promotion.
 function _promoted_types(::Type{A}, ::Type{B}) where {A,B}
-    P = Base.promote_op(promote_bases, A, B)
+    P = Base.promote_op(_promote_operands, A, B)
     return isconcretetype(P) ? fieldtypes(P) : (Any, Any)
 end
 function _convert_parent(::Type{A}, x) where {A<:AbstractStarAlgebra}
