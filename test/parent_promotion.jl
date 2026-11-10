@@ -152,9 +152,10 @@ end
     @test iszero(z)
     @test SA.basis(z).elements == [1.0, 2.0, 4.0]
     @test sum(xs) == element([1.0, 2.0, 4.0], [2, 3, 5])
-    # The default promotes the parents one by one
-    @test SA.basis(SA.common_parent(Tuple(xs))).elements == [1.0, 2.0, 4.0]
-    @test SA.common_parent((1, 2)) === nothing
+    # By default, `zero_for` promotes the parents one by one
+    @test SA.common_parent(Tuple(xs)) === nothing
+    z = MA.zero_for(typeof(xs[1]), Tuple(xs))
+    @test SA.basis(z).elements == [1.0, 2.0, 4.0]
     z = MA.zero_for(typeof(xs[1]), (xs[1],), [1, 2], (xs[2],))
     @test SA.basis(z).elements == [1.0, 4.0]
 end
@@ -239,7 +240,7 @@ end
     @test_throws InexactError convert(typeof(p), q)
     @test parent(t) === parent(p) === small
     @test SA.coeffs(p)[2] == 3
-    @test SA.common_parent([p, q, t]) == large
+    @test parent(MA.zero_for(typeof(q), [p, q, t])) == large
 end
 
 end # module
