@@ -220,6 +220,26 @@ end
                   MA.promote_operation(op, typeof(dx), typeof(y))
         end
 
+        # The products of the first `length(S1)` elements of `subb` are in
+        # `subb` so they are given by an `MTable` and the arithmetic stays in
+        # the algebra of the `SubBasis`
+        tRG = SA.StarAlgebra(G, SA.MTable(smstr, (length(S1), length(S1))))
+        tx = SA.AlgebraElement(SA.coeffs(x), tRG)
+        ty = SA.AlgebraElement(SA.coeffs(y), tRG)
+        @test parent(SA.implicit(tx)) == RG
+        @test SA.implicit(tx) == dx
+        @test SA.promote_operand(tx) === tx
+        @test SA.promote_operand(x) == dx
+        @test parent(SA.promote_operand(x)) == RG
+        @test SA.promote_operand(dx) === dx
+        for op in (+, -, *)
+            @test parent(op(tx, ty)) === tRG
+            @test typeof(op(tx, ty)) ==
+                  MA.promote_operation(op, typeof(tx), typeof(ty))
+            @test SA.AlgebraElement(SA.coeffs(op(tx, ty), SA.basis(RG)), RG) ==
+                  op(dx, dy)
+        end
+
         if !(one(G) in subb)
             @test_throws ArgumentError one(sbRG)
         end

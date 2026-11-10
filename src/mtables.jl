@@ -145,7 +145,11 @@ function MA.operate!(
     return res
 end
 
-# TODO promote_with_map
+# The table is indexed by the elements of the basis of `a` so it cannot be
+# reused for another basis.
+function promote_with_map(a::MTable, b::AbstractBasis, map)
+    return promote_with_map(a.mstr, b, map)
+end
 
 function promote_bases_with_maps(a::MTable, b::MTable)
     _a, _b = promote_bases_with_maps(a.mstr, b.mstr)
