@@ -178,7 +178,7 @@ function MA.operate!(op::UnsafeAddMul, res, A, B, α)
                 op,
                 res,
                 _basis_product(op.structure, kA, kB),
-                MA.@rewrite(α * vA * vB)
+                MA.@rewrite(α * vA * vB),
             )
         end
     end

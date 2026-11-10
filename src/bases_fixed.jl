@@ -244,3 +244,8 @@ function promote_bases_with_maps(a::SubBasis, b::ImplicitBasis)
     _a, _b = promote_bases_with_maps(parent(a), b)
     return maybe_promote(a, _a...), _b
 end
+
+function promote_bases_with_maps(a::ImplicitBasis, b::SubBasis)
+    _b, _a = promote_bases_with_maps(b, a)
+    return _a, _b
+end

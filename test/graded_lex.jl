@@ -103,6 +103,10 @@ end
         @test _sub_x.keys == [(1, 0), (3, 0)]
         @test _sub_x.is_sorted
         @test _y == bas_bi
+        _y, _sub_x = SA.promote_bases(bas_y, sub_x)
+        @test _y == bas_bi
+        @test parent(_sub_x) == bas_bi
+        @test _sub_x.keys == [(1, 0), (3, 0)]
         _sub_x, _sub_y = SA.promote_bases(sub_x, sub_y)
         @test parent(_sub_x) == bas_bi
         @test _sub_x.is_sorted
