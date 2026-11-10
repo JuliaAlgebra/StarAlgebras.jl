@@ -97,7 +97,8 @@ function test_zero_allocations(prototype, inputs::Vararg{Any,N}) where {N}
     direct[] = zero(prototype)
     output[] = MA.zero_for(P, inputs...)
     if VERSION >= v"1.13"
-        budget = @allocated direct[] = zero(prototype)
+        # The optional parent may be boxed, e.g., with `--code-coverage`
+        budget = 32 + @allocated direct[] = zero(prototype)
         @test (@allocated output[] = MA.zero_for(P, inputs...)) <= budget
     end
     @test iszero(direct[]) && iszero(output[])

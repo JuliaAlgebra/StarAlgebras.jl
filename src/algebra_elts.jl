@@ -113,15 +113,19 @@ maybe_promote(a, b, map) = promote_with_map(a, b, map)
 
 Same as `(maybe_promote(a, _a...), maybe_promote(b, _b...))` except that `a`
 (resp. `b`) is reused as the promoted version of `b` (resp. `a`) if it does not
-need to be promoted. This is only valid if `a` and `b` are parents, e.g., bases,
-multiplicative structures or algebras, as their promoted versions are then
-equal. This is not the case for algebra elements and terms for instance.
+need to be promoted and the promoted parents `first(_a)` and `first(_b)` of `a`
+and `b` are the same object. This is only valid if `a` and `b` are parents,
+e.g., bases, multiplicative structures or algebras. This is not the case for
+algebra elements and terms for instance.
 """
 function promote_parents(a, b, _a, _b)
-    if isnothing(last(_a))
-        return (a, nothing), (a, last(_b))
-    elseif isnothing(last(_b))
-        return (b, last(_a)), (b, nothing)
+    # The promoted parents can differ, e.g., a `SubBasis` and its parent basis.
+    if first(_a) === first(_b)
+        if isnothing(last(_a))
+            return (a, nothing), (a, last(_b))
+        elseif isnothing(last(_b))
+            return (b, last(_a)), (b, nothing)
+        end
     end
     return maybe_promote(a, _a...), maybe_promote(b, _b...)
 end
