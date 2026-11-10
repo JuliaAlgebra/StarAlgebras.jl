@@ -149,5 +149,5 @@ end
 
 function promote_bases_with_maps(a::MTable, b::MTable)
     _a, _b = promote_bases_with_maps(a.mstr, b.mstr)
-    return maybe_promote(a, _a...), maybe_promote(b, _b...)
+    return promote_parents(a, b, _a, _b)
 end

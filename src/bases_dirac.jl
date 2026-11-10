@@ -151,7 +151,7 @@ end
 
 function promote_bases_with_maps(a::ImplicitBasis, b::ImplicitBasis)
     if a == b
-        return (a, nothing), (b, nothing)
+        return (a, nothing), (a, nothing)
     end
     return error("Bases $a and $b are different and do not support promotion.")
 end

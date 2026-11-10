@@ -99,6 +99,24 @@ maybe_promote(a, _, ::Nothing) = a, nothing
 maybe_promote(a, b, map) = promote_with_map(a, b, map)
 
 """
+    promote_parents(a, b, _a, _b)
+
+Same as `(maybe_promote(a, _a...), maybe_promote(b, _b...))` except that `a`
+(resp. `b`) is reused as the promoted version of `b` (resp. `a`) if it does not
+need to be promoted. This is only valid if `a` and `b` are parents, e.g., bases,
+multiplicative structures or algebras, as their promoted versions are then
+equal. This is not the case for algebra elements and terms for instance.
+"""
+function promote_parents(a, b, _a, _b)
+    if isnothing(last(_a))
+        return (a, nothing), (a, last(_b))
+    elseif isnothing(last(_b))
+        return (b, last(_a)), (b, nothing)
+    end
+    return maybe_promote(a, _a...), maybe_promote(b, _b...)
+end
+
+"""
     promote_with_map(a, parent, map)
 
 Promote `a` given the promoted parent `parent` and the key map
@@ -139,13 +157,15 @@ function SA.promote_bases_with_maps(a::A, b::B)
     return SA.maybe_promote(a, _a...), _b
 end
 ```
+If `A` is itself a parent, e.g., a basis, a multiplicative structure or an
+algebra, use [`promote_parents`](@ref) in the method for `(a::A, b::A)`.
 """
 function promote_bases_with_maps end
 
 function promote_bases_with_maps(a::StarAlgebra, b::StarAlgebra)
-    a == b && return ((a, nothing), (b, nothing))
+    a == b && return ((a, nothing), (a, nothing))
     _a, _b = promote_bases_with_maps(mstructure(a), mstructure(b))
-    return maybe_promote(a, _a...), maybe_promote(b, _b...)
+    return promote_parents(a, b, _a, _b)
 end
 
 function promote_bases_with_maps(

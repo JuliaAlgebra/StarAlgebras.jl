@@ -11,6 +11,7 @@ struct GrowingBasis <: SA.ExplicitBasis{Float64,Int}
 end
 
 Base.length(b::GrowingBasis) = length(b.elements)
+Base.iterate(b::GrowingBasis, args...) = iterate(b.elements, args...)
 Base.getindex(b::GrowingBasis, i::Int) = b.elements[i]
 Base.getindex(b::GrowingBasis, x::Float64) = searchsortedfirst(b.elements, x)
 Base.:(==)(a::GrowingBasis, b::GrowingBasis) = a.elements == b.elements
@@ -20,6 +21,13 @@ function SA.zero_coeffs(::Type{T}, ::GrowingBasis) where {T}
 end
 
 function SA.promote_bases_with_maps(a::GrowingBasis, b::GrowingBasis)
+    if b.elements ⊆ a.elements
+        return (a, nothing),
+        (a, Base.Fix1(getindex, a) ∘ Base.Fix1(getindex, b))
+    elseif a.elements ⊆ b.elements
+        return (b, Base.Fix1(getindex, b) ∘ Base.Fix1(getindex, a)),
+        (b, nothing)
+    end
     common = GrowingBasis(sort!(union(a.elements, b.elements)))
     map_a = Base.Fix1(getindex, common) ∘ Base.Fix1(getindex, a)
     map_b = Base.Fix1(getindex, common) ∘ Base.Fix1(getindex, b)
@@ -62,6 +70,27 @@ end
     @test parent(c) === alg_c
     @test collect(SA.nonzero_pairs(SA.coeffs(a))) == [1 => 1.0f0 + 2.0f0im]
     @test collect(SA.nonzero_pairs(SA.coeffs(b))) == [1 => 3.0f0 + 4.0f0im]
+end
+
+@testset "Promoted parents are shared" begin
+    a = element([1.0, 2.0, 4.0], [1, 2, 3])
+    b = element([2.0, 4.0], [4, 5])
+    for (x, y) in ((a, b), (b, a))
+        for f in (parent, SA.mstructure, SA.basis)
+            @test all(p -> p === f(a), SA.promote_bases(f(x), f(y)))
+        end
+        @test all(p -> parent(p) === parent(a), SA.promote_bases(x, y))
+    end
+    mt_a, mt_b = SA.MTable(SA.basis(a), (0, 0)), SA.MTable(SA.basis(b), (0, 0))
+    for (x, y) in ((mt_a, mt_b), (mt_b, mt_a))
+        @test all(p -> p === mt_a, SA.promote_bases(x, y))
+    end
+    # Equal implicit bases that are not the same object
+    x, y =
+        SA.MappedBasis([1, 2], float, Int), SA.MappedBasis([1, 2], float, Int)
+    @test x !== y
+    @test all(p -> p === x, SA.promote_bases(x, y))
+    @test a + b == element([1.0, 2.0, 4.0], [1, 6, 8])
 end
 
 @testset "Mutable parent promotion" begin
