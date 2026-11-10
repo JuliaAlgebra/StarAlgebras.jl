@@ -220,6 +220,31 @@ end
 # Scalar representations can expose their term for parent preparation.
 _algebra_operand(x) = x
 
+_promote_parent(::Nothing, ::Nothing) = nothing
+_promote_parent(::Nothing, b) = b
+_promote_parent(a, ::Nothing) = a
+_promote_parent(a, b) = first(promote_bases(a, b))
+
+"""
+    common_parent(operands)
+
+Return the parent to which the parents of the algebra elements and terms of the
+collection `operands` can all be promoted, or `nothing` if there are none. The
+default promotes them one by one with [`promote_bases`](@ref), it can be
+specialized to promote all of them at once.
+"""
+@inline function common_parent(operands)
+    # Inlined to keep the optional parent unboxed
+    alg = nothing
+    for operand in operands
+        x = _algebra_operand(operand)
+        if x isa Union{AlgebraElement,Term}
+            alg = _promote_parent(alg, parent(x))
+        end
+    end
+    return alg
+end
+
 # Keep optional parents and prototypes unboxed across input recursion.
 @inline function _zero_for(
     ::Type{P},
@@ -231,9 +256,6 @@ _algebra_operand(x) = x
     for operand in input
         x = _algebra_operand(operand)
         if x isa Union{AlgebraElement,Term}
-            alg =
-                isnothing(alg) ? parent(x) :
-                first(promote_bases(alg, parent(x)))
             # Prefer an element with the promoted coefficient storage, e.g.
             # dense storage when mixing sparse and dense coefficients.
             if isnothing(prototype) || (
@@ -244,6 +266,7 @@ _algebra_operand(x) = x
             end
         end
     end
+    alg = _promote_parent(alg, common_parent(input))
     # Recurse over the tuple so each input's iterator type stays concrete.
     return _zero_for(P, alg, prototype, inputs...)
 end

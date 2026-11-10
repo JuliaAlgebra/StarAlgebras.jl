@@ -127,6 +127,38 @@ end
     end
 end
 
+const GrowingAlgebra = SA.StarAlgebra{
+    Float64,
+    Float64,
+    SA.DiracMStructure{Float64,Int,GrowingBasis,typeof(*)},
+}
+
+const COMMON_PARENT_CALLS = Ref(0)
+
+# Merge all the elements at once instead of promoting the parents one by one
+function SA.common_parent(
+    operands::AbstractVector{<:SA.AlgebraElement{<:Any,GrowingAlgebra}},
+)
+    COMMON_PARENT_CALLS[] += 1
+    elements = reduce(vcat, [SA.basis(x).elements for x in operands])
+    return SA.StarAlgebra(1.0, GrowingBasis(sort!(unique!(elements))))
+end
+
+@testset "Common parent" begin
+    xs = [element([4.0], [1]), element([1.0], [2]), element([2.0, 4.0], [3, 4])]
+    calls = COMMON_PARENT_CALLS[]
+    z = MA.zero_for(typeof(xs[1]), xs)
+    @test COMMON_PARENT_CALLS[] == calls + 1
+    @test iszero(z)
+    @test SA.basis(z).elements == [1.0, 2.0, 4.0]
+    @test sum(xs) == element([1.0, 2.0, 4.0], [2, 3, 5])
+    # The default promotes the parents one by one
+    @test SA.basis(SA.common_parent(Tuple(xs))).elements == [1.0, 2.0, 4.0]
+    @test SA.common_parent((1, 2)) === nothing
+    z = MA.zero_for(typeof(xs[1]), (xs[1],), [1, 2], (xs[2],))
+    @test SA.basis(z).elements == [1.0, 4.0]
+end
+
 # A basis with a type-level size exercises promotion that changes parent types.
 struct PowerBasis{N} <: SA.ExplicitBasis{Float64,Int} end
 
@@ -207,6 +239,7 @@ end
     @test_throws InexactError convert(typeof(p), q)
     @test parent(t) === parent(p) === small
     @test SA.coeffs(p)[2] == 3
+    @test SA.common_parent([p, q, t]) == large
 end
 
 end # module
