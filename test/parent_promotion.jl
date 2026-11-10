@@ -91,6 +91,21 @@ end
     @test x !== y
     @test all(p -> p === x, SA.promote_bases(x, y))
     @test a + b == element([1.0, 2.0, 4.0], [1, 6, 8])
+    # The promoted bases are different even if none needs to be promoted
+    implicit = SA.DiracBasis(1:5)
+    sub = SA.SubBasis(implicit, [2, 4])
+    alg_sub, alg = SA.StarAlgebra(1.0, sub), SA.StarAlgebra(1.0, implicit)
+    p = SA.AlgebraElement([1.0, 2.0], alg_sub)
+    for f in (identity, SA.mstructure)
+        x, y = SA.promote_bases(f(alg_sub), f(alg))
+        @test x === f(alg_sub)
+        @test y === f(alg)
+        y, x = SA.promote_bases(f(alg), f(alg_sub))
+        @test x === f(alg_sub)
+        @test y === f(alg)
+    end
+    q, _ = SA.promote_bases(p, alg)
+    @test q === p
 end
 
 @testset "Mutable parent promotion" begin
