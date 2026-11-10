@@ -5,6 +5,7 @@ using Test
 using PermutationGroups
 import Random
 import StarAlgebras as SA
+import MutableArithmetics as MA
 if !@isdefined aug
     include("group_utils.jl")
 end
@@ -168,6 +169,57 @@ end
 
         @test dx * dy == SA.AlgebraElement(SA.coeffs(x * y, SA.basis(RG)), RG)
 
+        @test SA.implicit_basis(SA.basis(sbRG)) === SA.basis(RG)
+        @test SA.implicit_basis(SA.basis(RG)) === SA.basis(RG)
+        @test SA.implicit(x) == dx
+        @test parent(SA.implicit(x)) == RG
+        @test SA.implicit(dx) === dx
+        @test typeof(SA.implicit(x)) ==
+              MA.promote_operation(SA.implicit, typeof(x))
+        @test MA.promote_operation(SA.implicit_basis, typeof(SA.basis(sbRG))) ==
+              typeof(SA.basis(RG))
+        @test MA.promote_operation(SA.implicit_basis, typeof(SA.basis(RG))) ==
+              typeof(SA.basis(RG))
+        ts = SA.Term(sbRG, 1, 2)
+        @test SA.implicit(ts).algebra == RG
+        @test SA.basis_element(SA.implicit(ts)) == SA.basis_element(ts)
+        @test SA.coefficient(SA.implicit(ts)) == 2
+        @test SA.implicit(SA.implicit(ts)) === SA.implicit(ts)
+
+        # Arithmetic between a term of the algebra of the parent basis and an
+        # element of the algebra of a `SubBasis`
+        t = SA.Term(RG, SA.basis(RG)[S1[1]], 2)
+        dt = 2 * RG(S1[1])
+        for op in (+, -, *)
+            @test op(t, x) == op(dt, dx)
+            @test op(x, t) == op(dx, dt)
+            @test parent(op(t, x)) == RG
+        end
+
+        # The parents cannot be promoted to a common parent
+        RG2 = SA.StarAlgebra(G, SA.DiracMStructure(db, (a, b) -> a * b))
+        @test_throws ArgumentError MA.promote_operation(
+            *,
+            typeof(dx),
+            typeof(SA.AlgebraElement(SA.coeffs(dx), RG2)),
+        )
+
+        # Arithmetic between elements of the algebra of a `SubBasis` and
+        # elements of the algebra of its parent basis
+        @test x == dx
+        @test hash(x) == hash(dx)
+        @test x != dy
+        for op in (+, -, *)
+            @test op(x, dy) == op(dx, dy)
+            @test parent(op(x, dy)) == RG
+            @test op(dx, y) == op(dx, dy)
+            @test parent(op(dx, y)) == RG
+            @test typeof(op(x, dy)) ==
+                  MA.promote_operation(op, typeof(x), typeof(dy))
+            @test typeof(op(dx, y)) ==
+                  MA.promote_operation(op, typeof(dx), typeof(y))
+        end
+
         if !(one(G) in subb)
             @test_throws ArgumentError one(sbRG)
         end
@@ -182,6 +234,12 @@ end
             @test isone(one(sRG))
             @test x * one(sRG) == x
             @test one(sRG) * x == x
+            # Elements of the algebras of two different `SubBasis` of the
+            # same parent basis
+            z = SA.AlgebraElement(SA.coeffs(dx, SA.basis(sbRG)), sbRG)
+            @test parent(x + z) == RG
+            @test x + z ==
+                  SA.AlgebraElement(SA.coeffs(x, SA.basis(RG)), RG) + dx
             @test eltype(one(Float64, sRG)) == Float64
             @test isone(one(x))
             @test coeffs(one(x)) == coeffs(one(sRG))

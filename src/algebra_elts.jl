@@ -1,10 +1,20 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2021-2025: Marek Kaluba, Benoît Legat
 
-Base.hash(a::AlgebraElement, h::UInt) = hash(coeffs(a), hash(parent(a), h))
+# An element of an algebra whose basis is a `SubBasis` is equal to the
+# corresponding element of the algebra whose basis is its parent so the hash
+# is computed from the latter.
+function Base.hash(a::AlgebraElement, h::UInt)
+    b = implicit(a)
+    return hash(coeffs(b), hash(parent(b), h))
+end
 
 function Base.:(==)(X::AlgebraElement, Y::AlgebraElement)
-    parent(X) == parent(Y) || return false
+    if parent(X) != parent(Y)
+        X = implicit(X)
+        Y = implicit(Y)
+        parent(X) == parent(Y) || return false
+    end
     return coeffs(X) == coeffs(Y)
 end
 
@@ -214,10 +224,78 @@ function promote_bases(a, b)
     return _a[1], _b[1]
 end
 
+"""
+    implicit_basis(basis::AbstractBasis)
+
+Return the implicit basis containing the elements of `basis`. This is the
+parent basis for a [`SubBasis`](@ref) and `basis` itself otherwise.
+"""
+implicit_basis(basis::AbstractBasis) = basis
+implicit_basis(basis::SubBasis) = parent(basis)
+
+function MA.promote_operation(
+    ::typeof(implicit_basis),
+    ::Type{B},
+) where {B<:AbstractBasis}
+    return B
+end
+
+function MA.promote_operation(
+    ::typeof(implicit_basis),
+    ::Type{<:SubBasis{T,I,K,B}},
+) where {T,I,K,B}
+    return B
+end
+
+# The object of the algebra does not depend on its basis
+function _implicit_algebra(alg::StarAlgebra, basis)
+    mstr, _ = promote_with_map(mstructure(alg), basis, identity)
+    return StarAlgebra(object(alg), mstr)
+end
+
+"""
+    implicit(a::Union{AlgebraElement,Term})
+
+Return `a` as an element of the algebra whose basis is
+`implicit_basis(basis(a))`.
+
+The result of an arithmetic operation involving an element of the algebra of a
+[`SubBasis`](@ref) is generally not in the span of this `SubBasis` so the
+operands are converted with `implicit` first. This only depends on the type of
+the basis so that the type of the result can be inferred.
+"""
+implicit(a::AlgebraElement) = _implicit(a, basis(a), implicit_basis(basis(a)))
+_implicit(a::AlgebraElement, ::B, ::B) where {B} = a
+function _implicit(a::AlgebraElement, _, basis)
+    return AlgebraElement(coeffs(a, basis), _implicit_algebra(parent(a), basis))
+end
+
+function implicit(t::Term)
+    return _implicit(t, basis(t.algebra), implicit_basis(basis(t.algebra)))
+end
+_implicit(t::Term, ::B, ::B) where {B} = t
+function _implicit(t::Term, _, basis)
+    return Term(
+        _implicit_algebra(t.algebra, basis),
+        basis[basis_element(t)],
+        coefficient(t),
+    )
+end
+
+function MA.promote_operation(::typeof(implicit), ::Type{A}) where {A}
+    return Base.promote_op(implicit, A)
+end
+
+_has_sub_basis(::Type{A}) where {A} = Base.promote_op(basis, A) <: SubBasis
+
+function _promote_operands(a, b)
+    return promote_bases(implicit(a), implicit(b))
+end
+
 # Parents can have different types when their basis data is encoded in types.
 # Reuse the same promotion as values before applying coefficient promotion.
 function _promoted_types(::Type{A}, ::Type{B}) where {A,B}
-    P = Base.promote_op(promote_bases, A, B)
+    P = Base.promote_op(_promote_operands, A, B)
     return isconcretetype(P) ? fieldtypes(P) : (Any, Any)
 end
 function _convert_parent(::Type{A}, x) where {A<:AbstractStarAlgebra}

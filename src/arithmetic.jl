@@ -16,9 +16,24 @@ end
 function algebra_promote_operation(op, args::Vararg{Type,N}) where {N}
     if args[1] <: AlgebraElement &&
        args[2] <: AlgebraElement &&
-       MA.promote_operation(parent, args[1]) !==
-       MA.promote_operation(parent, args[2])
-        return MA.promote_operation(op, _promoted_types(args...)...)
+       (
+           MA.promote_operation(parent, args[1]) !==
+           MA.promote_operation(parent, args[2]) ||
+           _has_sub_basis(args[1]) ||
+           _has_sub_basis(args[2])
+       )
+        promoted = _promoted_types(args[1], args[2])
+        if promoted != (args[1], args[2])
+            return MA.promote_operation(op, promoted...)
+        end
+        if MA.promote_operation(parent, args[1]) !==
+           MA.promote_operation(parent, args[2])
+            throw(
+                ArgumentError(
+                    "Cannot promote the parents of `$(args[1])` and `$(args[2])` to a common parent.",
+                ),
+            )
+        end
     end
     T = if op === (*) && args[1] <: AlgebraElement && args[2] <: AlgebraElement
         C = _product_coefficient_type(args...)
@@ -142,7 +157,7 @@ for op in [:+, :-, :*]
         # Inlining this wrapper crashes Julia 1.13 for sparse-dense matrices
         # of typed polynomials. Keep the arithmetic kernels optimized.
         Base.@noinline function Base.$op(X::AlgebraElement, Y::AlgebraElement)
-            _X, _Y = promote_bases(X, Y)
+            _X, _Y = _promote_operands(X, Y)
             P = MA.promote_operation($op, typeof(_X), typeof(_Y))
             return MA.operate_to!(MA.zero_for(P, (_X,), (_Y,)), $op, _X, _Y)
         end
