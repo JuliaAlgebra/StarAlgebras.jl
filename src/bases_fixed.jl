@@ -96,7 +96,7 @@ function promote_bases_with_maps(a::FixedBasis, b::FixedBasis)
             ),
         )
     end
-    return (a, nothing), (b, nothing)
+    return (a, nothing), (a, nothing)
 end
 
 """

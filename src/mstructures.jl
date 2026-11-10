@@ -230,7 +230,7 @@ end
 
 function promote_bases_with_maps(a::DiracMStructure, b::DiracMStructure)
     _a, _b = promote_bases_with_maps(basis(a), basis(b))
-    return maybe_promote(a, _a...), maybe_promote(b, _b...)
+    return promote_parents(a, b, _a, _b)
 end
 
 function promote_bases_with_maps(a::DiracMStructure, b::AbstractBasis)
