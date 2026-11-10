@@ -85,6 +85,11 @@ end
     for (x, y) in ((mt_a, mt_b), (mt_b, mt_a))
         @test all(p -> p === mt_a, SA.promote_bases(x, y))
     end
+    # Equal implicit bases that are not the same object
+    x, y =
+        SA.MappedBasis([1, 2], float, Int), SA.MappedBasis([1, 2], float, Int)
+    @test x !== y
+    @test all(p -> p === x, SA.promote_bases(x, y))
     @test a + b == element([1.0, 2.0, 4.0], [1, 6, 8])
 end
 
