@@ -1,0 +1,70 @@
+name: downstream-tests
+on:
+  workflow_dispatch:
+permissions:
+  # Allow julia-actions/cache to delete its old caches.
+  actions: write
+  contents: read
+jobs:
+  test:
+    name: Julia ${{ matrix.version }} - ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['1.10', '1']
+        package:
+          - DynamicPolynomials
+          - MultivariateBases
+          - MultivariateMoments
+          - MultivariatePolynomials
+          - PolyJuMP
+          - SemialgebraicSets
+          - SumOfSquares
+          - SymbolicWedderburn
+          - TypedPolynomials
+    env:
+      PACKAGE: ${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v3
+      - name: Test released downstream package with this StarAlgebras checkout
+        shell: julia --color=yes --startup-file=no {0}
+        run: |
+          import Pkg
+          import TOML
+          Pkg.activate(; temp = true)
+          package = ENV["PACKAGE"]
+          # Pin the released version before substituting SA, so resolution
+          # cannot hide a regression by selecting an older downstream release.
+          Pkg.add(package)
+          Pkg.pin(package)
+          downstream =
+              only(pkg for pkg in values(Pkg.dependencies()) if pkg.name == package)
+          project = TOML.parsefile(joinpath(downstream.source, "Project.toml"))
+          compat = get(get(project, "compat", Dict()), "StarAlgebras", nothing)
+          sa_path = ENV["GITHUB_WORKSPACE"]
+          sa_project = TOML.parsefile(joinpath(sa_path, "Project.toml"))
+          sa_version = VersionNumber(sa_project["version"])
+          if !isnothing(compat) && !(sa_version in Pkg.Types.semver_spec(compat))
+              @info(
+                  "Skipping incompatible downstream release",
+                  package,
+                  version = downstream.version,
+                  compat,
+                  sa_version,
+              )
+              exit(0)
+          end
+          # Resolution errors within the declared compatibility range fail CI.
+          Pkg.develop(Pkg.PackageSpec(; path = sa_path))
+          # A downstream test/Project.toml may request SA#main. Reapply the
+          # checkout inside Pkg's sandbox before it launches the tests.
+          Pkg.test(
+              package;
+              test_fn = () -> Pkg.develop(Pkg.PackageSpec(; path = sa_path)),
+          )
