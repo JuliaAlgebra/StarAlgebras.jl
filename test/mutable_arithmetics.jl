@@ -311,6 +311,20 @@ end
     end
 end
 
+@testset "Scaled accumulation with different orderings" begin
+    alg = StarAlgebra(1.0, SA.FixedBasis([1.0, 2.0, 3.0]))
+    g = AlgebraElement(SA.SparseCoefficients([3, 1], [4, 2], >), alg)
+    f = AlgebraElement(SA.SparseCoefficients([1, 3], [1, 2]), alg)
+    @test (@inferred MA.operate!(MA.sub_mul, f, 2, g)) === f
+    @test keys(coeffs(f)) == [1, 3]
+    @test values(coeffs(f)) == [-3, -6]
+    @test keys(coeffs(g)) == [3, 1]
+    @test values(coeffs(g)) == [4, 2]
+    @test MA.operate!(MA.add_mul, g, g, 2) === g
+    @test keys(coeffs(g)) == [3, 1]
+    @test values(coeffs(g)) == [12, 6]
+end
+
 function test_scalar_product_allocations(::Type{T}) where {T}
     alg = StarAlgebra(1, SA.FixedBasis(collect(1:100)))
     for c in (
