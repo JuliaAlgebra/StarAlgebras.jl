@@ -196,6 +196,15 @@ end
             @test parent(op(t, x)) == RG
         end
 
+        # The constant term may not be in `subb` so the sum is in the algebra of
+        # the parent basis
+        for op in (+, -)
+            @test op(x, 2) == op(dx, 2)
+            @test op(2, x) == op(2, dx)
+            @test parent(op(x, 2)) == RG
+            @test typeof(op(x, 2)) == MA.promote_operation(op, typeof(x), Int)
+        end
+
         # The parents cannot be promoted to a common parent
         RG2 = SA.StarAlgebra(G, SA.DiracMStructure(db, (a, b) -> a * b))
         @test_throws ArgumentError MA.promote_operation(
@@ -225,6 +234,26 @@ end
             z = MA.copy_if_mutable(dy)
             @test MA.operate!(op, z, x) == op(dy, dx)
             @test parent(z) == RG
+        end
+
+        # The products of the first `length(S1)` elements of `subb` are in
+        # `subb` so they are given by an `MTable` and the arithmetic stays in
+        # the algebra of the `SubBasis`
+        tRG = SA.StarAlgebra(G, SA.MTable(smstr, (length(S1), length(S1))))
+        tx = SA.AlgebraElement(SA.coeffs(x), tRG)
+        ty = SA.AlgebraElement(SA.coeffs(y), tRG)
+        @test parent(SA.implicit(tx)) == RG
+        @test SA.implicit(tx) == dx
+        @test SA.promote_operand(tx) === tx
+        @test SA.promote_operand(x) == dx
+        @test parent(SA.promote_operand(x)) == RG
+        @test SA.promote_operand(dx) === dx
+        for op in (+, -, *)
+            @test parent(op(tx, ty)) === tRG
+            @test typeof(op(tx, ty)) ==
+                  MA.promote_operation(op, typeof(tx), typeof(ty))
+            @test SA.AlgebraElement(SA.coeffs(op(tx, ty), SA.basis(RG)), RG) ==
+                  op(dx, dy)
         end
 
         if !(one(G) in subb)

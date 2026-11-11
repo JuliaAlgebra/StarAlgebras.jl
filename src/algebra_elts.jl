@@ -290,10 +290,30 @@ function MA.promote_operation(::typeof(implicit), ::Type{A}) where {A}
     return Base.promote_op(implicit, A)
 end
 
+"""
+    promote_operand(a::Union{AlgebraElement,Term})
+
+Return `a` in the algebra in which the arithmetic operations with `a` as
+operand are computed. This is `implicit(a)` by default, see [`implicit`](@ref),
+except for the elements of an algebra whose multiplicative structure is an
+[`MTable`](@ref) which are returned unchanged as the table gives the products of
+the elements of its basis in this basis. An algebra whose elements are closed
+under the arithmetic operations can implement this function to return them
+unchanged as well.
+"""
+promote_operand(a) = implicit(a)
+const _MTableAlgebra = StarAlgebra{O,T,<:MTable} where {O,T}
+promote_operand(a::AlgebraElement{T,<:_MTableAlgebra}) where {T} = a
+promote_operand(t::Term{T,<:_MTableAlgebra}) where {T} = t
+
+function MA.promote_operation(::typeof(promote_operand), ::Type{A}) where {A}
+    return Base.promote_op(promote_operand, A)
+end
+
 _has_sub_basis(::Type{A}) where {A} = Base.promote_op(basis, A) <: SubBasis
 
 function _promote_operands(a, b)
-    return promote_bases(implicit(a), implicit(b))
+    return promote_bases(promote_operand(a), promote_operand(b))
 end
 
 # Parents can have different types when their basis data is encoded in types.
