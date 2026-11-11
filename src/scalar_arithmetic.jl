@@ -1,9 +1,15 @@
 # This file is a part of StarAlgebras.jl. License is MIT: https://github.com/JuliaAlgebra/StarAlgebras.jl/blob/main/LICENSE
 # Copyright (c) 2026: Marek Kaluba, Benoît Legat
 
-# Polynomial frontends can extend a finite basis before adding a constant.
-_prepare_scalar_sum(p) = p
-MA.promote_operation(::typeof(_prepare_scalar_sum), ::Type{P}) where {P} = P
+# Kept as MultivariatePolynomials v0.6.3 extends it, use `promote_operand`
+# instead.
+_prepare_scalar_sum(p) = promote_operand(p)
+function MA.promote_operation(
+    ::typeof(_prepare_scalar_sum),
+    ::Type{P},
+) where {P}
+    return MA.promote_operation(promote_operand, P)
+end
 
 _coeff_type(::Type{<:Term{T}}) where {T} = T
 

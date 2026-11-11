@@ -196,6 +196,15 @@ end
             @test parent(op(t, x)) == RG
         end
 
+        # The constant term may not be in `subb` so the sum is in the algebra of
+        # the parent basis
+        for op in (+, -)
+            @test op(x, 2) == op(dx, 2)
+            @test op(2, x) == op(2, dx)
+            @test parent(op(x, 2)) == RG
+            @test typeof(op(x, 2)) == MA.promote_operation(op, typeof(x), Int)
+        end
+
         # The parents cannot be promoted to a common parent
         RG2 = SA.StarAlgebra(G, SA.DiracMStructure(db, (a, b) -> a * b))
         @test_throws ArgumentError MA.promote_operation(
