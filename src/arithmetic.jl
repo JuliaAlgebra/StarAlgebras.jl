@@ -172,7 +172,7 @@ _promote_operand!(op, output, x) = x
 # shared with other elements. Type-changing promotion belongs to operate!!.
 function _promote_operand!(op, output, x::Union{AlgebraElement,Term})
     parent(x) == parent(output) && return x
-    promoted, x = promote_bases(output, x)
+    promoted, x = _promote_operands(output, x)
     if typeof(promoted) !== typeof(output)
         throw(
             ArgumentError(

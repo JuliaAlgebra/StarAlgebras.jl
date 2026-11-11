@@ -219,6 +219,13 @@ end
             @test typeof(op(dx, y)) ==
                   MA.promote_operation(op, typeof(dx), typeof(y))
         end
+        # In-place arithmetic with the destination in the algebra of the
+        # parent basis
+        for op in (+, -)
+            z = MA.copy_if_mutable(dy)
+            @test MA.operate!(op, z, x) == op(dy, dx)
+            @test parent(z) == RG
+        end
 
         if !(one(G) in subb)
             @test_throws ArgumentError one(sbRG)
