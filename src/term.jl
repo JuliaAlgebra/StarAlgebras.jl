@@ -142,10 +142,6 @@ function Base.promote_rule(
     return similar_type(P, promote_type(T, S))
 end
 
-# `power_by_squaring` promotes to the type of `x * x`, so the product style
-# also determines whether a power is a Term or an AlgebraElement.
-Base.:^(x::Term, p::Integer) = Base.power_by_squaring(x, p)
-
 function MA.promote_operation(
     ::typeof(^),
     ::Type{T},
