@@ -164,7 +164,18 @@ for op in [:+, :-, :*]
     end
 end
 
-Base.:^(a::AlgebraElement, p::Integer) = Base.power_by_squaring(a, p)
+function Base.:^(a::Union{AlgebraElement,Term}, p::Integer)
+    if p == 0 || p == 1
+        # Preserve power_by_squaring's promotion without computing a square.
+        T = MA.promote_operation(*, typeof(a), typeof(a))
+        x = convert(T, a)
+        if p == 0
+            return one(x)
+        end
+        return copy(x)
+    end
+    return Base.power_by_squaring(a, p)
+end
 
 _promote_operand!(op, output, x) = x
 
