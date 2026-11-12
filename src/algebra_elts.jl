@@ -75,7 +75,11 @@ end
 
 # Array comparisons choose their default tolerance from the coefficient types.
 function LinearAlgebra.promote_leaf_eltypes(
-    ::Union{Term{T},AlgebraElement{T}},
+    ::Union{
+        Term{T},
+        AlgebraElement{T},
+        AbstractArray{<:Union{Term{T},AlgebraElement{T}}},
+    },
 ) where {T<:Number}
     return T
 end

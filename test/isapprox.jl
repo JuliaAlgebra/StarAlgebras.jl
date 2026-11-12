@@ -12,6 +12,8 @@ import StarAlgebras as SA
         p = make(T(2))
         q = make(T(3))
         @test [p] ≈ [p]
+        @test Any[p] ≈ Any[p]
+        @test view([p], :) ≈ view([p], :)
         @test [p p; p p] ≈ [p p; p p]
         @test !([p] ≈ [q])
         @test isapprox([p], [q]; atol = 2)
