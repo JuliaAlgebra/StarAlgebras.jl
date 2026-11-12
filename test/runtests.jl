@@ -36,6 +36,7 @@ end
 
 @testset "StarAlgebras" begin
     include("term.jl")
+    include("isapprox.jl")
     include("powers.jl")
     include("remove_leading_term.jl")
     include("mutable_arithmetics.jl")
