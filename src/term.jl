@@ -35,6 +35,10 @@ Return the coefficient of the term `t`.
 """
 coefficient(t::Term) = t.coefficient
 
+function LinearAlgebra.norm(t::Term, p::Real = 2)
+    return LinearAlgebra.norm(coefficient(t), p)
+end
+
 """
     basis_element(t::Term)
 

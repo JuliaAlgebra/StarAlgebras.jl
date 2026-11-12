@@ -73,6 +73,17 @@ function supp(a::AlgebraElement)
     return [b[i] for (i, _) in nonzero_pairs(coeffs(a))]
 end
 
+# Array comparisons choose their default tolerance from the coefficient types.
+function LinearAlgebra.promote_leaf_eltypes(
+    ::Union{
+        Term{T},
+        AlgebraElement{T},
+        AbstractArray{<:Union{Term{T},AlgebraElement{T}}},
+    },
+) where {T<:Number}
+    return T
+end
+
 function LinearAlgebra.norm(a::AlgebraElement, p::Real = 2)
     return LinearAlgebra.norm(coeffs(a), p)
 end
