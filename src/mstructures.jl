@@ -119,8 +119,72 @@ Base.getindex(mstr::MultiplicativeStructure, x) = basis(mstr)[x]
 
 basis(mstr::MultiplicativeStructure) = mstr.basis
 
+"""
+    basis_product(ms::MultiplicativeStructure, a, b)
+
+Return the single `key => weight` pair in the product of basis keys `a` and
+`b`. For a structure that supports single-term products, implement
+`MA.operate_to!!(output, basis_product, ms, a, b)` to reuse the storage of
+`first(output)`. Use separate output storage from either operand. The
+returned key may alias the output storage.
+"""
+function basis_product(ms::MultiplicativeStructure, a, b)
+    key, weight = only(nonzero_pairs(_basis_product(ms, a, b)))
+    return key => weight
+end
+
+function MA.operate(::typeof(basis_product), ms::MultiplicativeStructure, a, b)
+    return basis_product(ms, a, b)
+end
+
 struct UnsafeAddMul{M<:Union{typeof(*),MultiplicativeStructure}}
     structure::M
+end
+
+function MA.buffer_for(
+    op::UnsafeAddMul{<:MultiplicativeStructure},
+    ::Type,
+    ::Type{K},
+    ::Type{K},
+    ::Type,
+) where {K<:Vector}
+    ms = op.structure
+    if term_product_style(ms, comparable(basis(ms))) isa OrderedTermProduct
+        return K() => nothing
+    end
+    return nothing
+end
+
+MA.buffer_for(::UnsafeAddMul, ::Vararg{Type}) = nothing
+
+"""
+    unsafe_push_borrowed!(coefficients, key, value)
+
+Accumulate a coefficient whose key may be overwritten by the caller. A storage
+implementation may use the key for lookup and copy it only when inserting it.
+"""
+function unsafe_push_borrowed!(coefficients, key, value)
+    return unsafe_push!(coefficients, MA.copy_if_mutable(key), value)
+end
+
+function MA.buffered_operate!(
+    buffer,
+    op::UnsafeAddMul,
+    coefficients,
+    a,
+    b,
+    value,
+)
+    if buffer === nothing
+        return MA.operate!(
+            op,
+            coefficients,
+            _basis_product(op.structure, a, b),
+            value,
+        )
+    end
+    key, weight = MA.operate_to!!(buffer, basis_product, op.structure, a, b)
+    return unsafe_push_borrowed!(coefficients, key, weight * value)
 end
 
 """
@@ -172,12 +236,18 @@ function MA.operate!(::UnsafeAddMul, res, A, α)
 end
 
 function MA.operate!(op::UnsafeAddMul, res, A, B, α)
+    return _buffered_add_mul!(nothing, op, res, A, B, α)
+end
+
+function _buffered_add_mul!(buffer, op, res, A, B, α)
     for (kA, vA) in nonzero_pairs(A)
         for (kB, vB) in nonzero_pairs(B)
-            MA.operate!(
+            MA.buffered_operate!(
+                buffer,
                 op,
                 res,
-                _basis_product(op.structure, kA, kB),
+                kA,
+                kB,
                 MA.@rewrite(α * vA * vB),
             )
         end

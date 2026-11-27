@@ -37,7 +37,12 @@ function MA.operate_to!(res::AlgebraElement, ::typeof(+), Q::QuadraticForm)
     return res
 end
 
-function MA.operate!(
+function MA.operate!(op::UnsafeAdd, res::AlgebraElement, Q::QuadraticForm)
+    return MA.buffered_operate!(nothing, op, res, Q)
+end
+
+function MA.buffered_operate!(
+    buffer,
     ::UnsafeAdd,
     res::AlgebraElement,
     Q::QuadraticForm{T,ε},
@@ -46,9 +51,26 @@ function MA.operate!(
     for (i, b1) in pairs(basis(Q))
         b1★ = ε(b1)
         for (j, b2) in pairs(basis(Q))
-            MA.operate!(op, res, b1★, b2, Q[i, j])
+            _add_quadratic_product!(buffer, op, res, b1★, b2, Q[i, j])
         end
     end
+    return res
+end
+
+function _add_quadratic_product!(::Nothing, op, res, a, b, value)
+    return MA.operate!(op, res, a, b, value)
+end
+
+function _add_quadratic_product!(buffer, op, res, a, b, value)
+    ms = mstructure(res)
+    return MA.buffered_operate!(
+        buffer,
+        UnsafeAddMul(ms),
+        coeffs(res),
+        ms[a],
+        ms[b],
+        value,
+    )
 end
 
 function MA.operate!(
