@@ -239,3 +239,12 @@ end
         @test values(SA.coeffs(f)) == [-2, -4, -6]
     end
 end
+
+@testset "Single-term basis product fallback" begin
+    ms = SA.mstructure(biv_alg)
+    out = MA.operate_to!!(nothing, SA.basis_product, ms, (1, 0), (0, 1))
+    @test out == ((1, 1) => 1)
+    op = SA.UnsafeAddMul(ms)
+    @test MA.buffer_for(op, Nothing, Tuple{Int,Int}, Tuple{Int,Int}, Int) ===
+          nothing
+end

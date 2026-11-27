@@ -495,6 +495,26 @@ function MA.operate!(
     return res
 end
 
+function MA.buffered_operate!(
+    buffer,
+    ::UnsafeAddMul{typeof(*)},
+    res::AlgebraElement,
+    A::AlgebraElement,
+    B::AlgebraElement,
+    α = true,
+)
+    add_product = UnsafeAddMul(mstructure(res))
+    _buffered_add_mul!(
+        buffer,
+        add_product,
+        coeffs(res),
+        coeffs(A),
+        coeffs(B),
+        α,
+    )
+    return res
+end
+
 function MA.operate!(add::UnsafeAdd, res::AlgebraElement, A::AlgebraElement)
     MA.operate!(add, coeffs(res), coeffs(A))
     return res
